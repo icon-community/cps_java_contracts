@@ -21,13 +21,14 @@ import score.VarDB;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 import score.BranchDB;
+import scorex.util.ArrayList;
 import score.ArrayDB;
 import score.DictDB;
 import score.Context;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Payable;
-import scorex.util.ArrayList;
+
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -413,7 +414,8 @@ public class CPFTreasury {
     }
 
     private void _swap_tokens(Address _from, Address _to, BigInteger _amount){
-        // TODO: figure out how to send json string as data
+        String params = "" + "{\"method\":\"_swap\",\"params\":{\"toToken\":" + _to.toString() + "}}";
+        Context.call(dexScore.get(), "transfer", _amount, params.getBytes());
     }
 
     @External
@@ -478,6 +480,31 @@ public class CPFTreasury {
         swapState.set(0);
     }
 
+    @External(readonly = true)
+    public List<Map<String, String>> get_proposal_details(int _start_index, int _end_index){
+        List<Map<String, String>> proposals_list = new ArrayList<>();
+        if ((_end_index - _start_index) > 50){
+            Context.revert("Page Length cannot be greater than 50");
+        }
+        int count = proposalsKeys.size();
+
+        if (_start_index < 0 || _start_index > count){
+            _start_index = 0;
+        }
+
+        if (_end_index > count){
+            _end_index = count;
+        }
+
+        for (int i = _start_index; i < _end_index; i++){
+            Map<String, String> proposal_details = Map.of(consts.TOTAL_BUDGET, proposalBudgets.getOrDefault(proposalsKeys.get(i), BigInteger.ZERO).toString(),
+                    consts.IPFS_HASH, proposalsKeys.get(i));
+            proposals_list.add(proposal_details);
+        }
+        proposals_list.add(Map.of("count", String.valueOf(count)));
+        return proposals_list;
+    }
+
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data){
         String unpacked_data = new String(_data);
@@ -538,4 +565,4 @@ public class CPFTreasury {
     public void FundReceived(Address _sponsor_address, String note){}
 
 
-    }
+}
