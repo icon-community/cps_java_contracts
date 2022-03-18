@@ -127,5 +127,8 @@ public class consts {
     public static final String INSTALLMENT_COUNT = "installment_count";
     public static final String SPONSOR_REWARD_COUNT = "sponsor_reward_count";
     public static final String TOKEN = "token";
+    public static final String TOTAL_INSTALLMENT_PAID = "total_installment_paid";
+    public static final String TOTAL_TIMES_INSTALLMENT_PAID = "total_times_installment_paid";
+    public static final String INSTALLMENT_AMOUNT = "installment_amount";
 
 }

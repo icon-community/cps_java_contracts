@@ -56,4 +56,8 @@ public class ProposalData {
         );
     }
 
+    public String getProposalAttributesDetails(String prefix, String attribute){
+        return proposalsData.at(prefix).getOrDefault(attribute, "");
+    }
+
 }
