@@ -26,6 +26,7 @@ import score.annotation.Payable;
 import scorex.util.ArrayList;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -147,7 +148,7 @@ public class CPSTreasury {
         proposalsKeyListIndex.set(ipfs_hash, proposalsKeys.size() - 1);
     }
 
-    private Map<String, String> _get_projects(String _proposal_key){
+    private Map<String, ?> _get_projects(String _proposal_key){
         ProposalData proposalData = new ProposalData();
         return proposalData.getDataFromProposalDB(_proposal_key);
     }
@@ -186,38 +187,104 @@ public class CPSTreasury {
     }
 
     @External(readonly = true)
-    public void get_contributor_projected_fund(Address _wallet_address){
+    public Map<String, ?> get_contributor_projected_fund(Address _wallet_address){
         ProposalData proposalData = new ProposalData();
         BigInteger totalAmountToBePaidICX = BigInteger.ZERO;
         BigInteger totalAmountToBePaidbnUSD = BigInteger.ZERO;
         List<Map<String, String>> projectDetails = new ArrayList<>();
         for (int i = 0; i < proposalsKeys.size(); i++){
             String _ipfs_key = proposalsKeys.get(i);
-            if (proposalData.getProposalAttributesDetails(_ipfs_key, consts.STATUS).equals(DISQUALIFIED)){
-                if (proposalData.getProposalAttributesDetails(_ipfs_key, consts.CONTRIBUTOR_ADDRESS).equals(_wallet_address.toString())){
-                    BigInteger totalInstallment = new BigInteger(proposalData.getProposalAttributesDetails(_ipfs_key, consts.PROJECT_DURATION));
-                    BigInteger totalPaidCount = new BigInteger(proposalData.getProposalAttributesDetails(_ipfs_key, consts.INSTALLMENT_COUNT));
-                    if (totalPaidCount.compareTo(totalInstallment) < 0){
-                        String flag = proposalData.getProposalAttributesDetails(_ipfs_key, consts.TOKEN);
-                        BigInteger totalBudget = new BigInteger(proposalData.getProposalAttributesDetails(_ipfs_key, consts.TOTAL_BUDGET));
-                        BigInteger totalPaidAmount = new BigInteger(proposalData.getProposalAttributesDetails(_ipfs_key, consts.WITHDRAW_AMOUNT));
+            Map<String, ?> proposal_details = proposalData.getDataFromProposalDB(_ipfs_key);
+            if (proposal_details.get(consts.STATUS).equals(DISQUALIFIED)){
+                if (proposal_details.get(consts.SPONSOR_ADDRESS).equals(_wallet_address.toString())){
+                    int totalInstallment = (int) proposal_details.get(consts.PROJECT_DURATION);
+                    int totalPaidCount = (int) proposal_details.get(consts.INSTALLMENT_COUNT);
+                    if (totalPaidCount < totalInstallment){
+                        String flag = (String) proposal_details.get(consts.TOKEN);
+                        BigInteger totalBudget = (BigInteger) proposal_details.get(consts.TOTAL_BUDGET);
+                        BigInteger totalPaidAmount = (BigInteger) proposal_details.get(consts.WITHDRAW_AMOUNT);
+
                         Map<String, String> project_details = Map.of(
                                 consts.IPFS_HASH, _ipfs_key,
+                                consts.TOKEN, flag,
                                 consts.TOTAL_BUDGET, totalBudget.toString(),
                                 consts.TOTAL_INSTALLMENT_PAID, totalPaidAmount.toString(),
-                                consts.TOTAL_TIMES_INSTALLMENT_PAID, totalPaidCount.toString(),
-                                consts.INSTALLMENT_AMOUNT, totalBudget.divide(totalInstallment).toString());
+                                consts.TOTAL_INSTALLMENT_COUNT, String.valueOf(totalInstallment),
+                                consts.TOTAL_TIMES_INSTALLMENT_PAID, String.valueOf(totalPaidCount),
+                                consts.INSTALLMENT_AMOUNT, totalBudget.divide(BigInteger.valueOf(totalInstallment)).toString());
+
                         projectDetails.add(project_details);
                         if (flag.equals(consts.ICX)){
-                            totalAmountToBePaidICX = totalAmountToBePaidICX.add(totalBudget.divide(totalInstallment));
+                            totalAmountToBePaidICX = totalAmountToBePaidICX.add(totalBudget.divide(BigInteger.valueOf(totalInstallment)));
                         }
                         else {
-                            totalAmountToBePaidbnUSD = totalAmountToBePaidbnUSD.add(totalBudget);
+                            totalAmountToBePaidbnUSD = totalAmountToBePaidbnUSD.add(totalBudget.divide(BigInteger.valueOf(totalInstallment)));
                         }
                     }
                 }
             }
         }
+        return Map.of(
+                "data", projectDetails,
+                "project_count", projectDetails.size(),
+                "total_amount", Map.of("ICX", totalAmountToBePaidICX, "bnUSD", totalAmountToBePaidbnUSD),
+                "withdraw_amount_icx", installmentFundRecord.at(_wallet_address.toString()).getOrDefault(consts.ICX, BigInteger.ZERO),
+                "withdraw_amount_bnUSD", installmentFundRecord.at(_wallet_address.toString()).getOrDefault(consts.bnUSD, BigInteger.ZERO));
+    }
+
+
+    @External(readonly = true)
+    public Map<String, ?> get_sponsor_projected_fund(Address _wallet_address){
+        ProposalData proposalData = new ProposalData();
+        BigInteger totalAmountToBePaidICX = BigInteger.ZERO;
+        BigInteger totalAmountToBePaidbnUSD = BigInteger.ZERO;
+        BigInteger totalSponsorBondICX = BigInteger.ZERO;
+        BigInteger totalSponsorBondbnUSD = BigInteger.ZERO;
+        List<Map<String, String>> projectDetails = new ArrayList<>();
+        for (int i = 0; i < proposalsKeys.size(); i++){
+            String _ipfs_key = proposalsKeys.get(i);
+            Map<String, ?> proposal_details = proposalData.getDataFromProposalDB(_ipfs_key);
+            if (proposal_details.get(consts.STATUS).equals(DISQUALIFIED)){
+                if (proposal_details.get(consts.SPONSOR_ADDRESS).equals(_wallet_address.toString())){
+                    int totalInstallment = (int) proposal_details.get(consts.PROJECT_DURATION);
+                    int totalPaidCount = (int) proposal_details.get(consts.INSTALLMENT_COUNT);
+                    if (totalPaidCount < totalInstallment){
+                        String flag = (String) proposal_details.get(consts.TOKEN);
+                        BigInteger totalBudget = (BigInteger) proposal_details.get(consts.TOTAL_BUDGET);
+                        BigInteger totalPaidAmount = (BigInteger) proposal_details.get(consts.WITHDRAW_AMOUNT);
+                        BigInteger depositedSponsorBond = (BigInteger) proposal_details.get(consts.TOTAL_BUDGET);
+
+                        Map<String, String> project_details = Map.of(
+                                consts.IPFS_HASH, _ipfs_key,
+                                consts.TOKEN, flag,
+                                consts.TOTAL_BUDGET, totalBudget.toString(),
+                                consts.TOTAL_INSTALLMENT_PAID, totalPaidAmount.toString(),
+                                consts.TOTAL_INSTALLMENT_COUNT, String.valueOf(totalInstallment),
+                                consts.TOTAL_TIMES_INSTALLMENT_PAID, String.valueOf(totalPaidCount),
+                                consts.INSTALLMENT_AMOUNT, totalBudget.divide(BigInteger.valueOf(totalInstallment)).toString(),
+                                consts.SPONSOR_BOND_AMOUNT, depositedSponsorBond.toString());
+
+                        projectDetails.add(project_details);
+                        if (flag.equals(consts.ICX)){
+                            totalAmountToBePaidICX = totalAmountToBePaidICX.add(totalBudget.divide(BigInteger.valueOf(totalInstallment)));
+                            totalSponsorBondICX = totalSponsorBondICX.add(depositedSponsorBond);
+                        }
+                        else {
+                            totalAmountToBePaidbnUSD = totalAmountToBePaidbnUSD.add(totalBudget.divide(BigInteger.valueOf(totalInstallment)));
+                            totalSponsorBondbnUSD = totalSponsorBondbnUSD.add(depositedSponsorBond);
+                        }
+                    }
+                }
+            }
+        }
+        return Map.of(
+                "data", projectDetails,
+                "project_count", projectDetails.size(),
+                "total_amount", Map.of("ICX", totalAmountToBePaidICX, "bnUSD", totalAmountToBePaidbnUSD),
+                "withdraw_amount_icx", installmentFundRecord.at(_wallet_address.toString()).getOrDefault(consts.ICX, BigInteger.ZERO),
+                "withdraw_amount_bnUSD", installmentFundRecord.at(_wallet_address.toString()).getOrDefault(consts.bnUSD, BigInteger.ZERO),
+                "total_sponsor_bond", Map.of("ICX", totalSponsorBondICX, "bnUSD", totalSponsorBondbnUSD)
+        );
     }
 
     @EventLog(indexed = 1)
