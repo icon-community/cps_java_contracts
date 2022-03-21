@@ -32,11 +32,11 @@ import java.util.Map;
 
 import com.iconloop.score.example.utils.consts;
 
-public class CPSTreasury {
+public class CPSTreasury extends ProposalData{
     private final String name;
     private final String symbol;
     private static final String TAG = "CPS_Treasury";
-//    private static final byte[] PROPOSAL_DB_PREFIX = "proposal".getBytes();
+    private static final String PROPOSAL_DB_PREFIX = "proposal";
 
     private static final String ID = "id";
     private static final String PROPOSALS_KEYS = "_proposals_keys";
@@ -105,9 +105,9 @@ public class CPSTreasury {
         return id.get();
     }
 
-//    private byte proposal_prefix(String _proposal_key){
-//        return "m".getBytes();
-//    }
+    private String proposal_prefix(String _proposal_key){
+        return PROPOSAL_DB_PREFIX + "|" + id.get() + "|" + _proposal_key;
+    }
 
     private Boolean _proposal_exists(String _ipfs_key){
         return proposalsKeyListIndex.getOrDefault(_ipfs_key, null) != null;
@@ -287,6 +287,116 @@ public class CPSTreasury {
         );
     }
 
+    private void _deposit_proposal_fund(ProposalData.ProposalAttributes _proposals, BigInteger _value){
+        _add_record(_proposals);
+        ProposalFundDeposited(_proposals.ipfs_hash, "Received " + _proposals.ipfs_hash + " " + _value + " " +
+                consts.bnUSD + " fund from CPF");
+    }
+
+    @External
+    @Payable
+    public void update_proposal_fund(String _ipfs_key, BigInteger _added_budget, BigInteger _added_sponsor_reward,
+                                     int _added_installment_count){
+        ProposalData proposalData = new ProposalData();
+        Context.require(_proposal_exists(_ipfs_key), TAG + ": Invalid IPFS hash.");
+        String proposalPrefix = proposal_prefix(_ipfs_key);
+        Map<String, ?> proposalDetails = proposalData.getDataFromProposalDB(proposalPrefix);
+        BigInteger totalBudget = (BigInteger) proposalDetails.get(consts.TOTAL_BUDGET);
+        BigInteger sponsorReward = (BigInteger) proposalDetails.get(consts.SPONSORS_REWARDS);
+        int totalDuration = (int) proposalDetails.get(consts.PROJECT_DURATION);
+        BigInteger remainingAmount = (BigInteger) proposalDetails.get(consts.REMAINING_AMOUNT);
+        BigInteger sponsorRemainingAmount = (BigInteger) proposalDetails.get(consts.SPONSOR_REMAINING_AMOUNT);
+        int installmentCount = (int) proposalDetails.get(consts.INSTALLMENT_COUNT);
+        int sponsorRewardCount = (int) proposalDetails.get(consts.SPONSOR_REWARD_COUNT);
+        String flag = (String) proposalDetails.get(consts.TOKEN);
+
+        ProposalData.totalBudget.at(proposalPrefix).set(totalBudget.add(_added_budget));
+        ProposalData.sponsorReward.at(proposalPrefix).set(sponsorReward.add(_added_sponsor_reward));
+        ProposalData.projectDuration.at(proposalPrefix).set(totalDuration + _added_installment_count);
+        ProposalData.remainingAmount.at(proposalPrefix).set(remainingAmount.add(_added_budget));
+        ProposalData.sponsorRemainingAmount.at(proposalPrefix).set(sponsorRemainingAmount.add(_added_sponsor_reward));
+        ProposalData.installmentCount.at(proposalPrefix).set(installmentCount + _added_installment_count);
+        ProposalData.sponsorRewardCount.at(proposalPrefix).set(sponsorRewardCount + _added_installment_count);
+
+        ProposalFundDeposited(_ipfs_key, _ipfs_key + ": Added Budget: " + _added_budget + " " +
+                flag + "and Added time: " + _added_installment_count + " Successfully");
+    }
+
+    @External
+    public void send_installment_to_contributor(String _ipfs_key){
+        _validate_cps_score();
+        Context.require(_proposal_exists(_ipfs_key), TAG + ": Invalid IPFS Hash.");
+        BigInteger installmentAmount = BigInteger.ZERO;
+        ProposalData proposalData = new ProposalData();
+        String prefix = proposal_prefix(_ipfs_key);
+
+        int installmentCount = ProposalData.installmentCount.at(prefix).getOrDefault(0);
+        BigInteger withdrawAmount = ProposalData.withdrawAmount.at(prefix).getOrDefault(BigInteger.ZERO);
+        BigInteger remainingAmount = ProposalData.remainingAmount.at(prefix).getOrDefault(BigInteger.ZERO);
+        Address contributorAddress = ProposalData.contributorAddress.at(prefix).get();
+        String flag = ProposalData.token.at(prefix).get();
+
+        try {
+            if (installmentCount == 1) {
+                installmentAmount = remainingAmount;
+            } else {
+                installmentAmount = remainingAmount.divide(BigInteger.valueOf(installmentCount));
+            }
+            int newInstallmentCount = installmentCount - 1;
+            ProposalData.installmentCount.at(prefix).set(newInstallmentCount);
+            ProposalData.remainingAmount.at(prefix).set(remainingAmount.subtract(installmentAmount));
+            ProposalData.withdrawAmount.at(prefix).set(withdrawAmount.add(installmentAmount));
+            installmentFundRecord.at(contributorAddress.toString()).set(flag,
+                    installmentFundRecord.at(contributorAddress.toString()).get(flag).add(installmentAmount));
+            ProposalFundSent(contributorAddress, "new installment " + installmentAmount + " " + flag + " sent to contributors address.");
+
+            if (newInstallmentCount == 0){
+                ProposalData.status.at(prefix).set(COMPLETED);
+            }
+        }
+        catch (Exception e){
+            Context.revert(TAG + ": Network problem. Sending project funds to contributor. " + e);
+        }
+    }
+
+    @External
+    public void send_reward_to_sponsor(String _ipfs_key){
+        _validate_cps_score();
+
+        Context.require(_proposal_exists(_ipfs_key), TAG + ": Invalid IPFS Hash.");
+        BigInteger installmentAmount = BigInteger.ZERO;
+        String prefix = proposal_prefix(_ipfs_key);
+
+        int sponsorRewardCount = ProposalData.sponsorRewardCount.at(prefix).getOrDefault(0);
+        BigInteger sponsorWithdrawAmount = ProposalData.sponsorWithdrawAmount.at(prefix).getOrDefault(BigInteger.ZERO);
+        BigInteger sponsorRemainingAmount = ProposalData.sponsorRemainingAmount.at(prefix).getOrDefault(BigInteger.ZERO);
+        Address sponsorAddress = ProposalData.sponsorAddress.at(prefix).get();
+        String flag = ProposalData.token.at(prefix).get();
+
+        try {
+            if (sponsorRewardCount == 1) {
+                installmentAmount = sponsorRemainingAmount;
+            } else {
+                installmentAmount = sponsorRemainingAmount.divide(BigInteger.valueOf(sponsorRewardCount));
+            }
+            int newSponsorRewardCount = sponsorRewardCount - 1;
+            ProposalData.sponsorRewardCount.at(prefix).set(newSponsorRewardCount);
+            ProposalData.sponsorWithdrawAmount.at(prefix).set(sponsorWithdrawAmount.add(installmentAmount));
+            ProposalData.sponsorRemainingAmount.at(prefix).set(sponsorRemainingAmount.subtract(installmentAmount));
+            installmentFundRecord.at(sponsorAddress.toString()).set(flag, installmentFundRecord.at(sponsorAddress.toString()).get(flag).add(installmentAmount));
+            ProposalFundSent(sponsorAddress, "New installment " + installmentAmount + " " +
+                    flag + " sent to sponsor address.");
+        }
+        catch (Exception e){
+            Context.revert(TAG + ": Network problem. Sending project funds to sponsor.");
+        }
+    }
+
+    @External
+    public void disqualify_project(String _ipfs_key){
+
+    }
+
     @EventLog(indexed = 1)
     public void FundReturned(Address _sponsor_address, String note){}
 
@@ -298,6 +408,12 @@ public class CPSTreasury {
 
     @EventLog(indexed = 1)
     public void FundReceived(Address _sponsor_address, String note){}
+
+    @EventLog(indexed = 1)
+    public void ProposalFundDeposited(String _ipfs_key, String note){}
+
+    @EventLog(indexed = 1)
+    public void ProposalFundSent(Address _receiver_address, String note){}
 
 
 }

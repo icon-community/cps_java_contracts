@@ -15,21 +15,22 @@ public class ProposalData {
         public String token;
         public String contributor_address;
         public String sponsor_address;
+        public String status;
     }
-    private static final BranchDB<String, VarDB<String>> ipfsHash = Context.newBranchDB(consts.IPFS_HASH, String.class);
-    private static final BranchDB<String, VarDB<BigInteger>> totalBudget = Context.newBranchDB(consts.TOTAL_BUDGET, BigInteger.class);
-    private static final BranchDB<String, VarDB<BigInteger>> sponsorReward = Context.newBranchDB(consts.SPONSORS_REWARDS, BigInteger.class);
-    private static final BranchDB<String, VarDB<Integer>> projectDuration = Context.newBranchDB(consts.PROJECT_DURATION, Integer.class);
-    private static final BranchDB<String, VarDB<Address>> sponsorAddress = Context.newBranchDB(consts.SPONSOR_ADDRESS, Address.class);
-    private static final BranchDB<String, VarDB<Address>> contributorAddress = Context.newBranchDB(consts.CONTRIBUTOR_ADDRESS, Address.class);
-    private static final BranchDB<String, VarDB<String>> token = Context.newBranchDB(consts.TOKEN, String.class);
-    private static final BranchDB<String, VarDB<BigInteger>> withdrawAmount = Context.newBranchDB(consts.WITHDRAW_AMOUNT, BigInteger.class);
-    private static final BranchDB<String, VarDB<BigInteger>> sponsorWithdrawAmount = Context.newBranchDB(consts.SPONSOR_WITHDRAW_AMOUNT, BigInteger.class);
-    private static final BranchDB<String, VarDB<BigInteger>> remainingAmount = Context.newBranchDB(consts.REMAINING_AMOUNT, BigInteger.class);
-    private static final BranchDB<String, VarDB<BigInteger>> sponsorRemainingAmount = Context.newBranchDB(consts.SPONSOR_REMAINING_AMOUNT, BigInteger.class);
-    private static final BranchDB<String, VarDB<Integer>> installmentCount = Context.newBranchDB(consts.INSTALLMENT_COUNT, Integer.class);
-    private static final BranchDB<String, VarDB<Integer>> sponsorRewardCount = Context.newBranchDB(consts.SPONSOR_REWARD_COUNT, Integer.class);
-    private static final BranchDB<String, VarDB<String>> status = Context.newBranchDB(consts.STATUS, String.class);
+    protected static final BranchDB<String, VarDB<String>> ipfsHash = Context.newBranchDB(consts.IPFS_HASH, String.class);
+    protected static final BranchDB<String, VarDB<BigInteger>> totalBudget = Context.newBranchDB(consts.TOTAL_BUDGET, BigInteger.class);
+    protected static final BranchDB<String, VarDB<BigInteger>> sponsorReward = Context.newBranchDB(consts.SPONSORS_REWARDS, BigInteger.class);
+    protected static final BranchDB<String, VarDB<Integer>> projectDuration = Context.newBranchDB(consts.PROJECT_DURATION, Integer.class);
+    protected static final BranchDB<String, VarDB<Address>> sponsorAddress = Context.newBranchDB(consts.SPONSOR_ADDRESS, Address.class);
+    protected static final BranchDB<String, VarDB<Address>> contributorAddress = Context.newBranchDB(consts.CONTRIBUTOR_ADDRESS, Address.class);
+    protected static final BranchDB<String, VarDB<String>> token = Context.newBranchDB(consts.TOKEN, String.class);
+    protected static final BranchDB<String, VarDB<BigInteger>> withdrawAmount = Context.newBranchDB(consts.WITHDRAW_AMOUNT, BigInteger.class);
+    protected static final BranchDB<String, VarDB<BigInteger>> sponsorWithdrawAmount = Context.newBranchDB(consts.SPONSOR_WITHDRAW_AMOUNT, BigInteger.class);
+    protected static final BranchDB<String, VarDB<BigInteger>> remainingAmount = Context.newBranchDB(consts.REMAINING_AMOUNT, BigInteger.class);
+    protected static final BranchDB<String, VarDB<BigInteger>> sponsorRemainingAmount = Context.newBranchDB(consts.SPONSOR_REMAINING_AMOUNT, BigInteger.class);
+    protected static final BranchDB<String, VarDB<Integer>> installmentCount = Context.newBranchDB(consts.INSTALLMENT_COUNT, Integer.class);
+    protected static final BranchDB<String, VarDB<Integer>> sponsorRewardCount = Context.newBranchDB(consts.SPONSOR_REWARD_COUNT, Integer.class);
+    protected static final BranchDB<String, VarDB<String>> status = Context.newBranchDB(consts.STATUS, String.class);
 
 
 
@@ -47,7 +48,8 @@ public class ProposalData {
         sponsorRemainingAmount.at(prefix).set(_proposals.sponsor_reward);
         installmentCount.at(prefix).set(_proposals.project_duration);
         sponsorRewardCount.at(prefix).set(_proposals.project_duration);
-        status.at(prefix).set(_proposals.token);
+        token.at(prefix).set(_proposals.token);
+        status.at(prefix).set(_proposals.status);
     }
 
     public Map<String, ?> getDataFromProposalDB(String prefix){
