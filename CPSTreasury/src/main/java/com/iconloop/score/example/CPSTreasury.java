@@ -394,6 +394,103 @@ public class CPSTreasury extends ProposalData{
 
     @External
     public void disqualify_project(String _ipfs_key){
+        _validate_cps_score();
+        Context.require(_proposal_exists(_ipfs_key), TAG + ": Project not found. Invalid IPFS hash.");
+        String prefix = proposal_prefix(_ipfs_key);
+        ProposalData.status.at(prefix).set(DISQUALIFIED);
+
+        BigInteger totalBudget = ProposalData.totalBudget.at(prefix).getOrDefault(BigInteger.ZERO);
+        BigInteger withdrawAmount = ProposalData.withdrawAmount.at(prefix).getOrDefault(BigInteger.ZERO);
+        BigInteger sponsorReward = ProposalData.sponsorReward.at(prefix).getOrDefault(BigInteger.ZERO);
+        BigInteger sponsorWithdrawAmount = ProposalData.sponsorWithdrawAmount.at(prefix).getOrDefault(BigInteger.ZERO);
+        String flag = ProposalData.token.at(prefix).get();
+
+        BigInteger remainingBudget = totalBudget.subtract(withdrawAmount);
+        BigInteger remainingReward = sponsorReward.subtract(sponsorWithdrawAmount);
+        BigInteger totalReturnAmount = remainingBudget.add(remainingReward);
+
+        try{
+            if (flag.equals(consts.ICX)){
+                Context.call(totalReturnAmount, cpfTreasuryScore.get(), "disqualify_proposal_fund", _ipfs_key);
+            }
+            else if(flag.equals(consts.bnUSD)){
+                String _data = "" + "{\"method\":\"disqualify_project\",\"params\":{\"ipfs_key\":" + "\"" + _ipfs_key + "\"" + "}}";
+                Context.call(balancedDollar.get(), "transfer", cpfTreasuryScore.get(), totalReturnAmount, _data.getBytes());
+            }
+            else{
+                Context.revert(TAG + ": Not supported token.");
+            }
+            ProposalDisqualified(_ipfs_key, _ipfs_key + ", Proposal disqualified");
+        }
+        catch (Exception e){
+            Context.revert(TAG + ": Network problem. Sending proposal funds to CPF after project disqualification.");
+        }
+    }
+
+    @External
+    public void claim_reward(){
+        BigInteger availableAmountICX = installmentFundRecord.at(Context.getCaller().toString()).get(consts.ICX);
+        BigInteger availableAmountbnUSD = installmentFundRecord.at(Context.getCaller().toString()).get(consts.bnUSD);
+        if (availableAmountICX.compareTo(BigInteger.ZERO) > 0){
+            try{
+                installmentFundRecord.at(Context.getCaller().toString()).set(consts.ICX, BigInteger.ZERO);
+                Context.transfer(Context.getCaller(), availableAmountICX);
+                ProposalFundWithdrawn(Context.getCaller(), availableAmountICX + " " + consts.ICX + " withdrawn to " + Context.getCaller());
+            }
+            catch (Exception e){
+                Context.revert(TAG + ": Network problem while claiming reward.");
+            }
+        }
+        else if(availableAmountbnUSD.compareTo(BigInteger.ZERO) > 0){
+            try {
+                installmentFundRecord.at(Context.getCaller().toString()).set(consts.bnUSD, BigInteger.ZERO);
+                Context.call(balancedDollar.get(), "transfer",Context.getCaller(), availableAmountbnUSD);
+            }
+            catch (Exception e){
+                Context.revert(TAG + ": Network problem while claiming reward.");
+            }
+        }
+        else{
+            Context.revert(TAG + ": Claim Reward Fails. Available amount(ICX) = " + availableAmountICX + " and Available amount(bnUSD) = " + availableAmountbnUSD);
+        }
+    }
+
+    @External
+    public void tokenFallback(Address _from, BigInteger _value, byte[] _data){
+        Context.require(_from.equals(cpfTreasuryScore.get()), TAG + "Only receiving from " + cpfTreasuryScore.get());
+        String unpacked_data = new String(_data);
+        JsonObject jsonObject = Json.parse(unpacked_data).asObject();
+        JsonObject params = jsonObject.get("params").asObject();
+        if (jsonObject.get("method").asString().equals("deposit_proposal_fund")){
+            String ipfs_hash = params.get("ipfs_hash").asString();
+            int project_duration = Integer.parseInt(params.get("project_duration").asString());
+            BigInteger total_budget = new BigInteger(params.get("total_budget").asString());
+            BigInteger sponsor_reward = new BigInteger(params.get("sponsor_reward").asString());
+            String token = params.get("token").asString();
+            String contributor_address = params.get("contributor_address").asString();
+            String sponsor_address = params.get("sponsor_address").asString();
+            ProposalAttributes proposalAttributes = new ProposalAttributes();
+            proposalAttributes.ipfs_hash = ipfs_hash;
+            proposalAttributes.project_duration = project_duration;
+            proposalAttributes.total_budget = total_budget;
+            proposalAttributes.sponsor_reward = sponsor_reward;
+            proposalAttributes.token = token;
+            proposalAttributes.contributor_address = contributor_address;
+            proposalAttributes.sponsor_address = sponsor_address;
+            proposalAttributes.status = ACTIVE;
+            _deposit_proposal_fund(proposalAttributes, _value);
+        }
+        else if (jsonObject.get("method").asString().equals("budget_adjustment")){
+            String ipfs_key = params.get("_ipfs_key").asString();
+            BigInteger added_budget = new BigInteger(params.get("_added_budget").asString());
+            BigInteger added_sponsor_reward = new BigInteger(params.get("_added_sponsor_reward").asString());
+            int added_installment_count = Integer.parseInt(params.get("_added_installment_count").asString());
+
+            update_proposal_fund(ipfs_key, added_budget, added_sponsor_reward, added_installment_count);
+        }
+        else{
+            Context.revert(TAG + jsonObject.get("method").asString() + " Not a valid method.");
+        }
 
     }
 
@@ -415,5 +512,7 @@ public class CPSTreasury extends ProposalData{
     @EventLog(indexed = 1)
     public void ProposalFundSent(Address _receiver_address, String note){}
 
+    @EventLog(indexed = 1)
+    public void ProposalFundWithdrawn(Address _receiver_address, String note){}
 
 }
