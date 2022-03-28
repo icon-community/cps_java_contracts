@@ -40,8 +40,7 @@ deployJar {
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
     parameters {
-        arg('name', 'CPFTreasury')
-        arg('symbol', 'CPFTreasury')
+        arg('amount', '0x30D40')
 //        arg('decimals', '0x12')
 //        arg('initialSupply', '0x3e8')
 //        arg('on_update_var','0x0')
