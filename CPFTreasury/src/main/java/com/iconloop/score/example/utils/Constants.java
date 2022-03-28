@@ -2,8 +2,8 @@ package com.iconloop.score.example.utils;
 
 import java.math.BigInteger;
 
-public class consts {
-    public consts(){}
+public class Consts {
+    public Consts(){}
     //# ICX Multiplier
     public static final BigInteger MULTIPLIER = BigInteger.valueOf(10^18);
     //    # MAXIMUM PROJECT PERIOD
