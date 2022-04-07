@@ -1,29 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.iconloop.score.example.CPFTTreasuryTest" tests="23" skipped="0" failures="0" errors="0" timestamp="2022-04-07T06:25:08" hostname="swopnil-Inspiron-5567" time="0.425">
+<testsuite name="com.iconloop.score.example.CPFTTreasuryTest" tests="23" skipped="0" failures="0" errors="0" timestamp="2022-04-07T16:09:48" hostname="swopnil-Inspiron-5567" time="0.554">
   <properties/>
-  <testcase name="returnFundAmountExtraBnUSD()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.203"/>
-  <testcase name="addFundExtraBnUSD()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.008"/>
-  <testcase name="setCPSTreasuryScoreNotOwner()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.02"/>
-  <testcase name="disqualifyProposalFund()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.048"/>
-  <testcase name="updateProposalFund()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.017"/>
+  <testcase name="returnFundAmountExtraBnUSD()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.241"/>
+  <testcase name="addFundExtraBnUSD()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.009"/>
+  <testcase name="setCPSTreasuryScoreNotOwner()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.028"/>
+  <testcase name="disqualifyProposalFund()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.053"/>
+  <testcase name="updateProposalFund()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.019"/>
   <testcase name="setCPSScore()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.002"/>
   <testcase name="resetSwapState()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.009"/>
-  <testcase name="swapTokens()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.012"/>
-  <testcase name="setDEXScoreNotOwner()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.007"/>
+  <testcase name="swapTokens()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.016"/>
+  <testcase name="setDEXScoreNotOwner()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.041"/>
   <testcase name="setDEXScore()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.002"/>
   <testcase name="name()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.001"/>
   <testcase name="setSICXScore()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.001"/>
-  <testcase name="setBNUSDScoreNotOwner()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.009"/>
+  <testcase name="setBNUSDScoreNotOwner()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.01"/>
   <testcase name="setMaxCapIcxAndBnusdTest()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.004"/>
-  <testcase name="transferProposalFundToCPSTreasury()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.009"/>
-  <testcase name="addFundExtraICX()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.007"/>
-  <testcase name="setRouterScoreNotOwner()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.008"/>
-  <testcase name="setRouterScore()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.001"/>
+  <testcase name="transferProposalFundToCPSTreasury()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.008"/>
+  <testcase name="addFundExtraICX()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.005"/>
+  <testcase name="setRouterScoreNotOwner()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.016"/>
+  <testcase name="setRouterScore()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.0"/>
   <testcase name="setCPSTreasuryScore()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.001"/>
   <testcase name="setBMUSDScore()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.001"/>
-  <testcase name="setCPSScoreNotOwner()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.006"/>
-  <testcase name="returnFundAmountExtraICX()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.005"/>
-  <testcase name="setSICXScoreNotOwner()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.005"/>
+  <testcase name="setCPSScoreNotOwner()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.01"/>
+  <testcase name="returnFundAmountExtraICX()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.008"/>
+  <testcase name="setSICXScoreNotOwner()" classname="com.iconloop.score.example.CPFTTreasuryTest" time="0.012"/>
   <system-out><![CDATA[[{_ipfs_hash=Proposal 1, _budget_transfer=102000000000000000000}, {_ipfs_hash=Proposal 2, _budget_transfer=112200000000000000000}, {count=2}]
 [{_ipfs_hash=Proposal 1, _budget_transfer=22000000000000000000}, {_ipfs_hash=Proposal 2, _budget_transfer=112200000000000000000}, {count=2}]
 [{_ipfs_hash=Proposal 1, _budget_transfer=102000000000000000000}, {_ipfs_hash=Proposal 2, _budget_transfer=112200000000000000000}, {count=2}]
