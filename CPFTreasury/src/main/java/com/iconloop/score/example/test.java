@@ -28,7 +28,7 @@ public class test {
         JsonObject jsonObject = new JsonObject();
         jsonObject.add("method", "_swap");
         JsonObject params__ = new JsonObject();
-        params__.add("toToken", "swopnil");
+        params__.add("toToken", 10);
         jsonObject.add("params", params__);
         System.out.println(jsonObject);
         String jsonstring = String.valueOf(jsonObject);
@@ -40,8 +40,8 @@ public class test {
 
         JsonObject json_ = Json.parse(unpacked_).asObject();
         String method_ = json_.get("method").asString();
-        String params___ = json_.get("params").asObject().get("toToken").asString();
-        System.out.println(method_);
+        int params___ = json_.get("params").asObject().get("toToken").asInt();
+        System.out.println(params___);
 
     }
 }
