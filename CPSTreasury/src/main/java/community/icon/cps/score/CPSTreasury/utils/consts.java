@@ -1,4 +1,4 @@
-package com.iconloop.score.example.utils;
+package community.icon.cps.score.CPSTreasury.utils;
 
 import java.math.BigInteger;
 

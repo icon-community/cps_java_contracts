@@ -14,21 +14,13 @@
  * limitations under the License.
  */
 
-package com.iconloop.score.example;
+package community.icon.cps.score.CPSTreasury;
 
 import score.*;
-import com.eclipsesource.json.Json;
-import com.eclipsesource.json.JsonObject;
-import scorex.util.ArrayList;
 import score.annotation.EventLog;
 import score.annotation.External;
-import score.annotation.Payable;
 
 import java.math.BigInteger;
-import java.util.List;
-import java.util.Map;
-
-import com.iconloop.score.example.utils.consts;
 
 public class CPSTreasury {
     private final String name;

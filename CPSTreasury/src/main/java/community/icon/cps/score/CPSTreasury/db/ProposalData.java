@@ -1,13 +1,11 @@
-package com.iconloop.score.example.db;
+package community.icon.cps.score.CPSTreasury.db;
 
+import community.icon.cps.score.CPSTreasury.utils.consts;
 import score.BranchDB;
 import score.Context;
 import score.DictDB;
-import score.VarDB;
-import com.iconloop.score.example.utils.consts;
 
 import java.math.BigInteger;
-import java.util.Locale;
 import java.util.Map;
 
 public class ProposalData {

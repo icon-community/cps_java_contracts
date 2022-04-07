@@ -1,8 +1,8 @@
-package com.iconloop.score.example;
+package community.icon.cps.score.CPFTreasury;
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
-import com.iconloop.score.example.utils.Eventlogs;
+import community.icon.cps.score.CPFTreasury.utils.Eventlogs;
 import score.*;
 import score.annotation.External;
 import score.annotation.Optional;

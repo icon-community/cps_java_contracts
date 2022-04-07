@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.iconloop.score.example;
+package community.icon.cps.score.CPFTreasury;
 
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
@@ -23,10 +23,8 @@ import com.iconloop.score.test.TestBase;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import score.Address;
 import org.junit.jupiter.api.function.Executable;
-import com.iconloop.score.example.CPFTreasury;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;

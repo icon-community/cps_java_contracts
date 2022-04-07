@@ -1,4 +1,4 @@
-package com.iconloop.score.example.utils;
+package community.icon.cps.score.CPFTreasury.utils;
 import score.Address;
 import score.annotation.EventLog;
 
