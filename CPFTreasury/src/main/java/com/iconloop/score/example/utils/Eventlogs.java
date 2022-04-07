@@ -5,14 +5,18 @@ import score.annotation.EventLog;
 
 public class Eventlogs {
     @EventLog(indexed = 1)
-    public static void ProposalSubmitted(Address _sender_address, String note){}
+    public static void FundReturned(Address _sponsor_address, String note) {
+    }
 
     @EventLog(indexed = 1)
-    public static void VotedSuccessfully(Address _sender_address, String note){}
+    public static void ProposalFundTransferred(String _ipfs_key, String note) {
+    }
 
     @EventLog(indexed = 1)
-    public static void ProgressReportSubmitted(Address _sender_address, String note){}
+    public static void ProposalDisqualified(String _ipfs_key, String note) {
+    }
 
     @EventLog(indexed = 1)
-    public static void PeriodUpdate(String note){}
+    public static void FundReceived(Address _sponsor_address, String note) {
+    }
 }
