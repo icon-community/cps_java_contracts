@@ -1,3 +1,3 @@
 Manifest-Version: 1.0
-Main-Class: com.iconloop.score.example.CPSTreasury
+Main-Class: community.icon.cps.score.CPSTreasury.CPSTreasury
 
