@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 public class CPFTreasury {
-    private static final BigInteger MULTIPLIER = BigInteger.valueOf(10 ^ 18);
+    private static final BigInteger MULTIPLIER = new BigInteger("1000000000000000000");
     private static final String TAG = "CPF_TREASURY";
     private static final String ICX = "ICX";
     private static final String bnUSD = "bnUSD";
