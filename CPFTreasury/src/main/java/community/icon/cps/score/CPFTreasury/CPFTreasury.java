@@ -497,8 +497,9 @@ public class CPFTreasury {
         }
 
         for (int i = _start_index; i < _end_index; i++) {
-            Map<String, ?> proposalDetails = Map.of(TOTAL_BUDGET, proposalBudgets.getOrDefault(proposalsKeys.get(i), BigInteger.ZERO).toString(),
-                    IPFS_HASH, proposalsKeys.get(i));
+            String proposalHash = proposalsKeys.get(i);
+            Map<String, ?> proposalDetails = Map.of(TOTAL_BUDGET, proposalBudgets.getOrDefault(proposalHash, BigInteger.ZERO).toString(),
+                    IPFS_HASH, proposalHash);
             proposalsList.add(proposalDetails);
         }
         proposalsList.add(Map.of("count", String.valueOf(count)));
@@ -507,11 +508,10 @@ public class CPFTreasury {
 
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
-        String unpacked_data = new String(_data);
         Address bnUSDScore = balancedDollar.get();
         Address sICX = sICXScore.get();
-
         Address caller = Context.getCaller();
+
         Context.require(caller.equals(bnUSDScore) || caller.equals(sICX), TAG + " Only " + bnUSDScore + " and " + sICX + " can send tokens to CPF Treasury.");
         if (caller.equals(sICX)) {
             if (_from.equals(dexScore.get())) {
@@ -521,6 +521,7 @@ public class CPFTreasury {
                 Context.call(dexScore.get(), "transfer", _value, jsonString.getBytes());
             }
         } else {
+            String unpacked_data = new String(_data);
             JsonObject json = Json.parse(unpacked_data).asObject();
             if (_from.equals(cpsScore.get())) {
                 if (json.get("method").asString().equals("return_fund_amount")) {
