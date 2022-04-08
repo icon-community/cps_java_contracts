@@ -15,7 +15,7 @@ dependencies {
 }
 
 optimizedJar {
-    mainClassName = 'com.iconloop.score.example.CPSTreasury'
+    mainClassName = 'community.icon.cps.score.CPSTreasury.CPSTreasury'
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
