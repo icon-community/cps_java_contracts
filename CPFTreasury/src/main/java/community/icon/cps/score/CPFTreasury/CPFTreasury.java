@@ -283,24 +283,11 @@ public class CPFTreasury {
                 "remainingToSwap", maxCap.subtract(getTotalFundBNUSD()));
     }
 
-    @External
-    @Payable
-    public void return_fund_amount(Address _address, @Optional Address _from, @Optional String _flag, @Optional BigInteger _value) {
-        if (_from == null) {
-            _from = Context.getCaller();
-        }
-        if (_flag == null) {
-            _flag = ICX;
-        }
-        if (_value == null) {
-            _value = BigInteger.ZERO;
-        }
-        validateCpsScore(_from);
+    private void returnFundAmount(Address _address, BigInteger _value) {
+        Context.require(_value.compareTo(BigInteger.ZERO) > 0,
+                TAG + ": Sponsor Bond Amount should be greater than 0");
         burnExtraFund();
-        if (_flag.equals(ICX)) {
-            _value = Context.getValue();
-        }
-        Eventlogs.FundReturned(_address, "Sponsor Bond amount " + _value + " " + _flag + " Returned to CPF Treasury.");
+        Eventlogs.FundReturned(_address, "Sponsor Bond amount " + _value + " " + bnUSD + " Returned to CPF Treasury.");
     }
 
     @External
@@ -369,26 +356,14 @@ public class CPFTreasury {
         Eventlogs.ProposalFundTransferred(_ipfs_key, "Successfully transferred " + totalTransfer + " " + bnUSD + " to CPS Treasury");
     }
 
-    @External
-    @Payable
-    public void disqualify_proposal_fund(String _ipfs_key, @Optional BigInteger _value, @Optional String _flag,
-                                         @Optional Address _from) {
-        if (_value == null) {
-            _value = BigInteger.ZERO;
-        }
-        if (_flag == null) {
-            _flag = ICX;
-        }
-
-        validateCpsTreasuryScore(_from);
+    private void disqualifyProposalFund(String _ipfs_key, BigInteger _value) {
         Context.require(proposalExists(_ipfs_key), TAG + ": IPFS key does not exist.");
-        Context.require(_flag.equals(bnUSD), TAG + ": Not supported token." + _flag);
 
         BigInteger _budget = proposalBudgets.get(_ipfs_key);
         proposalBudgets.set(_ipfs_key, _budget.subtract(_value));
 
         burnExtraFund();
-        Eventlogs.ProposalDisqualified(_ipfs_key, "Proposal disqualified. " + _value + " " + _flag + " is returned back to Treasury.");
+        Eventlogs.ProposalDisqualified(_ipfs_key, "Proposal disqualified. " + _value + " " + bnUSD + " is returned back to Treasury.");
     }
 
     @External
@@ -526,7 +501,7 @@ public class CPFTreasury {
             if (_from.equals(cpsScore.get())) {
                 if (json.get("method").asString().equals("return_fund_amount")) {
                     Address _sponsor_address = Address.fromString(json.get("params").asObject().get("sponsor_address").asString());
-                    return_fund_amount(_sponsor_address, _from, bnUSD, _value);
+                    returnFundAmount(_sponsor_address, _value);
                 } else if (json.get("method").asString().equals("burn_amount")) {
                     _swapTokens(caller, sICX, _value);
                 } else {
@@ -535,7 +510,7 @@ public class CPFTreasury {
             } else if (_from.equals(cpsTreasuryScore.get())) {
                 if (json.get("method").asString().equals("disqualify_project")) {
                     String ipfs_key = json.get("params").asObject().get("ipfs_key").asString();
-                    disqualify_proposal_fund(ipfs_key, _value, bnUSD, _from);
+                    disqualifyProposalFund(ipfs_key, _value);
                 } else {
                     Context.revert(TAG + ": Not supported method " + json.get("method"));
                 }
