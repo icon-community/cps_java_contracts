@@ -54,8 +54,22 @@ public class CPFTreasury {
     private static final VarDB<Integer> swapState = Context.newVarDB(SWAP_STATE, Integer.class);
     private static final VarDB<Integer> swapCount = Context.newVarDB(SWAP_COUNT, Integer.class);
 
-    public CPFTreasury(int amount) {
-        treasuryFund.set(BigInteger.valueOf(amount).multiply(MULTIPLIER));
+    public CPFTreasury(@Optional BigInteger amount, @Optional boolean _on_update_var) {
+        if (amount == null) {
+            amount = BigInteger.valueOf(1000000).multiply(MULTIPLIER);
+        }
+
+        if (_on_update_var) {
+            onUpdate();
+            return;
+        }
+
+        treasuryFund.set(amount);
+
+    }
+
+    public void onUpdate() {
+        stakingScore.set(null);
     }
 
     private boolean proposalExists(String _ipfs_key) {
