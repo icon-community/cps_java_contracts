@@ -457,6 +457,7 @@ public class CPFTreasury {
 
                 if (remainingICXToSwap.compareTo(BigInteger.valueOf(5).multiply(MULTIPLIER)) > 0) {
                     swap_icx_bnusd(remainingICXToSwap);
+                    swapCount.set(swapCountValue + 1);
                 }
             }
         }
