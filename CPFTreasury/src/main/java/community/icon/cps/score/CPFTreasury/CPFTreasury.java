@@ -545,10 +545,10 @@ public class CPFTreasury {
 
     @Payable
     public void fallback() {
-        if (Context.getCaller().equals(routerScore.get())) {
+        if (Context.getCaller().equals(dexScore.get())) {
             _burn(Context.getValue());
         } else {
-            add_fund();
+            Context.revert(TAG + ": Please send fund using add_fund().");
         }
     }
 
