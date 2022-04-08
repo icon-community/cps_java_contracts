@@ -83,22 +83,10 @@ public class CPFTreasury {
         Context.require(_score.isContract(), TAG + ": Target " + _score + " is not a SCORE");
     }
 
-    private void validateCpsScore(@Optional Address _from) {
-        if (_from == null) {
-            _from = Context.getCaller();
-        }
+    private void validateCpsScore() {
         Address _cpsScore = cpsScore.get();
-        Context.require(_from.equals(_cpsScore),
+        Context.require(Context.getCaller().equals(_cpsScore),
                 TAG + ": Only " + _cpsScore + " SCORE can send fund using this method.");
-    }
-
-    private void validateCpsTreasuryScore(@Optional Address _from) {
-        if (_from == null) {
-            _from = Context.getCaller();
-        }
-        Address _cpsTreasuryScore = cpsTreasuryScore.get();
-        Context.require(_from.equals(_cpsTreasuryScore),
-                TAG + ": Only " + _cpsTreasuryScore + " SCORE can send fund using this method.");
     }
 
     /**
@@ -305,7 +293,7 @@ public class CPFTreasury {
     public void transfer_proposal_fund_to_cps_treasury(String _ipfs_key, int _total_installment_count,
                                                        Address _sponsor_address, Address _contributor_address,
                                                        String token_flag, BigInteger _total_budget) {
-        validateCpsScore(null);
+        validateCpsScore();
         Context.require(!proposalExists(_ipfs_key), TAG + ": Project already exists. Invalid IPFS Hash");
         Context.require(token_flag.equals(bnUSD), TAG + ": " + token_flag + " is not supported. Only " + bnUSD + " token available.");
         BigInteger _sponsor_reward = _total_budget.multiply(BigInteger.TWO).divide(BigInteger.valueOf(100));
@@ -334,7 +322,7 @@ public class CPFTreasury {
 
     @External
     public void update_proposal_fund(String _ipfs_key, String _flag, @Optional BigInteger _added_budget, @Optional BigInteger _total_installment_count) {
-        validateCpsScore(null);
+        validateCpsScore();
         Context.require(proposalExists(_ipfs_key), TAG + ": IPFS hash does not exist.");
         Context.require(_flag.equals(bnUSD), TAG + ": Unsupported token. " + _flag);
 
@@ -430,7 +418,7 @@ public class CPFTreasury {
 
     @External
     public void swap_tokens(int _count) {
-        validateCpsScore(null);
+        validateCpsScore();
         BigInteger sicxICXPrice = (BigInteger) Context.call(dexScore.get(), "getPrice", sICXICXPoolID);
         BigInteger sicxBnusdPrice = (BigInteger) Context.call(dexScore.get(), "getPrice", sICXBNUSDPoolID);
         BigInteger icxbnUSDPrice = sicxBnusdPrice.multiply(MULTIPLIER).divide(sicxICXPrice);
