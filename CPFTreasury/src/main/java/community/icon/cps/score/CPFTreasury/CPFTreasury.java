@@ -41,7 +41,7 @@ public class CPFTreasury {
     private static final ArrayDB<String> proposalsKeys = Context.newArrayDB(PROPOSALS_KEYS, String.class);
     private static final DictDB<String, BigInteger> proposalBudgets = Context.newDictDB(PROPOSAL_BUDGETS, BigInteger.class);
     private static final VarDB<BigInteger> treasuryFund = Context.newVarDB(TREASURY_FUND, BigInteger.class);
-    private static final VarDB<BigInteger> treasuryFundBnUSd = Context.newVarDB(TREASURY_FUND_BNUSD, BigInteger.class);
+    private static final VarDB<BigInteger> treasuryFundbnUSD = Context.newVarDB(TREASURY_FUND_BNUSD, BigInteger.class);
 
     private static final VarDB<Address> cpsTreasuryScore = Context.newVarDB(CPS_TREASURY_SCORE, Address.class);
     private static final VarDB<Address> cpsScore = Context.newVarDB(CPS_SCORE, Address.class);
@@ -120,7 +120,7 @@ public class CPFTreasury {
     @External
     public void setMaximumTreasuryFundBnusd(BigInteger _value) {
         validateAdmins();
-        treasuryFundBnUSd.set(_value);
+        treasuryFundbnUSD.set(_value);
     }
 
 
@@ -260,7 +260,9 @@ public class CPFTreasury {
     }
 
     /**
-     * @return
+     * Get total amount of fund on the SCORE
+     *
+     * @return map of ICX and bnUSD amount
      */
     @External(readonly = true)
     public Map<String, BigInteger> get_total_funds() {
@@ -274,7 +276,7 @@ public class CPFTreasury {
 
     @External(readonly = true)
     public Map<String, BigInteger> get_remaining_swap_amount() {
-        BigInteger maxCap = treasuryFundBnUSd.get();
+        BigInteger maxCap = treasuryFundbnUSD.get();
         return Map.of("maxCap", maxCap,
                 "remainingToSwap", maxCap.subtract(getTotalFundBNUSD()));
     }
@@ -399,7 +401,7 @@ public class CPFTreasury {
         BigInteger icxAmount = amounts.get(ICX);
         BigInteger bnUSDAmount = amounts.get(bnUSD);
         BigInteger extraAmountIcx = icxAmount.subtract(treasuryFund.get());
-        BigInteger extraAmountBnUSD = bnUSDAmount.subtract(treasuryFundBnUSd.get());
+        BigInteger extraAmountBnUSD = bnUSDAmount.subtract(treasuryFundbnUSD.get());
 
         if (extraAmountIcx.compareTo(BigInteger.ZERO) > 0) {
             _burn(extraAmountIcx);
@@ -439,8 +441,8 @@ public class CPFTreasury {
         }
         int swap_state = swapState.getOrDefault(0);
         if (swap_state == 0) {
-            int swap_count = swapCount.getOrDefault(0);
-            int count = _count - swap_count;
+            int swapCountValue = swapCount.getOrDefault(0);
+            int count = _count - swapCountValue;
             if (count == 0) {
                 swapState.set(1);
                 swapCount.set(0);
@@ -478,7 +480,7 @@ public class CPFTreasury {
     public List<Map<String, ?>> get_proposal_details(int _start_index, int _end_index) {
         List<Map<String, ?>> proposalsList = new ArrayList<>();
         if ((_end_index - _start_index) > 50) {
-            Context.revert("Page Length cannot be greater than 50");
+            Context.revert(TAG + ": Page Length cannot be greater than 50");
         }
         int count = proposalsKeys.size();
 
@@ -524,14 +526,14 @@ public class CPFTreasury {
                 } else if (json.get("method").asString().equals("burn_amount")) {
                     _swapTokens(caller, sICX, _value);
                 } else {
-                    Context.revert(TAG + " Not supported method " + json.get("method"));
+                    Context.revert(TAG + ": Not supported method " + json.get("method"));
                 }
             } else if (_from.equals(cpsTreasuryScore.get())) {
                 if (json.get("method").asString().equals("disqualify_project")) {
                     String ipfs_key = json.get("params").asObject().get("ipfs_key").asString();
                     disqualify_proposal_fund(ipfs_key, _value, bnUSD, _from);
                 } else {
-                    Context.revert(TAG + " Not supported method " + json.get("method"));
+                    Context.revert(TAG + ": Not supported method " + json.get("method"));
                 }
             } else if (_from.equals(dexScore.get()) || _from.equals(routerScore.get())) {
                 burnExtraFund();
@@ -555,14 +557,5 @@ public class CPFTreasury {
             ipfsHash.add(proposalsKeys.get(i));
         }
         return ipfsHash;
-    }
-
-    @External(readonly = true)
-    public BigInteger getProposalBudgets(String ipfsHash) {
-        return treasuryFundBnUSd.get();
-    }
-
-    @External
-    public void setProposalKeysAndBudgets() {
     }
 }
