@@ -17,6 +17,7 @@ public class ProposalData {
         public String sponsor_address;
         public String status;
     }
+//    todo balanced loans remove static
     protected static final BranchDB<String, VarDB<String>> ipfsHash = Context.newBranchDB(consts.IPFS_HASH, String.class);
     protected static final BranchDB<String, VarDB<BigInteger>> totalBudget = Context.newBranchDB(consts.TOTAL_BUDGET, BigInteger.class);
     protected static final BranchDB<String, VarDB<BigInteger>> sponsorReward = Context.newBranchDB(consts.SPONSORS_REWARDS, BigInteger.class);
