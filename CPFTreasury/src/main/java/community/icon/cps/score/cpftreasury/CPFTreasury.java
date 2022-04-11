@@ -31,15 +31,8 @@ public class CPFTreasury extends SetterGetter {
     public static final VarDB<Address> sICXScore = Context.newVarDB(SICX_SCORE, Address.class);
     public static final VarDB<Address> routerScore = Context.newVarDB(ROUTER_SCORE, Address.class);
 
-    public CPFTreasury(@Optional BigInteger amount, @Optional boolean _on_update_var) {
-        if (amount == null) {
-            amount = BigInteger.valueOf(1000000).multiply(MULTIPLIER);
-        }
-
-        if (_on_update_var) {
-            onUpdate();
-            return;
-        }
+    private final VarDB<Integer> swapState = Context.newVarDB(SWAP_STATE, Integer.class);
+    private final VarDB<Integer> swapCount = Context.newVarDB(SWAP_COUNT, Integer.class);
 
     public CPFTreasury() {
 
