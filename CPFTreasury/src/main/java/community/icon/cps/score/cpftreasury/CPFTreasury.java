@@ -2,8 +2,8 @@ package community.icon.cps.score.cpftreasury;
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
-import community.icon.cps.score.CPFTreasury.utils.Eventlogs;
 import score.*;
+import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
 import score.annotation.Payable;
@@ -366,5 +366,22 @@ public class CPFTreasury extends SetterGetter {
             ipfsHash.add(proposalsKeys.get(i));
         }
         return ipfsHash;
+    }
+
+    //EventLogs
+    @EventLog(indexed = 1)
+    public void FundReturned(Address _sponsor_address, String note) {
+    }
+
+    @EventLog(indexed = 1)
+    public void ProposalFundTransferred(String _ipfs_key, String note) {
+    }
+
+    @EventLog(indexed = 1)
+    public void ProposalDisqualified(String _ipfs_key, String note) {
+    }
+
+    @EventLog(indexed = 1)
+    public void FundReceived(Address _sponsor_address, String note) {
     }
 }
