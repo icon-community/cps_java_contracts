@@ -1,7 +1,10 @@
 package community.icon.cps.score.CPSTreasury.db;
 
-import score.*;
 import community.icon.cps.score.CPSTreasury.utils.consts;
+import score.Address;
+import score.BranchDB;
+import score.Context;
+import score.VarDB;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -17,6 +20,7 @@ public class ProposalData {
         public String sponsor_address;
         public String status;
     }
+//    todo balanced loans remove static
     protected static final BranchDB<String, VarDB<String>> ipfsHash = Context.newBranchDB(consts.IPFS_HASH, String.class);
     protected static final BranchDB<String, VarDB<BigInteger>> totalBudget = Context.newBranchDB(consts.TOTAL_BUDGET, BigInteger.class);
     protected static final BranchDB<String, VarDB<BigInteger>> sponsorReward = Context.newBranchDB(consts.SPONSORS_REWARDS, BigInteger.class);
