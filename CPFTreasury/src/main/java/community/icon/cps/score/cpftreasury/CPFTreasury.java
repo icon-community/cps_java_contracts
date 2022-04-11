@@ -37,6 +37,7 @@ public class CPFTreasury {
     private static final int sICXICXPoolID = 1;
     private static final int sICXBNUSDPoolID = 2;
 
+public class CPFTreasury extends SetterGetter {
 
     private static final ArrayDB<String> proposalsKeys = Context.newArrayDB(PROPOSALS_KEYS, String.class);
     private static final DictDB<String, BigInteger> proposalBudgets = Context.newDictDB(PROPOSAL_BUDGETS, BigInteger.class);
@@ -122,138 +123,7 @@ public class CPFTreasury {
     }
 
 
-    /**
-     * Sets the cps score address. Only owner can set the method
-     *
-     * @param _score: Score address of cps score
-     */
-    @External
-    public void setCpsScore(Address _score) {
-        validateOwnerScore(_score);
-        cpsScore.set(_score);
-    }
-
-    /**
-     * Returns the cps score address
-     *
-     * @return cps score address
-     */
-    @External(readonly = true)
-    public Address getCpsScore() {
-        return cpsScore.get();
-    }
-
-    /**
-     * Sets the cps treasury score address. Only owner can set the method
-     *
-     * @param _score: Score address of cps treasury score
-     */
-    @External
-    public void setCpsTreasuryScore(Address _score) {
-        validateOwnerScore(_score);
-        cpsTreasuryScore.set(_score);
-    }
-
-    /**
-     * Returns the cps treasury score address
-     *
-     * @return cps treasury score address
-     */
-    @External(readonly = true)
-    public Address getCpsTreasuryScore() {
-        return cpsTreasuryScore.get();
-    }
-
-    /**
-     * Sets the bnUSD score address. Only owner can set the method
-     *
-     * @param _score: Score address of bnUSD score
-     */
-    @External
-    public void setBnUSDScore(Address _score) {
-        validateOwnerScore(_score);
-        balancedDollar.set(_score);
-    }
-
-    /**
-     * Returns the bnUSD score address
-     *
-     * @return cps bnUSD address
-     */
-    @External(readonly = true)
-    public Address getBnUSDScore() {
-        return balancedDollar.get();
-    }
-
-    /**
-     * Sets the sicx score address. Only owner can set the method
-     *
-     * @param _score: Score address of sicx score
-     */
-    @External
-    public void setSicxScore(Address _score) {
-        validateOwnerScore(_score);
-        sICXScore.set(_score);
-    }
-
-    /**
-     * Reruns the sicx score address
-     *
-     * @return sicx score address
-     */
-    @External(readonly = true)
-    public Address getSicxScore() {
-        return sICXScore.get();
-    }
-
-    /**
-     * Sets the dex score address. Only owner can set the method
-     *
-     * @param _score: Score address of dex score
-     */
-    @External
-    public void setDexScore(Address _score) {
-        validateOwnerScore(_score);
-        dexScore.set(_score);
-    }
-
-    /**
-     * Returns the dex score address
-     *
-     * @return dex score address
-     */
-    @External(readonly = true)
-    public Address getDexScore() {
-        return dexScore.get();
-    }
-
-    /**
-     * Sets the router score address. Only owner can set the method
-     *
-     * @param _score: Score address of router score
-     */
-    @External
-    public void setRouterScore(Address _score) {
-        validateOwnerScore(_score);
-        routerScore.set(_score);
-    }
-
-    /**
-     * Returns the router score address
-     *
-     * @return router score address
-     */
-    @External(readonly = true)
-    public Address getRouterScore() {
-        return routerScore.get();
-    }
-
-    /**
-     * Burns ICX method
-     *
-     * @param amount: amount to burn in loop
-     */
-    private void _burn(BigInteger amount) {
+    private void burn(BigInteger amount) {
         Context.call(amount, SYSTEM_ADDRESS, "burn");
     }
 
