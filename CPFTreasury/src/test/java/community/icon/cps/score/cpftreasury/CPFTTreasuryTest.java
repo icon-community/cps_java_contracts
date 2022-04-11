@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package community.icon.cps.score.CPFTreasury;
+package community.icon.cps.score.cpftreasury;
 
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;

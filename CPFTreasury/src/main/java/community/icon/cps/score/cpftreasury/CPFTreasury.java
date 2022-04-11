@@ -1,4 +1,4 @@
-package community.icon.cps.score.CPFTreasury;
+package community.icon.cps.score.cpftreasury;
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
