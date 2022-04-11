@@ -230,7 +230,7 @@ public class CPFTreasury extends SetterGetter {
         validateCpsScore();
         BigInteger sicxICXPrice = (BigInteger) Context.call(dexScore.get(), "getPrice", sICXICXPoolID);
         BigInteger sicxBnusdPrice = (BigInteger) Context.call(dexScore.get(), "getPrice", sICXBNUSDPoolID);
-        BigInteger icxbnUSDPrice = sicxBnusdPrice.multiply(MULTIPLIER).divide(sicxICXPrice);
+        BigInteger icxbnUSDPrice = sicxBnusdPrice.multiply(EXA).divide(sicxICXPrice);
         BigInteger bnUSDRemainingToSwap = get_remaining_swap_amount().get("remainingToSwap");
         if (bnUSDRemainingToSwap.compareTo(BigInteger.TEN.multiply(EXA)) < 0 || _count == 0) {
             swapState.set(SwapCompleted);
@@ -250,9 +250,10 @@ public class CPFTreasury extends SetterGetter {
                         remainingICXToSwap = icxBalance;
                     }
 
-                if (remainingICXToSwap.compareTo(BigInteger.valueOf(5).multiply(MULTIPLIER)) > 0) {
-                    swap_icx_bnusd(remainingICXToSwap);
-                    swapCount.set(swapCountValue + 1);
+                    if (remainingICXToSwap.compareTo(BigInteger.valueOf(5).multiply(EXA)) > 0) {
+                        swapIcxBnusd(remainingICXToSwap);
+                        swapCount.set(swapCountValue + 1);
+                    }
                 }
             }
         }
