@@ -43,16 +43,12 @@ public class CPFTreasury {
     private static final VarDB<BigInteger> treasuryFund = Context.newVarDB(TREASURY_FUND, BigInteger.class);
     private static final VarDB<BigInteger> treasuryFundbnUSD = Context.newVarDB(TREASURY_FUND_BNUSD, BigInteger.class);
 
-    private static final VarDB<Address> cpsTreasuryScore = Context.newVarDB(CPS_TREASURY_SCORE, Address.class);
-    private static final VarDB<Address> cpsScore = Context.newVarDB(CPS_SCORE, Address.class);
-    private static final VarDB<Address> balancedDollar = Context.newVarDB(BALANCED_DOLLAR, Address.class);
-    private static final VarDB<Address> dexScore = Context.newVarDB(DEX_SCORE, Address.class);
-    private static final VarDB<Address> stakingScore = Context.newVarDB(STAKING_SCORE, Address.class);
-    private static final VarDB<Address> sICXScore = Context.newVarDB(SICX_SCORE, Address.class);
-    private static final VarDB<Address> routerScore = Context.newVarDB(ROUTER_SCORE, Address.class);
-
-    private static final VarDB<Integer> swapState = Context.newVarDB(SWAP_STATE, Integer.class);
-    private static final VarDB<Integer> swapCount = Context.newVarDB(SWAP_COUNT, Integer.class);
+    public static final VarDB<Address> cpsTreasuryScore = Context.newVarDB(CPS_TREASURY_SCORE, Address.class);
+    public static final VarDB<Address> cpsScore = Context.newVarDB(CPS_SCORE, Address.class);
+    public static final VarDB<Address> balancedDollar = Context.newVarDB(BALANCED_DOLLAR, Address.class);
+    public static final VarDB<Address> dexScore = Context.newVarDB(DEX_SCORE, Address.class);
+    public static final VarDB<Address> sICXScore = Context.newVarDB(SICX_SCORE, Address.class);
+    public static final VarDB<Address> routerScore = Context.newVarDB(ROUTER_SCORE, Address.class);
 
     public CPFTreasury(@Optional BigInteger amount, @Optional boolean _on_update_var) {
         if (amount == null) {
