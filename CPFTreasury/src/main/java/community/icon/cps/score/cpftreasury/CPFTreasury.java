@@ -120,7 +120,7 @@ public class CPFTreasury extends SetterGetter {
         params.add("project_duration", _total_installment_count);
         params.add("sponsor_address", _sponsor_address.toString());
         params.add("contributor_address", _contributor_address.toString());
-        params.add("total_budget", "0x" + _total_budget);
+        params.add("total_budget", "0x" + _total_budget.toString(16));
         params.add("sponsor_reward", "0x" + sponsorReward.toString(16));
         params.add("token", token_flag);
         depositProposal.add("params", params);
