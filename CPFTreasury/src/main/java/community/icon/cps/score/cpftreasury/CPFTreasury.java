@@ -265,8 +265,11 @@ public class CPFTreasury extends SetterGetter {
     }
 
     @External(readonly = true)
-    public List<Map<String, ?>> get_proposal_details(int _start_index, int _end_index) {
-        List<Map<String, ?>> proposalsList = new ArrayList<>();
+    public Map<String, Object> get_proposal_details(@Optional int _start_index, @Optional int _end_index) {
+        if (_end_index == 0) {
+            _end_index = 20;
+        }
+        List<Map<String, Object>> proposalsList = new ArrayList<>();
         if ((_end_index - _start_index) > 50) {
             Context.revert(TAG + ": Page Length cannot be greater than 50");
         }
@@ -286,12 +289,10 @@ public class CPFTreasury extends SetterGetter {
 
         for (int i = _start_index; i < _end_index; i++) {
             String proposalHash = proposalsKeys.get(i);
-            Map<String, ?> proposalDetails = Map.of(TOTAL_BUDGET, proposalBudgets.getOrDefault(proposalHash, BigInteger.ZERO).toString(),
-                    IPFS_HASH, proposalHash);
+            Map<String, Object> proposalDetails = Map.of(TOTAL_BUDGET, proposalBudgets.getOrDefault(proposalHash, BigInteger.ZERO).toString(), IPFS_HASH, proposalHash);
             proposalsList.add(proposalDetails);
         }
-        proposalsList.add(Map.of("count", String.valueOf(count)));
-        return proposalsList;
+        return Map.of("data", proposalsList, "count", count);
     }
 
     @External
