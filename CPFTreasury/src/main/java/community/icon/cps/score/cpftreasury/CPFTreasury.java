@@ -19,10 +19,10 @@ import static community.icon.cps.score.cpftreasury.Validations.validateCpsScore;
 
 public class CPFTreasury extends SetterGetter {
 
-    private static final ArrayDB<String> proposalsKeys = Context.newArrayDB(PROPOSALS_KEYS, String.class);
-    private static final DictDB<String, BigInteger> proposalBudgets = Context.newDictDB(PROPOSAL_BUDGETS, BigInteger.class);
-    private static final VarDB<BigInteger> treasuryFund = Context.newVarDB(TREASURY_FUND, BigInteger.class);
-    private static final VarDB<BigInteger> treasuryFundbnUSD = Context.newVarDB(TREASURY_FUND_BNUSD, BigInteger.class);
+    private final ArrayDB<String> proposalsKeys = Context.newArrayDB(PROPOSALS_KEYS, String.class);
+    private final DictDB<String, BigInteger> proposalBudgets = Context.newDictDB(PROPOSAL_BUDGETS, BigInteger.class);
+    private final VarDB<BigInteger> treasuryFund = Context.newVarDB(TREASURY_FUND, BigInteger.class);
+    private final VarDB<BigInteger> treasuryFundbnUSD = Context.newVarDB(TREASURY_FUND_BNUSD, BigInteger.class);
 
     public static final VarDB<Address> cpsTreasuryScore = Context.newVarDB(CPS_TREASURY_SCORE, Address.class);
     public static final VarDB<Address> cpsScore = Context.newVarDB(CPS_SCORE, Address.class);
