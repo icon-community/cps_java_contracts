@@ -390,7 +390,7 @@ public class CPFTreasury extends SetterGetter {
                 } else {
                     Context.revert(TAG + ": Not supported method " + transferData.get("method"));
                 }
-            } else if (_from.equals(dexScore.get()) || _from.equals(routerScore.get())) {
+            } else {
                 burnExtraFund();
             }
         }
