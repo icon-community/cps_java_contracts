@@ -13,29 +13,9 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-public class CPFTreasury {
-    private static final BigInteger MULTIPLIER = new BigInteger("1000000000000000000");
-    private static final String TAG = "CPF_TREASURY";
-    private static final String ICX = "ICX";
-    private static final String bnUSD = "bnUSD";
-    private static final String PROPOSAL_BUDGETS = "_proposals_budgets";
-    private static final String PROPOSALS_KEYS = "_proposals_keys";
-    private static final String CPS_TREASURY_SCORE = "_cps_treasury_score";
-    private static final String CPS_SCORE = "_cps_score";
-    private static final String TREASURY_FUND = "treasury_fund";
-    private static final String TREASURY_FUND_BNUSD = "treasury_fund_bnusd";
-    private static final String IPFS_HASH = "_ipfs_hash";
-    private static final String TOTAL_BUDGET = "_budget_transfer";
-    private static final String BALANCED_DOLLAR = "balanced_dollar";
-    private static final String DEX_SCORE = "dex_score";
-    private static final String SICX_SCORE = "sicx_score";
-    private static final String STAKING_SCORE = "staking_score";
-    private static final String ROUTER_SCORE = "router_score";
-    private static final String SWAP_STATE = "swap_state";
-    private static final String SWAP_COUNT = "swap_count";
-    private static final Address SYSTEM_ADDRESS = Address.fromString("cx0000000000000000000000000000000000000000");
-    private static final int sICXICXPoolID = 1;
-    private static final int sICXBNUSDPoolID = 2;
+import static community.icon.cps.score.cpftreasury.Constants.*;
+import static community.icon.cps.score.cpftreasury.Validations.validateAdmins;
+import static community.icon.cps.score.cpftreasury.Validations.validateCpsScore;
 
 public class CPFTreasury extends SetterGetter {
 
@@ -78,33 +58,7 @@ public class CPFTreasury extends SetterGetter {
         return TAG;
     }
 
-    private void validateAdmins() {
-        Context.require((Boolean) Context.call(cpsScore.get(), "is_admin", Context.getCaller()),
-                TAG + ": Only Admins can call this method");
 
-    }
-
-    private void validateOwner() {
-        Context.require(Context.getCaller().equals(Context.getOwner()),
-                TAG + ": Only owner can call this method");
-    }
-
-    private void validateOwnerScore(Address _score) {
-        validateOwner();
-        Context.require(_score.isContract(), TAG + ": Target " + _score + " is not a SCORE");
-    }
-
-    private void validateCpsScore() {
-        Address _cpsScore = cpsScore.get();
-        Context.require(Context.getCaller().equals(_cpsScore),
-                TAG + ": Only " + _cpsScore + " SCORE can send fund using this method.");
-    }
-
-    /**
-     * Set the maximum Treasury fund. Default 1M in ICX
-     *
-     * @param _value: value in loop
-     */
     @External
     public void setMaximumTreasuryFundIcx(BigInteger _value) {
         validateAdmins();
