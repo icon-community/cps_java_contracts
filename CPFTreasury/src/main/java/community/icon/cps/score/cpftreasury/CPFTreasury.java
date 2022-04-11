@@ -49,8 +49,8 @@ public class CPFTreasury extends SetterGetter {
         stakingScore.set(null);
     }
 
-    private boolean proposalExists(String _ipfs_key) {
-        return proposalBudgets.getOrDefault(_ipfs_key, null) != null;
+    private boolean proposalExists(String ipfsKey) {
+        return proposalBudgets.get(ipfsKey) != null;
     }
 
     @External(readonly = true)
