@@ -145,7 +145,7 @@ public class CPFTreasury extends SetterGetter {
                                      @Optional BigInteger _total_installment_count) {
         validateCpsScore();
         Context.require(proposalExists(_ipfs_key), TAG + ": IPFS hash does not exist.");
-        Context.require(_flag.equals(bnUSD), TAG + ": Unsupported token. " + _flag);
+        Context.require(_flag != null && _flag.equals(bnUSD), TAG + ": Unsupported token. " + _flag);
 
         if (_added_budget == null) {
             _added_budget = BigInteger.ZERO;
