@@ -41,12 +41,8 @@ public class CPFTreasury extends SetterGetter {
             return;
         }
 
-        treasuryFund.set(amount);
+    public CPFTreasury() {
 
-    }
-
-    public void onUpdate() {
-        stakingScore.set(null);
     }
 
     private boolean proposalExists(String ipfsKey) {
