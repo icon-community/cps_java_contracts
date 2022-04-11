@@ -149,46 +149,46 @@ public class CPFTreasury extends SetterGetter {
                 "remainingToSwap", maxCap.subtract(getTotalFundBNUSD()));
     }
 
-    private void returnFundAmount(Address _address, BigInteger _value) {
-        Context.require(_value.compareTo(BigInteger.ZERO) > 0,
-                TAG + ": Sponsor Bond Amount should be greater than 0");
+    private void returnFundAmount(Address address, BigInteger value) {
+        Context.require(value.compareTo(BigInteger.ZERO) > 0, TAG + ": Sponsor Bond Amount should be greater than 0");
         burnExtraFund();
-        Eventlogs.FundReturned(_address, "Sponsor Bond amount " + _value + " " + bnUSD + " Returned to CPF Treasury.");
+        FundReturned(address, "Sponsor Bond amount " + value + " " + bnUSD + " Returned to CPF Treasury.");
     }
 
     @External
-    public void transfer_proposal_fund_to_cps_treasury(String _ipfs_key, int _total_installment_count,
-                                                       Address _sponsor_address, Address _contributor_address,
-                                                       String token_flag, BigInteger _total_budget) {
+    public void transfer_proposal_fund_to_cps_treasury(String _ipfs_key, int _total_installment_count, Address _sponsor_address, Address _contributor_address, String token_flag, BigInteger _total_budget) {
         validateCpsScore();
         Context.require(!proposalExists(_ipfs_key), TAG + ": Project already exists. Invalid IPFS Hash");
         Context.require(token_flag.equals(bnUSD), TAG + ": " + token_flag + " is not supported. Only " + bnUSD + " token available.");
-        BigInteger _sponsor_reward = _total_budget.multiply(BigInteger.TWO).divide(BigInteger.valueOf(100));
-        BigInteger total_transfer = _total_budget.add(_sponsor_reward);
+        BigInteger sponsorReward = _total_budget.multiply(BigInteger.TWO).divide(BigInteger.valueOf(100));
+        BigInteger totalTransfer = _total_budget.add(sponsorReward);
 
-        BigInteger balanceOf = (BigInteger) Context.call(balancedDollar.get(), "balanceOf", Context.getAddress());
-        Context.require(balanceOf.compareTo(total_transfer) > 0, TAG + ": Not enough fund " + balanceOf + " token available");
+        Address balancedDollar = CPFTreasury.balancedDollar.get();
+        BigInteger bnUSDBalance = Context.call(BigInteger.class, balancedDollar, "balanceOf", Context.getAddress());
+        Context.require(totalTransfer.compareTo(bnUSDBalance) < 0, TAG + ": Not enough fund " + bnUSDBalance + " token available");
+
         proposalsKeys.add(_ipfs_key);
-        proposalBudgets.set(_ipfs_key, total_transfer);
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.add("method", "deposit_proposal_fund");
+        proposalBudgets.set(_ipfs_key, totalTransfer);
+
+        JsonObject depositProposal = new JsonObject();
+        depositProposal.add("method", "deposit_proposal_fund");
         JsonObject params = new JsonObject();
         params.add("ipfs_hash", _ipfs_key);
-        params.add("project_duration", String.valueOf(_total_installment_count));
+        params.add("project_duration", _total_installment_count);
         params.add("sponsor_address", _sponsor_address.toString());
         params.add("contributor_address", _contributor_address.toString());
-        params.add("totalBudget", _total_budget.toString());
-        params.add("sponsor_reward", _sponsor_reward.toString());
+        params.add("total_budget", "0x" + _total_budget);
+        params.add("sponsor_reward", "0x" + sponsorReward.toString(16));
         params.add("token", token_flag);
-        jsonObject.add("params", params);
-        String jsonString = String.valueOf(jsonObject);
+        depositProposal.add("params", params);
 
-        Context.call(balancedDollar.get(), "transfer", cpsTreasuryScore.get(), total_transfer, jsonString.getBytes());
-        Eventlogs.ProposalFundTransferred(_ipfs_key, "Successfully transferred " + total_transfer + " " + token_flag + " to CPS Treasury " + cpsTreasuryScore.get());
+        Context.call(balancedDollar, "transfer", cpsTreasuryScore.get(), totalTransfer, depositProposal.toString().getBytes());
+        ProposalFundTransferred(_ipfs_key, "Successfully transferred " + totalTransfer + " " + token_flag + " to CPS Treasury " + cpsTreasuryScore.get());
     }
 
     @External
-    public void update_proposal_fund(String _ipfs_key, String _flag, @Optional BigInteger _added_budget, @Optional BigInteger _total_installment_count) {
+    public void update_proposal_fund(String _ipfs_key, @Optional String _flag, @Optional BigInteger _added_budget,
+                                     @Optional BigInteger _total_installment_count) {
         validateCpsScore();
         Context.require(proposalExists(_ipfs_key), TAG + ": IPFS hash does not exist.");
         Context.require(_flag.equals(bnUSD), TAG + ": Unsupported token. " + _flag);
@@ -207,9 +207,10 @@ public class CPFTreasury extends SetterGetter {
         BigInteger proposalBudget = proposalBudgets.getOrDefault(_ipfs_key, BigInteger.ZERO);
         proposalBudgets.set(_ipfs_key, proposalBudget.add(totalTransfer));
         BigInteger bnUSDFund = get_total_funds().get(bnUSD);
-        Context.require(bnUSDFund.compareTo(totalTransfer) >= 0, TAG + ": Not enough " + totalTransfer + " BNUSD on treasury");
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.add("method", "budget_adjustment");
+        Context.require(totalTransfer.compareTo(bnUSDFund) >= 0, TAG + ": Not enough " + totalTransfer + " BNUSD on treasury");
+
+        JsonObject budgetAdjustmentData = new JsonObject();
+        budgetAdjustmentData.add("method", "budget_adjustment");
         JsonObject params = new JsonObject();
         params.add("_ipfs_key", _ipfs_key);
         params.add("_added_budget", "0x" + _added_budget.toString(16));
@@ -217,25 +218,25 @@ public class CPFTreasury extends SetterGetter {
         params.add("_added_installment_count", "0x" + _total_installment_count.toString(16));
         budgetAdjustmentData.add("params", params);
 
-        Context.call(balancedDollar.get(), "transfer", cpsTreasuryScore.get(), totalTransfer, jsonString.getBytes());
-        Eventlogs.ProposalFundTransferred(_ipfs_key, "Successfully transferred " + totalTransfer + " " + bnUSD + " to CPS Treasury");
+        Context.call(balancedDollar.get(), "transfer", cpsTreasuryScore.get(), totalTransfer, budgetAdjustmentData.toString().getBytes());
+        ProposalFundTransferred(_ipfs_key, "Successfully transferred " + totalTransfer + " " + bnUSD + " to CPS Treasury");
     }
 
-    private void disqualifyProposalFund(String _ipfs_key, BigInteger _value) {
-        Context.require(proposalExists(_ipfs_key), TAG + ": IPFS key does not exist.");
+    private void disqualifyProposalFund(String ipfsKey, BigInteger value) {
+        Context.require(proposalExists(ipfsKey), TAG + ": IPFS key does not exist.");
 
-        BigInteger _budget = proposalBudgets.get(_ipfs_key);
-        proposalBudgets.set(_ipfs_key, _budget.subtract(_value));
+        BigInteger budget = proposalBudgets.get(ipfsKey);
+        proposalBudgets.set(ipfsKey, budget.subtract(value));
 
         burnExtraFund();
-        Eventlogs.ProposalDisqualified(_ipfs_key, "Proposal disqualified. " + _value + " " + bnUSD + " is returned back to Treasury.");
+        ProposalDisqualified(ipfsKey, "Proposal disqualified. " + value + " " + bnUSD + " is returned back to Treasury.");
     }
 
     @External
     @Payable
     public void add_fund() {
         burnExtraFund();
-        Eventlogs.FundReceived(Context.getCaller(), "Treasury fund " + Context.getValue() + " " + ICX + " received.");
+        FundReceived(Context.getCaller(), "Treasury fund " + Context.getValue() + " " + ICX + " received.");
     }
 
     private void burnExtraFund() {
@@ -246,28 +247,28 @@ public class CPFTreasury extends SetterGetter {
         BigInteger extraAmountBnUSD = bnUSDAmount.subtract(treasuryFundbnUSD.get());
 
         if (extraAmountIcx.compareTo(BigInteger.ZERO) > 0) {
-            _burn(extraAmountIcx);
+            burn(extraAmountIcx);
         }
 
         if (extraAmountBnUSD.compareTo(BigInteger.ZERO) > 0) {
-            _swapTokens(balancedDollar.get(), sICXScore.get(), extraAmountBnUSD);
+            swapTokens(balancedDollar.get(), sICXScore.get(), extraAmountBnUSD);
         }
     }
 
-    private void _swapTokens(Address _from, Address _to, BigInteger _amount) {
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.add("method", "_swap");
+    private void swapTokens(Address _from, Address _to, BigInteger _amount) {
+        JsonObject swapData = new JsonObject();
+        swapData.add("method", "_swap");
         JsonObject params = new JsonObject();
         params.add("toToken", _to.toString());
-        jsonObject.add("params", params);
-        String jsonString = String.valueOf(jsonObject);
-        Context.call(_from, "transfer", dexScore.get(), _amount, jsonString.getBytes());
+        swapData.add("params", params);
+        Context.call(_from, "transfer", dexScore.get(), _amount, swapData.toString().getBytes());
     }
 
     @External
-    public void swap_icx_bnusd(BigInteger _amount) {
+    public void swapIcxBnusd(BigInteger amount) {
         Address[] path = new Address[]{sICXScore.get(), balancedDollar.get()};
-        Context.call(_amount, routerScore.get(), "route", (Object[]) path);
+        Object[] params = new Object[]{path};
+        Context.call(amount, routerScore.get(), "route", params);
     }
 
     @External
@@ -277,23 +278,23 @@ public class CPFTreasury extends SetterGetter {
         BigInteger sicxBnusdPrice = (BigInteger) Context.call(dexScore.get(), "getPrice", sICXBNUSDPoolID);
         BigInteger icxbnUSDPrice = sicxBnusdPrice.multiply(MULTIPLIER).divide(sicxICXPrice);
         BigInteger bnUSDRemainingToSwap = get_remaining_swap_amount().get("remainingToSwap");
-        if (bnUSDRemainingToSwap.compareTo(BigInteger.TEN.multiply(MULTIPLIER)) < 0 || _count == 0) {
-            swapState.set(1);
-            swapCount.set(0);
-        }
-        int swap_state = swapState.getOrDefault(0);
-        if (swap_state == 0) {
-            int swapCountValue = swapCount.getOrDefault(0);
-            int count = _count - swapCountValue;
-            if (count == 0) {
-                swapState.set(1);
-                swapCount.set(0);
-            } else {
-                BigInteger remainingICXToSwap = bnUSDRemainingToSwap.multiply(MULTIPLIER).divide(icxbnUSDPrice.multiply(BigInteger.valueOf(count)));
-                BigInteger icxBalance = Context.getBalance(Context.getAddress());
-                if (remainingICXToSwap.compareTo(icxBalance) > 0) {
-                    remainingICXToSwap = icxBalance;
-                }
+        if (bnUSDRemainingToSwap.compareTo(BigInteger.TEN.multiply(EXA)) < 0 || _count == 0) {
+            swapState.set(SwapCompleted);
+            swapCount.set(SwapReset);
+        } else {
+            int swapState = this.swapState.getOrDefault(0);
+            if (swapState == SwapContinue) {
+                int swapCountValue = swapCount.getOrDefault(0);
+                int count = _count - swapCountValue;
+                if (count == 0) {
+                    this.swapState.set(SwapCompleted);
+                    swapCount.set(SwapReset);
+                } else {
+                    BigInteger remainingICXToSwap = bnUSDRemainingToSwap.multiply(EXA).divide(icxbnUSDPrice.multiply(BigInteger.valueOf(count)));
+                    BigInteger icxBalance = Context.getBalance(Context.getAddress());
+                    if (remainingICXToSwap.compareTo(icxBalance) > 0) {
+                        remainingICXToSwap = icxBalance;
+                    }
 
                 if (remainingICXToSwap.compareTo(BigInteger.valueOf(5).multiply(MULTIPLIER)) > 0) {
                     swap_icx_bnusd(remainingICXToSwap);
@@ -310,13 +311,13 @@ public class CPFTreasury extends SetterGetter {
 
     @External
     public void reset_swap_state() {
-        Address cps_score_address = cpsScore.get();
+        Address cpsScoreAddress = cpsScore.get();
         Address caller = Context.getCaller();
 
-        boolean checkCaller = caller.equals(cps_score_address) || (Boolean) Context.call(cps_score_address, "is_admin", caller);
+        boolean checkCaller = caller.equals(cpsScoreAddress) || (Boolean) Context.call(cpsScoreAddress, "is_admin", caller);
         Context.require(checkCaller, TAG + ": Only admin can call this method.");
-        swapState.set(0);
-        swapCount.set(0);
+        swapState.set(SwapContinue);
+        swapCount.set(SwapReset);
     }
 
     @External(readonly = true)
@@ -355,32 +356,39 @@ public class CPFTreasury extends SetterGetter {
         Address sICX = sICXScore.get();
         Address caller = Context.getCaller();
 
-        Context.require(caller.equals(bnUSDScore) || caller.equals(sICX), TAG + " Only " + bnUSDScore + " and " + sICX + " can send tokens to CPF Treasury.");
+        Context.require(caller.equals(bnUSDScore) || caller.equals(sICX), TAG +
+                " Only " + bnUSDScore + " and " + sICX + " can send tokens to CPF Treasury.");
         if (caller.equals(sICX)) {
             if (_from.equals(dexScore.get())) {
-                JsonObject jsonObject = new JsonObject();
-                jsonObject.add("method", "_swap_icx");
-                String jsonString = String.valueOf(jsonObject);
-                Context.call(dexScore.get(), "transfer", _value, jsonString.getBytes());
+                JsonObject swapICX = new JsonObject();
+                swapICX.add("method", "_swap_icx");
+                Context.call(dexScore.get(), "transfer", _value, swapICX.toString().getBytes());
+            } else {
+                Context.revert(TAG + ": sICX can be approved only from Balanced DEX.");
             }
         } else {
+
+            if (_data == null || new String(_data).equalsIgnoreCase("none")) {
+                _data = "{}".getBytes();
+            }
             String unpacked_data = new String(_data);
-            JsonObject json = Json.parse(unpacked_data).asObject();
+            JsonObject transferData = Json.parse(unpacked_data).asObject();
+
             if (_from.equals(cpsScore.get())) {
-                if (json.get("method").asString().equals("return_fund_amount")) {
-                    Address _sponsor_address = Address.fromString(json.get("params").asObject().get("sponsor_address").asString());
+                if (transferData.get("method").asString().equals("return_fund_amount")) {
+                    Address _sponsor_address = Address.fromString(transferData.get("params").asObject().get("sponsor_address").asString());
                     returnFundAmount(_sponsor_address, _value);
-                } else if (json.get("method").asString().equals("burn_amount")) {
-                    _swapTokens(caller, sICX, _value);
+                } else if (transferData.get("method").asString().equals("burn_amount")) {
+                    swapTokens(caller, sICX, _value);
                 } else {
-                    Context.revert(TAG + ": Not supported method " + json.get("method"));
+                    Context.revert(TAG + ": Not supported method " + transferData.get("method"));
                 }
             } else if (_from.equals(cpsTreasuryScore.get())) {
-                if (json.get("method").asString().equals("disqualify_project")) {
-                    String ipfs_key = json.get("params").asObject().get("ipfs_key").asString();
+                if (transferData.get("method").asString().equals("disqualify_project")) {
+                    String ipfs_key = transferData.get("params").asObject().get("ipfs_key").asString();
                     disqualifyProposalFund(ipfs_key, _value);
                 } else {
-                    Context.revert(TAG + ": Not supported method " + json.get("method"));
+                    Context.revert(TAG + ": Not supported method " + transferData.get("method"));
                 }
             } else if (_from.equals(dexScore.get()) || _from.equals(routerScore.get())) {
                 burnExtraFund();
@@ -391,7 +399,7 @@ public class CPFTreasury extends SetterGetter {
     @Payable
     public void fallback() {
         if (Context.getCaller().equals(dexScore.get())) {
-            _burn(Context.getValue());
+            burn(Context.getValue());
         } else {
             Context.revert(TAG + ": Please send fund using add_fund().");
         }
