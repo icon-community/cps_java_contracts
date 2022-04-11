@@ -461,8 +461,11 @@ public class CPFTreasury {
             Context.revert(TAG + ": Page Length cannot be greater than 50");
         }
         int count = proposalsKeys.size();
+        if (_start_index > count) {
+            Context.revert(TAG + ": Start index can't be higher than total count.");
+        }
 
-        if (_start_index < 0 || _start_index > count) {
+        if (_start_index < 0) {
             _start_index = 0;
         }
 
