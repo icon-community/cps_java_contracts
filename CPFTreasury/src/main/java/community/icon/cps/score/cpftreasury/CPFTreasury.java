@@ -342,11 +342,10 @@ public class CPFTreasury {
         jsonObject.add("method", "budget_adjustment");
         JsonObject params = new JsonObject();
         params.add("_ipfs_key", _ipfs_key);
-        params.add("_added_budget", _added_budget.toString());
-        params.add("_added_sponsor_reward", sponsorReward.toString());
-        params.add("_added_installment_count", _total_installment_count.toString());
-        jsonObject.add("params", params);
-        String jsonString = String.valueOf(jsonObject);
+        params.add("_added_budget", "0x" + _added_budget.toString(16));
+        params.add("_added_sponsor_reward", "0x" + sponsorReward.toString(16));
+        params.add("_added_installment_count", "0x" + _total_installment_count.toString(16));
+        budgetAdjustmentData.add("params", params);
 
         Context.call(balancedDollar.get(), "transfer", cpsTreasuryScore.get(), totalTransfer, jsonString.getBytes());
         Eventlogs.ProposalFundTransferred(_ipfs_key, "Successfully transferred " + totalTransfer + " " + bnUSD + " to CPS Treasury");
