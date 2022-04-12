@@ -99,7 +99,9 @@ public class CPFTreasury extends SetterGetter {
     }
 
     @External
-    public void transfer_proposal_fund_to_cps_treasury(String _ipfs_key, int _total_installment_count, Address _sponsor_address, Address _contributor_address, String token_flag, BigInteger _total_budget) {
+    public void transfer_proposal_fund_to_cps_treasury(String _ipfs_key, int _total_installment_count,
+                                                       Address _sponsor_address, Address _contributor_address,
+                                                       String token_flag, BigInteger _total_budget) {
         validateCpsScore();
         Context.require(!proposalExists(_ipfs_key), TAG + ": Project already exists. Invalid IPFS Hash");
         Context.require(token_flag.equals(bnUSD), TAG + ": " + token_flag + " is not supported. Only " + bnUSD + " token available.");
