@@ -325,14 +325,14 @@ public class CPFTreasury extends SetterGetter {
                 } else if (transferData.get("method").asString().equals("burn_amount")) {
                     swapTokens(caller, sICX, _value);
                 } else {
-                    Context.revert(TAG + ": Not supported method " + transferData.get("method"));
+                    Context.revert(TAG + ": Not supported method " + transferData.get("method").asString());
                 }
             } else if (_from.equals(cpsTreasuryScore.get())) {
                 if (transferData.get("method").asString().equals("disqualify_project")) {
                     String ipfs_key = transferData.get("params").asObject().get("ipfs_key").asString();
                     disqualifyProposalFund(ipfs_key, _value);
                 } else {
-                    Context.revert(TAG + ": Not supported method " + transferData.get("method"));
+                    Context.revert(TAG + ": Not supported method " + transferData.get("method").asString());
                 }
             } else {
                 burnExtraFund();
