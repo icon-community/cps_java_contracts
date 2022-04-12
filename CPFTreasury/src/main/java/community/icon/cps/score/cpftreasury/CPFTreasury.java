@@ -122,8 +122,8 @@ public class CPFTreasury extends SetterGetter {
         params.add("project_duration", _total_installment_count);
         params.add("sponsor_address", _sponsor_address.toString());
         params.add("contributor_address", _contributor_address.toString());
-        params.add("total_budget", "0x" + _total_budget.toString(16));
-        params.add("sponsor_reward", "0x" + sponsorReward.toString(16));
+        params.add("total_budget", _total_budget.toString());
+        params.add("sponsor_reward", sponsorReward.toString());
         params.add("token", token_flag);
         depositProposal.add("params", params);
 
@@ -133,7 +133,7 @@ public class CPFTreasury extends SetterGetter {
 
     @External
     public void update_proposal_fund(String _ipfs_key, @Optional String _flag, @Optional BigInteger _added_budget,
-                                     @Optional BigInteger _total_installment_count) {
+                                     @Optional int _total_installment_count) {
         validateCpsScore();
         Context.require(proposalExists(_ipfs_key), TAG + ": IPFS hash does not exist.");
         Context.require(_flag != null && _flag.equals(bnUSD), TAG + ": Unsupported token. " + _flag);
@@ -142,9 +142,6 @@ public class CPFTreasury extends SetterGetter {
             _added_budget = BigInteger.ZERO;
         }
 
-        if (_total_installment_count == null) {
-            _total_installment_count = BigInteger.ZERO;
-        }
 
         BigInteger sponsorReward = _added_budget.multiply(BigInteger.TWO).divide(BigInteger.valueOf(100));
         BigInteger totalTransfer = _added_budget.add(sponsorReward);
@@ -158,9 +155,9 @@ public class CPFTreasury extends SetterGetter {
         budgetAdjustmentData.add("method", "budget_adjustment");
         JsonObject params = new JsonObject();
         params.add("_ipfs_key", _ipfs_key);
-        params.add("_added_budget", "0x" + _added_budget.toString(16));
-        params.add("_added_sponsor_reward", "0x" + sponsorReward.toString(16));
-        params.add("_added_installment_count", "0x" + _total_installment_count.toString(16));
+        params.add("_added_budget", _added_budget.toString());
+        params.add("_added_sponsor_reward", sponsorReward.toString());
+        params.add("_added_installment_count", _total_installment_count);
         budgetAdjustmentData.add("params", params);
 
         Context.call(balancedDollar.get(), "transfer", cpsTreasuryScore.get(), totalTransfer, budgetAdjustmentData.toString().getBytes());
