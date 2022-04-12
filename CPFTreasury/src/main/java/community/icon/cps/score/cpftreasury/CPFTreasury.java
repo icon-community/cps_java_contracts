@@ -249,7 +249,7 @@ public class CPFTreasury extends SetterGetter {
 
     @External(readonly = true)
     public Map<String, Integer> get_swap_state_status() {
-        return Map.of("state", swapState.get(), "count", swapCount.get());
+        return Map.of("state", swapState.getOrDefault(0), "count", swapCount.getOrDefault(0));
     }
 
     @External
