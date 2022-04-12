@@ -16,6 +16,7 @@
 
 package community.icon.cps.score.cpftreasury;
 
+import com.eclipsesource.json.JsonObject;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
@@ -23,24 +24,23 @@ import com.iconloop.score.test.TestBase;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import score.Address;
 import org.junit.jupiter.api.function.Executable;
-
-import java.math.BigInteger;
-import java.security.SecureRandom;
-import java.util.List;
-import java.util.Map;
-
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import score.Address;
 import score.Context;
 import score.DictDB;
 import score.VarDB;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import java.math.BigInteger;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 
 public class CPFTTreasuryTest extends TestBase {
     private static final Address ZERO_ADDRESS = new Address(new byte[Address.LENGTH]);
