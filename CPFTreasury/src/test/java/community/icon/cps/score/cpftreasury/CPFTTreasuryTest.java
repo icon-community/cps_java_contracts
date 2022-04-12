@@ -46,6 +46,11 @@ public class CPFTTreasuryTest extends TestBase {
     private static final Address ZERO_ADDRESS = new Address(new byte[Address.LENGTH]);
     private static final Address treasury_score = new Address(new byte[Address.LENGTH]);
     private static final Address score_address = Address.fromString("cx0000000000000000000000000000000000000000");
+    private static final Address sicxScore = Address.fromString("cx0000000000000000000000000000000000000001");
+    private static final Address bnUSDScore = Address.fromString("cx0000000000000000000000000000000000000002");
+    private static final Address dexScore = Address.fromString("cx0000000000000000000000000000000000000003");
+    private static final Address cpsTreasuryScore = Address.fromString("cx0000000000000000000000000000000000000004");
+
     private static final String name = "CPF_TREASURY";
     private static final String symbol = "CPF_TREASURY";
     public static final String TAG = "CPF_TREASURY";
