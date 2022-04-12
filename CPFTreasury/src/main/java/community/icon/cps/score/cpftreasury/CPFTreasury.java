@@ -352,14 +352,6 @@ public class CPFTreasury extends SetterGetter {
         }
     }
 
-    @External(readonly = true)
-    public List<String> getProposalKeys() {
-        List<String> ipfsHash = new ArrayList<>();
-        for (int i = 0; i < proposalsKeys.size(); i++) {
-            ipfsHash.add(proposalsKeys.get(i));
-        }
-        return ipfsHash;
-    }
 
     //EventLogs
     @EventLog(indexed = 1)
