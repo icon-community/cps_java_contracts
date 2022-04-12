@@ -67,7 +67,7 @@ public class CPFTTreasuryTest extends TestBase {
 
     @BeforeEach
     public void setup() throws Exception {
-        tokenScore = sm.deploy(owner, CPFTreasury.class, 1000);
+        tokenScore = sm.deploy(owner, CPFTreasury.class);
     }
 
     @Test
