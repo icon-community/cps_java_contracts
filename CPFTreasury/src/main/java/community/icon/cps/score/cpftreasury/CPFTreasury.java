@@ -306,7 +306,7 @@ public class CPFTreasury extends SetterGetter {
             if (_from.equals(dexScore.get())) {
                 JsonObject swapICX = new JsonObject();
                 swapICX.add("method", "_swap_icx");
-                Context.call(dexScore.get(), "transfer", _value, swapICX.toString().getBytes());
+                Context.call(caller, "transfer", dexScore.get(), _value, swapICX.toString().getBytes());
             } else {
                 Context.revert(TAG + ": sICX can be approved only from Balanced DEX.");
             }
