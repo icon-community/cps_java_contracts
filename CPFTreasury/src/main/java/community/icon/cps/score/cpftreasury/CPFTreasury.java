@@ -122,8 +122,8 @@ public class CPFTreasury extends SetterGetter {
         params.add("project_duration", _total_installment_count);
         params.add("sponsor_address", _sponsor_address.toString());
         params.add("contributor_address", _contributor_address.toString());
-        params.add("total_budget", _total_budget.toString());
-        params.add("sponsor_reward", sponsorReward.toString());
+        params.add("total_budget", _total_budget.toString(16));
+        params.add("sponsor_reward", sponsorReward.toString(16));
         params.add("token", token_flag);
         depositProposal.add("params", params);
 
@@ -155,8 +155,8 @@ public class CPFTreasury extends SetterGetter {
         budgetAdjustmentData.add("method", "budget_adjustment");
         JsonObject params = new JsonObject();
         params.add("_ipfs_key", _ipfs_key);
-        params.add("_added_budget", _added_budget.toString());
-        params.add("_added_sponsor_reward", sponsorReward.toString());
+        params.add("_added_budget", _added_budget.toString(16));
+        params.add("_added_sponsor_reward", sponsorReward.toString(16));
         params.add("_added_installment_count", _total_installment_count);
         budgetAdjustmentData.add("params", params);
 
