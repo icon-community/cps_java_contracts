@@ -243,8 +243,8 @@ public class CPFTTreasuryTest extends TestBase {
             params.add("project_duration", 2);
             params.add("sponsor_address", testing_account.getAddress().toString());
             params.add("contributor_address", testing_account2.getAddress().toString());
-            params.add("total_budget", BigInteger.valueOf(100).multiply(MULTIPLIER).toString());
-            params.add("sponsor_reward", BigInteger.valueOf(2).multiply(MULTIPLIER).toString());
+            params.add("total_budget", BigInteger.valueOf(100).multiply(MULTIPLIER).toString(16));
+            params.add("sponsor_reward", BigInteger.valueOf(2).multiply(MULTIPLIER).toString(16));
             params.add("token", "bnUSD");
             depositProposal.add("params", params);
             theMock.verify(() -> Context.call(score_address, "transfer", score_address, BigInteger.valueOf(102).multiply(MULTIPLIER), depositProposal.toString().getBytes()), times(1));
@@ -275,8 +275,8 @@ public class CPFTTreasuryTest extends TestBase {
             budgetAdjustmentData.add("method", "budget_adjustment");
             JsonObject params = new JsonObject();
             params.add("_ipfs_key", "Proposal 1");
-            params.add("_added_budget", BigInteger.valueOf(100).multiply(MULTIPLIER).toString());
-            params.add("_added_sponsor_reward", BigInteger.valueOf(2).multiply(MULTIPLIER).toString());
+            params.add("_added_budget", BigInteger.valueOf(100).multiply(MULTIPLIER).toString(16));
+            params.add("_added_sponsor_reward", BigInteger.valueOf(2).multiply(MULTIPLIER).toString(16));
             params.add("_added_installment_count", 1);
             budgetAdjustmentData.add("params", params);
 
@@ -303,23 +303,6 @@ public class CPFTTreasuryTest extends TestBase {
             tokenScore.invoke(owner, "setMaximumTreasuryFundBnusd", BigInteger.valueOf(2000).multiply(MULTIPLIER));
         }
     }
-
-//    @Test
-//    void disqualifyProposalFund() {
-//        setMaxCapIcxAndBnusd();
-//
-//        transferProposalFundMethod();
-//        VarDB<Address> balancedDollar = mock(VarDB.class);
-//
-//        tokenScore.invoke(owner, "setCpsTreasuryScore", score_address);
-//        try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
-//            theMock.when(() -> Context.getBalance(Context.getAddress())).thenReturn(BigInteger.valueOf(1000).multiply(MULTIPLIER));
-//            theMock.when(() -> Context.call(balancedDollar.get(), "balanceOf", Context.getAddress())).thenReturn(BigInteger.valueOf(1000).multiply(MULTIPLIER));
-//            tokenScore.invoke(owner, "disqualifyProposalFund", "Proposal 1", BigInteger.valueOf(80).multiply(MULTIPLIER));
-//        }
-//        System.out.println(tokenScore.call("get_proposal_details",  0,5));
-//
-//    }
 
     @Test
     void swapIcxBnusd(){
@@ -479,7 +462,7 @@ public class CPFTTreasuryTest extends TestBase {
             JsonObject swapICX = new JsonObject();
             swapICX.add("method", "_swap_icx");
             tokenScore.invoke(owner, "tokenFallback", dexScore, BigInteger.ONE.multiply(MULTIPLIER), data.getBytes());
-            theMock.verify(() -> Context.call(dexScore, "transfer", BigInteger.ONE.multiply(MULTIPLIER), swapICX.toString().getBytes()), times(1));
+            theMock.verify(() -> Context.call(sicxScore, "transfer", dexScore, BigInteger.ONE.multiply(MULTIPLIER), swapICX.toString().getBytes()), times(1));
         }
     }
 
