@@ -149,7 +149,7 @@ public class CPFTreasury extends SetterGetter {
         BigInteger proposalBudget = proposalBudgets.getOrDefault(_ipfs_key, BigInteger.ZERO);
         proposalBudgets.set(_ipfs_key, proposalBudget.add(totalTransfer));
         BigInteger bnUSDFund = get_total_funds().get(bnUSD);
-        Context.require(totalTransfer.compareTo(bnUSDFund) >= 0, TAG + ": Not enough " + totalTransfer + " BNUSD on treasury");
+        Context.require(totalTransfer.compareTo(bnUSDFund) <= 0, TAG + ": Not enough " + totalTransfer + " BNUSD on treasury");
 
         JsonObject budgetAdjustmentData = new JsonObject();
         budgetAdjustmentData.add("method", "budget_adjustment");
