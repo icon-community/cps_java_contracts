@@ -12,13 +12,9 @@ public class Validations {
 
     }
 
-    public static void validateOwner() {
-        Context.require(Context.getCaller().equals(Context.getOwner()),
-                TAG + ": Only owner can call this method");
-    }
 
-    public static void validateOwnerScore(Address _score) {
-        validateOwner();
+    public static void validateAdminScore(Address _score) {
+        validateAdmins();
         Context.require(_score.isContract(), TAG + ": Target " + _score + " is not a SCORE");
     }
 
