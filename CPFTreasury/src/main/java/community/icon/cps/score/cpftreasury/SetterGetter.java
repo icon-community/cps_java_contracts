@@ -11,7 +11,7 @@ public class SetterGetter {
      */
     @External
     public void setCpsScore(Address _score) {
-        Validations.validateOwnerScore(_score);
+        Validations.validateAdminScore(_score);
         CPFTreasury.cpsScore.set(_score);
     }
 
@@ -26,13 +26,13 @@ public class SetterGetter {
     }
 
     /**
-     * Sets the cps treasury score address. Only owner can set the method
+     * Sets the cps treasury score address. Only cps admins can set the method
      *
      * @param _score: Score address of cps treasury score
      */
     @External
     public void setCpsTreasuryScore(Address _score) {
-        Validations.validateOwnerScore(_score);
+        Validations.validateAdminScore(_score);
         CPFTreasury.cpsTreasuryScore.set(_score);
     }
 
@@ -47,13 +47,13 @@ public class SetterGetter {
     }
 
     /**
-     * Sets the bnUSD score address. Only owner can set the method
+     * Sets the bnUSD score address. Only cps admins can set the method
      *
      * @param _score: Score address of bnUSD score
      */
     @External
     public void setBnUSDScore(Address _score) {
-        Validations.validateOwnerScore(_score);
+        Validations.validateAdminScore(_score);
         CPFTreasury.balancedDollar.set(_score);
     }
 
@@ -68,13 +68,13 @@ public class SetterGetter {
     }
 
     /**
-     * Sets the sicx score address. Only owner can set the method
+     * Sets the sicx score address. Only cps admins can set the method
      *
      * @param _score: Score address of sicx score
      */
     @External
     public void setSicxScore(Address _score) {
-        Validations.validateOwnerScore(_score);
+        Validations.validateAdminScore(_score);
         CPFTreasury.sICXScore.set(_score);
     }
 
@@ -95,7 +95,7 @@ public class SetterGetter {
      */
     @External
     public void setDexScore(Address _score) {
-        Validations.validateOwnerScore(_score);
+        Validations.validateAdminScore(_score);
         CPFTreasury.dexScore.set(_score);
     }
 
@@ -116,7 +116,7 @@ public class SetterGetter {
      */
     @External
     public void setRouterScore(Address _score) {
-        Validations.validateOwnerScore(_score);
+        Validations.validateAdminScore(_score);
         CPFTreasury.routerScore.set(_score);
     }
 
