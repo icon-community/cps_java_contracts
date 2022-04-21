@@ -1,3 +1,19 @@
+/*
+ * Copyright 2020 ICONLOOP Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package community.icon.cps.score.cpftreasury;
 
 import com.eclipsesource.json.JsonObject;
@@ -83,37 +99,61 @@ public class CPFTTreasuryTest extends TestBase {
 
     @Test
     void setCPSScore() {
-        tokenScore.invoke(owner, "setCpsScore", score_address);
+        VarDB<Address> cpsScore = mock(VarDB.class);
+        try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
+            theMock.when(() -> Context.call(cpsScore.get(), "is_admin", Context.getCaller())).thenReturn(true);
+            tokenScore.invoke(owner, "setCpsScore", score_address);
+        }
         assertEquals(score_address, tokenScore.call("getCpsScore"));
     }
 
     @Test
     void setCPSTreasuryScore() {
-        tokenScore.invoke(owner, "setCpsTreasuryScore", score_address);
+        VarDB<Address> cpsScore = mock(VarDB.class);
+        try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
+            theMock.when(() -> Context.call(cpsScore.get(), "is_admin", Context.getCaller())).thenReturn(true);
+            tokenScore.invoke(owner, "setCpsTreasuryScore", score_address);
+        }
         assertEquals(score_address, tokenScore.call("getCpsTreasuryScore"));
     }
 
     @Test
     void setBMUSDScore() {
-        tokenScore.invoke(owner, "setBnUSDScore", score_address);
+        VarDB<Address> cpsScore = mock(VarDB.class);
+        try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
+            theMock.when(() -> Context.call(cpsScore.get(), "is_admin", Context.getCaller())).thenReturn(true);
+            tokenScore.invoke(owner, "setBnUSDScore", score_address);
+        }
         assertEquals(score_address, tokenScore.call("getBnUSDScore"));
     }
 
     @Test
     void setSICXScore() {
-        tokenScore.invoke(owner, "setSicxScore", score_address);
+        VarDB<Address> cpsScore = mock(VarDB.class);
+        try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
+            theMock.when(() -> Context.call(cpsScore.get(), "is_admin", Context.getCaller())).thenReturn(true);
+            tokenScore.invoke(owner, "setSicxScore", score_address);
+        }
         assertEquals(score_address, tokenScore.call("getSicxScore"));
     }
 
     @Test
     void setDEXScore() {
-        tokenScore.invoke(owner, "setDexScore", score_address);
+        VarDB<Address> cpsScore = mock(VarDB.class);
+        try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
+            theMock.when(() -> Context.call(cpsScore.get(), "is_admin", Context.getCaller())).thenReturn(true);
+            tokenScore.invoke(owner, "setDexScore", score_address);
+        }
         assertEquals(score_address, tokenScore.call("getDexScore"));
     }
 
     @Test
     void setRouterScore() {
-        tokenScore.invoke(owner, "setRouterScore", score_address);
+        VarDB<Address> cpsScore = mock(VarDB.class);
+        try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
+            theMock.when(() -> Context.call(cpsScore.get(), "is_admin", Context.getCaller())).thenReturn(true);
+            tokenScore.invoke(owner, "setRouterScore", score_address);
+        }
         assertEquals(score_address, tokenScore.call("getRouterScore"));
     }
 
@@ -158,58 +198,57 @@ public class CPFTTreasuryTest extends TestBase {
     }
 
     void setRouterScoreExceptions(Account address, Address _score) {
-        try {
+        VarDB<Address> cpsScore = mock(VarDB.class);
+        try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
+            theMock.when(() -> Context.call(cpsScore.get(), "is_admin", Context.getCaller())).thenReturn(false);
             tokenScore.invoke(address, "setRouterScore", _score);
         } catch (Exception e) {
             throw e;
         }
     }
 
-    @Test
-    void setCPSScoreNotOwner() {
-        Executable setCPSScoreNotOwner = () -> setCPSScoreExceptions(testing_account, score_address);
-        expectErrorMessage(setCPSScoreNotOwner, TAG + ": Only owner can call this method");
-    }
-
-    @Test
-    void setCPSTreasuryScoreNotOwner() {
-        Executable setCPSTreasuryScoreNotOwner = () -> setCPSTreasuryScoreExceptions(testing_account, score_address);
-        expectErrorMessage(setCPSTreasuryScoreNotOwner, TAG + ": Only owner can call this method");
-    }
-
-    @Test
-    void setBNUSDScoreNotOwner() {
-        Executable setbnUSDScoreNotOwner = () -> setBNUSDScoreExceptions(testing_account, score_address);
-        expectErrorMessage(setbnUSDScoreNotOwner, TAG + ": Only owner can call this method");
-    }
-
-    @Test
-    void setSICXScoreNotOwner() {
-        Executable setSICXScoreNotOwner = () -> setSICXScoreExceptions(testing_account, score_address);
-        expectErrorMessage(setSICXScoreNotOwner, TAG + ": Only owner can call this method");
-    }
-
-    @Test
-    void setDEXScoreNotOwner() {
-        Executable setDEXScoreNotOwner = () -> setDEXScoreExceptions(testing_account, score_address);
-        expectErrorMessage(setDEXScoreNotOwner, TAG + ": Only owner can call this method");
-    }
-
-    @Test
-    void setRouterScoreNotOwner() {
-        Executable setRouterScoreNotOwner = () -> setRouterScoreExceptions(testing_account, score_address);
-        expectErrorMessage(setRouterScoreNotOwner, TAG + ": Only owner can call this method");
-    }
+//    @Test
+//    void setCPSScoreNotAdmin() {
+//        Executable setCPSScoreNotOwner = () -> setCPSScoreExceptions(testing_account, score_address);
+//        expectErrorMessage(setCPSScoreNotOwner, TAG + ": Only owner can call this method");
+//    }
+//
+//    @Test
+//    void setCPSTreasuryScoreNotAdmin() {
+//        Executable setCPSTreasuryScoreNotOwner = () -> setCPSTreasuryScoreExceptions(testing_account, score_address);
+//        expectErrorMessage(setCPSTreasuryScoreNotOwner, TAG + ": Only owner can call this method");
+//    }
+//
+//    @Test
+//    void setBNUSDScoreNotAdmin() {
+//        Executable setbnUSDScoreNotOwner = () -> setBNUSDScoreExceptions(testing_account, score_address);
+//        expectErrorMessage(setbnUSDScoreNotOwner, TAG + ": Only owner can call this method");
+//    }
+//
+//    @Test
+//    void setSICXScoreNotAdmin() {
+//        Executable setSICXScoreNotOwner = () -> setSICXScoreExceptions(testing_account, score_address);
+//        expectErrorMessage(setSICXScoreNotOwner, TAG + ": Only owner can call this method");
+//    }
+//
+//    @Test
+//    void setDEXScoreNotAdmin() {
+//        Executable setDEXScoreNotOwner = () -> setDEXScoreExceptions(testing_account, score_address);
+//        expectErrorMessage(setDEXScoreNotOwner, TAG + ": Only owner can call this method");
+//    }
+//
+//    @Test
+//    void setRouterScoreNotAdmin() {
+//        Executable setRouterScoreNotOwner = () -> setRouterScoreExceptions(testing_account, score_address);
+//        expectErrorMessage(setRouterScoreNotOwner, TAG + ": Only owner can call this method");
+//    }
 
     @Test
     void transferProposalFundToCPSTreasury() {
-        tokenScore.invoke(owner, "setCpsScore", score_address);
-        tokenScore.invoke(owner, "setBnUSDScore", score_address);
-        tokenScore.invoke(owner, "setCpsTreasuryScore", score_address);
 
-        VarDB<Address> balancedDollar = Mockito.mock(VarDB.class);
-        VarDB<Address> cpsTreasuryScore = Mockito.mock(VarDB.class);
-
+        setBMUSDScoreMethod(bnUSDScore);
+        setCPSTreasuryScoreMetod(cpsTreasuryScore);
+        setCPSScoreMethod(score_address);
 
         try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
             theMock.
@@ -217,7 +256,7 @@ public class CPFTTreasuryTest extends TestBase {
                     thenReturn(score_address);
             Mockito.when(proposalBudgets.getOrDefault("Proposal 1", null)).thenReturn(BigInteger.valueOf(10));
             theMock.when(() -> Context.getAddress()).thenReturn(tokenScore.getAddress());
-            theMock.when(() -> Context.call(BigInteger.class, score_address, "balanceOf", tokenScore.getAddress())).thenReturn(BigInteger.valueOf(1000).multiply(MULTIPLIER));
+            theMock.when(() -> Context.call(BigInteger.class, bnUSDScore, "balanceOf", tokenScore.getAddress())).thenReturn(BigInteger.valueOf(1000).multiply(MULTIPLIER));
             tokenScore.invoke(owner, "transfer_proposal_fund_to_cps_treasury", "Proposal 1", 2, testing_account.getAddress(), testing_account2.getAddress(), "bnUSD", BigInteger.valueOf(100).multiply(MULTIPLIER));
 
             JsonObject depositProposal = new JsonObject();
@@ -231,7 +270,7 @@ public class CPFTTreasuryTest extends TestBase {
             params.add("sponsor_reward", BigInteger.valueOf(2).multiply(MULTIPLIER).toString(16));
             params.add("token", "bnUSD");
             depositProposal.add("params", params);
-            theMock.verify(() -> Context.call(score_address, "transfer", score_address, BigInteger.valueOf(102).multiply(MULTIPLIER), depositProposal.toString().getBytes()), times(1));
+            theMock.verify(() -> Context.call(bnUSDScore, "transfer", cpsTreasuryScore, BigInteger.valueOf(102).multiply(MULTIPLIER), depositProposal.toString().getBytes()), times(1));
         } catch (Exception e) {
             throw e;
         }
@@ -290,11 +329,11 @@ public class CPFTTreasuryTest extends TestBase {
 
     @Test
     void swapIcxBnusd(){
-        tokenScore.invoke(owner, "setSicxScore", score_address);
-        tokenScore.invoke(owner, "setBnUSDScore", score_address);
+        setSICXScoreMethod(sicxScore);
+        setBMUSDScoreMethod(bnUSDScore);
         try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
             VarDB<Address> routerScore = mock(VarDB.class);
-            Address[] path = new Address[]{score_address, score_address};
+            Address[] path = new Address[]{sicxScore, bnUSDScore};
             Object[] params = new Object[]{path};
             theMock.when(() -> Context.call(BigInteger.valueOf(10).multiply(MULTIPLIER), routerScore.get(), "route", params)).thenReturn(null);
             tokenScore.invoke(owner, "swapIcxBnusd", BigInteger.valueOf(10).multiply(MULTIPLIER));
@@ -327,7 +366,6 @@ public class CPFTTreasuryTest extends TestBase {
         setMaxCapIcxAndBnusd();
         VarDB<Address> balancedDollar = mock(VarDB.class);
         VarDB<Address> dexScore = mock(VarDB.class);
-        VarDB<Address> cpsScore = mock(VarDB.class);
 
         transferProposalFundMethod();
         try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
@@ -346,7 +384,6 @@ public class CPFTTreasuryTest extends TestBase {
         setMaxCapIcxAndBnusd();
         VarDB<Address> balancedDollar = mock(VarDB.class);
         VarDB<Address> dexScore = mock(VarDB.class);
-        VarDB<Address> cpsScore = mock(VarDB.class);
 
         transferProposalFundMethod();
         try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
@@ -363,10 +400,9 @@ public class CPFTTreasuryTest extends TestBase {
     @Test
     void resetSwapState() {
         setMaxCapIcxAndBnusd();
-        VarDB<Address> cpsScore = mock(VarDB.class);
         VarDB<Integer> swapState = mock(VarDB.class);
         swapState.set(10);
-        tokenScore.invoke(owner, "setCpsScore", score_address);
+        setCPSScoreMethod(score_address);
         try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
             theMock.when(() -> Context.getCaller()).thenReturn(testing_account.getAddress());
             theMock.when(() -> Context.call(score_address, "is_admin", Context.getCaller())).thenReturn(true);
@@ -377,8 +413,7 @@ public class CPFTTreasuryTest extends TestBase {
 
     private void transferProposalFundMethod() {
         VarDB<Address> balancedDollar = mock(VarDB.class);
-
-        tokenScore.invoke(owner, "setCpsScore", score_address);
+        setCPSScoreMethod(score_address);
         try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
             theMock.when(() -> Context.getCaller()).thenReturn(score_address);
             theMock.when(() -> Context.call(BigInteger.class, balancedDollar.get(), "balanceOf", Context.getAddress())).thenReturn(BigInteger.valueOf(1000).multiply(MULTIPLIER));
@@ -387,21 +422,20 @@ public class CPFTTreasuryTest extends TestBase {
 
 
         }
-        System.out.println(tokenScore.call("get_proposal_details", 0, 5));
     }
 
     @Test
     void addFundExtraICX(){
         setMaxCapIcxAndBnusd();
         VarDB<Address> balancedDollar = mock(VarDB.class);
-        tokenScore.invoke(owner, "setCpsScore", score_address);
-        tokenScore.invoke(owner, "setBnUSDScore", score_address);
-        tokenScore.invoke(owner, "setDexScore", score_address);
-        tokenScore.invoke(owner, "setSicxScore", score_address);
+        setBMUSDScoreMethod(bnUSDScore);
+        setDEXScoreMethod(dexScore);
+        setSICXScoreMethod(sicxScore);
+        setCPSScoreMethod(score_address);
 
         try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
             theMock.when(() -> Context.getBalance(Context.getAddress())).thenReturn(BigInteger.valueOf(2001).multiply(MULTIPLIER));
-            theMock.when(() -> Context.call(score_address, "balanceOf", Context.getAddress())).thenReturn(BigInteger.valueOf(2000).multiply(MULTIPLIER));
+            theMock.when(() -> Context.call(bnUSDScore, "balanceOf", Context.getAddress())).thenReturn(BigInteger.valueOf(2000).multiply(MULTIPLIER));
             tokenScore.invoke(owner, "add_fund");
             theMock.verify(() -> Context.call(BigInteger.valueOf(1).multiply(MULTIPLIER), score_address, "burn"), times(1));
 
@@ -416,30 +450,31 @@ public class CPFTTreasuryTest extends TestBase {
     private void addFundMethod() {
         setMaxCapIcxAndBnusd();
         VarDB<Address> balancedDollar = mock(VarDB.class);
-        tokenScore.invoke(owner, "setCpsScore", score_address);
-        tokenScore.invoke(owner, "setBnUSDScore", score_address);
-        tokenScore.invoke(owner, "setDexScore", score_address);
-        tokenScore.invoke(owner, "setSicxScore", score_address);
+        setBMUSDScoreMethod(bnUSDScore);
+        setDEXScoreMethod(dexScore);
+        setSICXScoreMethod(sicxScore);
+        setCPSScoreMethod(score_address);
 
         try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
             theMock.when(() -> Context.getBalance(Context.getAddress())).thenReturn(BigInteger.valueOf(2000).multiply(MULTIPLIER));
-            theMock.when(() -> Context.call(score_address, "balanceOf", Context.getAddress())).thenReturn(BigInteger.valueOf(2001).multiply(MULTIPLIER));
+            theMock.when(() -> Context.call(bnUSDScore, "balanceOf", Context.getAddress())).thenReturn(BigInteger.valueOf(2001).multiply(MULTIPLIER));
             tokenScore.invoke(owner, "add_fund");
             JsonObject swapData = new JsonObject();
             swapData.add("method", "_swap");
             JsonObject params = new JsonObject();
-            params.add("toToken", score_address.toString());
+            params.add("toToken", sicxScore.toString());
             swapData.add("params", params);
-            theMock.verify(() -> Context.call(score_address, "transfer", score_address, BigInteger.ONE.multiply(MULTIPLIER), swapData.toString().getBytes()));
+            theMock.verify(() -> Context.call(bnUSDScore, "transfer", dexScore, BigInteger.ONE.multiply(MULTIPLIER), swapData.toString().getBytes()));
         }
     }
 
     @Test
     void tokenFallbackCallerIsSicxFromIsDex(){
-        tokenScore.invoke(owner, "setCpsScore", score_address);
-        tokenScore.invoke(owner, "setBnUSDScore", bnUSDScore);
-        tokenScore.invoke(owner, "setDexScore", dexScore);
-        tokenScore.invoke(owner, "setSicxScore", sicxScore);
+        setBMUSDScoreMethod(bnUSDScore);
+        setDEXScoreMethod(dexScore);
+        setSICXScoreMethod(sicxScore);
+        setCPSScoreMethod(score_address);
+
         try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
             theMock.when(() -> Context.getCaller()).thenReturn(sicxScore);
             String data = "data";
@@ -452,10 +487,11 @@ public class CPFTTreasuryTest extends TestBase {
 
     @Test
     void tokenFallbackCallerIsSicxFromNotDex(){
-        tokenScore.invoke(owner, "setCpsScore", score_address);
-        tokenScore.invoke(owner, "setBnUSDScore", bnUSDScore);
-        tokenScore.invoke(owner, "setDexScore", dexScore);
-        tokenScore.invoke(owner, "setSicxScore", sicxScore);
+        setBMUSDScoreMethod(bnUSDScore);
+        setDEXScoreMethod(dexScore);
+        setSICXScoreMethod(sicxScore);
+        setCPSScoreMethod(score_address);
+
         try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
             theMock.when(() -> Context.getCaller()).thenReturn(sicxScore);
             String data = "data";
@@ -470,10 +506,11 @@ public class CPFTTreasuryTest extends TestBase {
     @Test
     void tokenFallBackCallerNotSicx(){
         setMaxCapIcxAndBnusd();
-        tokenScore.invoke(owner, "setBnUSDScore", score_address);
-        tokenScore.invoke(owner, "setBnUSDScore", bnUSDScore);
-        tokenScore.invoke(owner, "setDexScore", dexScore);
-        tokenScore.invoke(owner, "setSicxScore", sicxScore);
+        setBMUSDScoreMethod(bnUSDScore);
+        setDEXScoreMethod(dexScore);
+        setSICXScoreMethod(sicxScore);
+        setCPSScoreMethod(score_address);
+
         try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
             theMock.when(() -> Context.getCaller()).thenReturn(dexScore);
             theMock.when(() -> Context.getBalance(Context.getAddress())).thenReturn(BigInteger.valueOf(2000).multiply(MULTIPLIER));
@@ -495,10 +532,12 @@ public class CPFTTreasuryTest extends TestBase {
     @Test
     void tokenFallBackFromIsCpsScoreMethodReturnFundAmount(){
         setMaxCapIcxAndBnusd();
-        tokenScore.invoke(owner, "setCpsScore", score_address);
-        tokenScore.invoke(owner, "setBnUSDScore", bnUSDScore);
-        tokenScore.invoke(owner, "setDexScore", dexScore);
-        tokenScore.invoke(owner, "setSicxScore", sicxScore);
+
+        setBMUSDScoreMethod(bnUSDScore);
+        setDEXScoreMethod(dexScore);
+        setSICXScoreMethod(sicxScore);
+        setCPSScoreMethod(score_address);
+
         try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
             theMock.when(() -> Context.getCaller()).thenReturn(dexScore);
             theMock.when(() -> Context.getBalance(Context.getAddress())).thenReturn(BigInteger.valueOf(2000).multiply(MULTIPLIER));
@@ -521,10 +560,12 @@ public class CPFTTreasuryTest extends TestBase {
     @Test
     void tokenFallBackFromIsCpsScoreMethodBurnAmount(){
         setMaxCapIcxAndBnusd();
-        tokenScore.invoke(owner, "setCpsScore", score_address);
-        tokenScore.invoke(owner, "setBnUSDScore", bnUSDScore);
-        tokenScore.invoke(owner, "setDexScore", dexScore);
-        tokenScore.invoke(owner, "setSicxScore", sicxScore);
+
+        setBMUSDScoreMethod(bnUSDScore);
+        setDEXScoreMethod(dexScore);
+        setSICXScoreMethod(sicxScore);
+        setCPSScoreMethod(score_address);
+
         try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
             theMock.when(() -> Context.getCaller()).thenReturn(dexScore);
             theMock.when(() -> Context.getBalance(Context.getAddress())).thenReturn(BigInteger.valueOf(2000).multiply(MULTIPLIER));
@@ -547,12 +588,18 @@ public class CPFTTreasuryTest extends TestBase {
     @Test
     void tokenFallBackFromIsCpsTreasuryScore(){
         setMaxCapIcxAndBnusd();
-        transferProposalFundMethod();
-        tokenScore.invoke(owner, "setCpsScore", score_address);
-        tokenScore.invoke(owner, "setBnUSDScore", bnUSDScore);
-        tokenScore.invoke(owner, "setDexScore", dexScore);
-        tokenScore.invoke(owner, "setSicxScore", sicxScore);
-        tokenScore.invoke(owner, "setCpsTreasuryScore", cpsTreasuryScore);
+        setBMUSDScoreMethod(bnUSDScore);
+        setDEXScoreMethod(dexScore);
+        setSICXScoreMethod(sicxScore);
+        setCPSTreasuryScoreMetod(cpsTreasuryScore);
+        setCPSScoreMethod(score_address);
+
+        try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
+            theMock.when(() -> Context.getCaller()).thenReturn(score_address);
+            theMock.when(() -> Context.call(BigInteger.class, bnUSDScore, "balanceOf", Context.getAddress())).thenReturn(BigInteger.valueOf(1000).multiply(MULTIPLIER));
+            tokenScore.invoke(owner, "transfer_proposal_fund_to_cps_treasury", "Proposal 1", 2, testing_account.getAddress(), testing_account2.getAddress(), "bnUSD", BigInteger.valueOf(100).multiply(MULTIPLIER));
+            tokenScore.invoke(owner, "transfer_proposal_fund_to_cps_treasury", "Proposal 2", 2, testing_account.getAddress(), testing_account2.getAddress(), "bnUSD", BigInteger.valueOf(110).multiply(MULTIPLIER));
+        }
 
         try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
             theMock.when(() -> Context.getCaller()).thenReturn(dexScore);
@@ -582,10 +629,12 @@ public class CPFTTreasuryTest extends TestBase {
     @Test
     void tokenFallBackFromIsCpsScoreInvalidMethod(){
         setMaxCapIcxAndBnusd();
-        tokenScore.invoke(owner, "setCpsScore", score_address);
-        tokenScore.invoke(owner, "setBnUSDScore", bnUSDScore);
-        tokenScore.invoke(owner, "setDexScore", dexScore);
-        tokenScore.invoke(owner, "setSicxScore", sicxScore);
+
+        setBMUSDScoreMethod(bnUSDScore);
+        setDEXScoreMethod(dexScore);
+        setSICXScoreMethod(sicxScore);
+        setCPSScoreMethod(score_address);
+
         try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
             theMock.when(() -> Context.getCaller()).thenReturn(dexScore);
             theMock.when(() -> Context.getBalance(Context.getAddress())).thenReturn(BigInteger.valueOf(2000).multiply(MULTIPLIER));
@@ -603,12 +652,19 @@ public class CPFTTreasuryTest extends TestBase {
     @Test
     void tokenFallBackFromIsCpsTreasuryScoreInvalidMethod(){
         setMaxCapIcxAndBnusd();
-        transferProposalFundMethod();
-        tokenScore.invoke(owner, "setCpsScore", score_address);
-        tokenScore.invoke(owner, "setBnUSDScore", bnUSDScore);
-        tokenScore.invoke(owner, "setDexScore", dexScore);
-        tokenScore.invoke(owner, "setSicxScore", sicxScore);
-        tokenScore.invoke(owner, "setCpsTreasuryScore", cpsTreasuryScore);
+
+        setBMUSDScoreMethod(bnUSDScore);
+        setDEXScoreMethod(dexScore);
+        setSICXScoreMethod(sicxScore);
+        setCPSTreasuryScoreMetod(cpsTreasuryScore);
+        setCPSScoreMethod(score_address);
+
+        try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
+            theMock.when(() -> Context.getCaller()).thenReturn(score_address);
+            theMock.when(() -> Context.call(BigInteger.class, bnUSDScore, "balanceOf", Context.getAddress())).thenReturn(BigInteger.valueOf(1000).multiply(MULTIPLIER));
+            tokenScore.invoke(owner, "transfer_proposal_fund_to_cps_treasury", "Proposal 1", 2, testing_account.getAddress(), testing_account2.getAddress(), "bnUSD", BigInteger.valueOf(100).multiply(MULTIPLIER));
+            tokenScore.invoke(owner, "transfer_proposal_fund_to_cps_treasury", "Proposal 2", 2, testing_account.getAddress(), testing_account2.getAddress(), "bnUSD", BigInteger.valueOf(110).multiply(MULTIPLIER));
+        }
 
         try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
             theMock.when(() -> Context.getCaller()).thenReturn(dexScore);
@@ -626,7 +682,7 @@ public class CPFTTreasuryTest extends TestBase {
 
     @Test
     void fallback(){
-        tokenScore.invoke(owner, "setDexScore", dexScore);
+        setDEXScoreMethod(dexScore);
         try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
             theMock.when(() -> Context.getCaller()).thenReturn(dexScore);
             theMock.when(() -> Context.getValue()).thenReturn(BigInteger.valueOf(1000).multiply(MULTIPLIER));
@@ -637,7 +693,7 @@ public class CPFTTreasuryTest extends TestBase {
 
     @Test
     void fallbackSenderIsNotDex(){
-        tokenScore.invoke(owner, "setDexScore", dexScore);
+        setDEXScoreMethod(dexScore);
         try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
             theMock.when(() -> Context.getCaller()).thenReturn(sicxScore);
             theMock.when(() -> Context.getValue()).thenReturn(BigInteger.valueOf(1000).multiply(MULTIPLIER));
@@ -651,6 +707,57 @@ public class CPFTTreasuryTest extends TestBase {
         AssertionError e = Assertions.assertThrows(AssertionError.class, contractCall);
         assertEquals(errorMessage, e.getMessage());
     }
+
+    void setCPSScoreMethod(Address scoreAddress) {
+        VarDB<Address> cpsScore = mock(VarDB.class);
+        try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
+            theMock.when(() -> Context.call(cpsScore.get(), "is_admin", Context.getCaller())).thenReturn(true);
+            tokenScore.invoke(owner, "setCpsScore", scoreAddress);
+        }
+    }
+
+    void setCPSTreasuryScoreMetod(Address scoreAddress) {
+        VarDB<Address> cpsScore = mock(VarDB.class);
+        try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
+            theMock.when(() -> Context.call(cpsScore.get(), "is_admin", Context.getCaller())).thenReturn(true);
+            tokenScore.invoke(owner, "setCpsTreasuryScore", scoreAddress);
+        }
+    }
+
+    void setBMUSDScoreMethod(Address scoreAddress) {
+        VarDB<Address> cpsScore = mock(VarDB.class);
+        try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
+            theMock.when(() -> Context.call(cpsScore.get(), "is_admin", Context.getCaller())).thenReturn(true);
+            tokenScore.invoke(owner, "setBnUSDScore", scoreAddress);
+        }
+    }
+
+    void setSICXScoreMethod(Address scoreAddress) {
+        VarDB<Address> cpsScore = mock(VarDB.class);
+        try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
+            theMock.when(() -> Context.call(cpsScore.get(), "is_admin", Context.getCaller())).thenReturn(true);
+            tokenScore.invoke(owner, "setSicxScore", scoreAddress);
+        }
+    }
+
+    void setDEXScoreMethod(Address scoreAddress) {
+        VarDB<Address> cpsScore = mock(VarDB.class);
+        try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
+            theMock.when(() -> Context.call(cpsScore.get(), "is_admin", Context.getCaller())).thenReturn(true);
+            tokenScore.invoke(owner, "setDexScore", scoreAddress);
+        }
+    }
+
+    void setRouterScoreMethod(Address scoreAddress) {
+        VarDB<Address> cpsScore = mock(VarDB.class);
+        try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
+            theMock.when(() -> Context.call(cpsScore.get(), "is_admin", Context.getCaller())).thenReturn(true);
+            tokenScore.invoke(owner, "setRouterScore", score_address);
+        }
+    }
+
+
+
 }
 
 
