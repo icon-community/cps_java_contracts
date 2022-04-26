@@ -1,8 +1,7 @@
-package community.icon.cps.score.CPSTreasury.db;
+package community.icon.cps.score.cpstreasury.db;
 
-import jdk.jshell.Snippet;
 import score.*;
-import community.icon.cps.score.CPSTreasury.utils.consts;
+import community.icon.cps.score.cpstreasury.utils.consts;
 
 import java.math.BigInteger;
 import java.util.Map;

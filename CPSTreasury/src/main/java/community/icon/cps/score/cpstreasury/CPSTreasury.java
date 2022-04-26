@@ -1,6 +1,6 @@
-package community.icon.cps.score.CPSTreasury;
+package community.icon.cps.score.cpstreasury;
 
-import community.icon.cps.score.CPSTreasury.db.ProposalData;
+import community.icon.cps.score.cpstreasury.db.ProposalData;
 import score.*;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
@@ -13,7 +13,7 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-import community.icon.cps.score.CPSTreasury.utils.consts;
+import community.icon.cps.score.cpstreasury.utils.consts;
 
 public class CPSTreasury extends ProposalData{
     private static final String TAG = "CPS_Treasury";

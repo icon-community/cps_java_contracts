@@ -1,5 +1,4 @@
-package community.icon.cps.score.CPSTreasury;
-import com.eclipsesource.json.JsonObject;
+package community.icon.cps.score.cpstreasury;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
@@ -8,19 +7,13 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
-import org.mockito.Answers;
-import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import score.Address;
-import score.Context;
 import score.DictDB;
 import score.VarDB;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;

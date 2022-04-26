@@ -1,4 +1,4 @@
-package community.icon.cps.score.CPSTreasury.utils;
+package community.icon.cps.score.cpstreasury.utils;
 
 import java.math.BigInteger;
 

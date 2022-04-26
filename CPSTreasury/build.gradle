@@ -15,7 +15,7 @@ dependencies {
 }
 
 optimizedJar {
-    mainClassName = 'community.icon.cps.score.CPSTreasury.CPSTreasury'
+    mainClassName = 'community.icon.cps.score.cpstreasury.CPSTreasury'
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
@@ -40,11 +40,6 @@ deployJar {
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
     parameters {
-        arg('name', 'CPSTreasury')
-        arg('symbol', 'CPSTreasury')
-//        arg('decimals', '0x12')
-//        arg('initialSupply', '0x3e8')
-//        arg('on_update_var','0x0')
     }
 }
 
