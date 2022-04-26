@@ -411,9 +411,9 @@ public class CPSTreasury extends ProposalData {
         JsonObject params = jsonObject.get("params").asObject();
         if (jsonObject.get("method").asString().equals("deposit_proposal_fund")) {
             String ipfs_hash = params.get("ipfs_hash").asString();
-            int project_duration = Integer.parseInt(params.get("project_duration").asString());
-            BigInteger total_budget = new BigInteger(params.get("total_budget").asString());
-            BigInteger sponsor_reward = new BigInteger(params.get("sponsor_reward").asString());
+            int project_duration = params.get("project_duration").asInt();
+            BigInteger total_budget = new BigInteger(params.get("total_budget").asString(), 16);
+            BigInteger sponsor_reward = new BigInteger(params.get("sponsor_reward").asString(), 16);
             String token = params.get("token").asString();
             String contributor_address = params.get("contributor_address").asString();
             String sponsor_address = params.get("sponsor_address").asString();
@@ -429,9 +429,9 @@ public class CPSTreasury extends ProposalData {
             depositProposalFund(proposalAttributes, _value);
         } else if (jsonObject.get("method").asString().equals("budget_adjustment")) {
             String ipfs_key = params.get("_ipfs_key").asString();
-            BigInteger added_budget = new BigInteger(params.get("_added_budget").asString());
-            BigInteger added_sponsor_reward = new BigInteger(params.get("_added_sponsor_reward").asString());
-            int added_installment_count = Integer.parseInt(params.get("_added_installment_count").asString());
+            BigInteger added_budget = new BigInteger(params.get("_added_budget").asString(), 16);
+            BigInteger added_sponsor_reward = new BigInteger(params.get("_added_sponsor_reward").asString(), 16);
+            int added_installment_count = params.get("_added_installment_count").asInt();
 
             update_proposal_fund(ipfs_key, added_budget, added_sponsor_reward, added_installment_count);
         } else {
