@@ -298,11 +298,7 @@ public class CPSTreasury extends ProposalData{
         BigInteger installmentAmount = BigInteger.ZERO;
         String prefix = proposalPrefix(_ipfs_key);
         Map<String, ?> proposalData = getDataFromProposalDB(prefix);
-//        int installmentCount = ProposalData.installmentCount.at(prefix).getOrDefault(0);
-//        BigInteger withdrawAmount = ProposalData.withdrawAmount.at(prefix).getOrDefault(BigInteger.ZERO);
-//        BigInteger remainingAmount = ProposalData.remainingAmount.at(prefix).getOrDefault(BigInteger.ZERO);
-//        Address contributorAddress = ProposalData.contributorAddress.at(prefix).get();
-//        String flag = ProposalData.token.at(prefix).get();
+
         int installmentCount = (int) proposalData.get(consts.INSTALLMENT_COUNT);
         BigInteger withdrawAmount = (BigInteger) proposalData.get(consts.WITHDRAW_AMOUNT);
         BigInteger remainingAmount = (BigInteger) proposalData.get(consts.REMAINING_AMOUNT);
@@ -320,12 +316,12 @@ public class CPSTreasury extends ProposalData{
 //            ProposalData.remainingAmount.at(prefix).set(remainingAmount.subtract(installmentAmount));
 //            ProposalData.withdrawAmount.at(prefix).set(withdrawAmount.add(installmentAmount));
 
-            setInstallmentCount(prefix, newInstallmentCount);
-            setRemainingAmount(prefix, remainingAmount.subtract(installmentAmount));
-            setWithdrawAmount(prefix, withdrawAmount.add(installmentAmount));
-            installmentFundRecord.at(contributorAddress.toString()).set(flag,
-                    installmentFundRecord.at(contributorAddress.toString()).get(flag).add(installmentAmount));
-            ProposalFundSent(contributorAddress, "new installment " + installmentAmount + " " + flag + " sent to contributors address.");
+        setInstallmentCount(prefix, newInstallmentCount);
+        setRemainingAmount(prefix, remainingAmount.subtract(installmentAmount));
+        setWithdrawAmount(prefix, withdrawAmount.add(installmentAmount));
+        installmentFundRecord.at(contributorAddress.toString()).set(flag,
+                installmentFundRecord.at(contributorAddress.toString()).get(flag).add(installmentAmount));
+        ProposalFundSent(contributorAddress, "new installment " + installmentAmount + " " + flag + " sent to contributors address.");
 
             if (newInstallmentCount == 0){
 //                ProposalData.status.at(prefix).set(COMPLETED);
@@ -344,12 +340,6 @@ public class CPSTreasury extends ProposalData{
         Context.require(proposalExists(_ipfs_key), TAG + ": Invalid IPFS Hash.");
         BigInteger installmentAmount = BigInteger.ZERO;
         String prefix = proposalPrefix(_ipfs_key);
-//        Map<String, ?> proposalData = getDataFromProposalDB(prefix);
-//        int sponsorRewardCount = ProposalData.sponsorRewardCount.at(prefix).getOrDefault(0);
-//        BigInteger sponsorWithdrawAmount = ProposalData.sponsorWithdrawAmount.at(prefix).getOrDefault(BigInteger.ZERO);
-//        BigInteger sponsorRemainingAmount = ProposalData.sponsorRemainingAmount.at(prefix).getOrDefault(BigInteger.ZERO);
-//        Address sponsorAddress = ProposalData.sponsorAddress.at(prefix).get();
-//        String flag = ProposalData.token.at(prefix).get();
 
         int sponsorRewardCount = getSponsorRewardCount(prefix);
         BigInteger sponsorWithdrawAmount = getSponsorWithdrawAmount(prefix);
@@ -368,16 +358,12 @@ public class CPSTreasury extends ProposalData{
 //            ProposalData.sponsorWithdrawAmount.at(prefix).set(sponsorWithdrawAmount.add(installmentAmount));
 //            ProposalData.sponsorRemainingAmount.at(prefix).set(sponsorRemainingAmount.subtract(installmentAmount));
 
-            setSponsorRewardCount(prefix, newSponsorRewardCount);
-            setSponsorWithdrawAmount(prefix, sponsorWithdrawAmount.add(installmentAmount));
-            setSponsorRemainingAmount(prefix, sponsorRemainingAmount.subtract(installmentAmount));
-            installmentFundRecord.at(sponsorAddress.toString()).set(flag, installmentFundRecord.at(sponsorAddress.toString()).get(flag).add(installmentAmount));
-            ProposalFundSent(sponsorAddress, "New installment " + installmentAmount + " " +
-                    flag + " sent to sponsor address.");
-        }
-        catch (Exception e){
-            Context.revert(TAG + ": Network problem. Sending project funds to sponsor.");
-        }
+        setSponsorRewardCount(prefix, newSponsorRewardCount);
+        setSponsorWithdrawAmount(prefix, sponsorWithdrawAmount.add(installmentAmount));
+        setSponsorRemainingAmount(prefix, sponsorRemainingAmount.subtract(installmentAmount));
+        installmentFundRecord.at(sponsorAddress.toString()).set(flag, installmentFundRecord.at(sponsorAddress.toString()).get(flag).add(installmentAmount));
+        ProposalFundSent(sponsorAddress, "New installment " + installmentAmount + " " +
+                flag + " sent to sponsor address.");
     }
 
     @External
