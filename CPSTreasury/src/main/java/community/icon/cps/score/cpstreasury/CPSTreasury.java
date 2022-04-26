@@ -15,7 +15,7 @@ import java.util.Map;
 
 import community.icon.cps.score.cpstreasury.utils.consts;
 
-public class CPSTreasury extends ProposalData{
+public class CPSTreasury extends ProposalData {
     private static final String TAG = "CPS_Treasury";
     private static final String PROPOSAL_DB_PREFIX = "proposal";
 
@@ -58,57 +58,58 @@ public class CPSTreasury extends ProposalData{
     private final VarDB<Address> cpsScore = Context.newVarDB(CPS_SCORE, Address.class);
     private final VarDB<Address> balancedDollar = Context.newVarDB(BALANCED_DOLLAR, Address.class);
 
-    public  CPSTreasury(){
+    public CPSTreasury() {
     }
 
     @External(readonly = true)
-    public String name(){
+    public String name() {
         return TAG;
     }
+
     @Payable
-    public void fallback(){
+    public void fallback() {
         Context.revert(TAG + ": ICX can only be send by CPF Treasury Score");
     }
 
-    private void setId(String _val){
+    private void setId(String _val) {
         id.set(_val);
     }
 
-    private String getId(){
+    private String getId() {
         return id.get();
     }
 
-    private String proposalPrefix(String _proposal_key){
+    private String proposalPrefix(String _proposal_key) {
         return PROPOSAL_DB_PREFIX + "|" + id.get() + "|" + _proposal_key;
     }
 
-    private Boolean proposalExists(String _ipfs_key){
+    private Boolean proposalExists(String _ipfs_key) {
         return proposalsKeyListIndex.getOrDefault(_ipfs_key, null) != null;
     }
 
-    private void validateAdmins(){
+    private void validateAdmins() {
         Boolean isAdmin = callScore(Boolean.class, cpsScore.get(), "is_admin", Context.getCaller());
         Context.require(isAdmin,
                 TAG + ": Only admins can call this method");
 
     }
 
-    private void validateAdminScore(Address _score){
+    private void validateAdminScore(Address _score) {
         validateAdmins();
         Context.require(_score.isContract(), TAG + "Target " + _score + " is not a score.");
     }
 
-    private void validateCpsScore(){
+    private void validateCpsScore() {
         Context.require(Context.getCaller().equals(cpsScore.get()),
                 TAG + ": Only CPS score " + cpsScore.get() + " can send fund using this method.");
     }
 
-    private void validateCpfTreasuryScore(){
+    private void validateCpfTreasuryScore() {
         Context.require(Context.getCaller().equals(cpfTreasuryScore.get()),
                 TAG + ": Only CPF Treasury score " + cpfTreasuryScore.get() + " can send fund using this method.");
     }
 
-    private void addRecord(ProposalData.ProposalAttributes _proposal){
+    private void addRecord(ProposalData.ProposalAttributes _proposal) {
         ProposalData proposalData = new ProposalData();
         String ipfs_hash = _proposal.ipfs_hash;
         Context.require(!proposalExists(ipfs_hash), TAG + ": Already have this project");
@@ -117,58 +118,58 @@ public class CPSTreasury extends ProposalData{
         proposalsKeyListIndex.set(ipfs_hash, proposalsKeys.size() - 1);
     }
 
-    private Map<String, ?> getProjects(String _proposal_key){
+    private Map<String, ?> getProjects(String _proposal_key) {
         ProposalData proposalData = new ProposalData();
         return proposalData.getDataFromProposalDB(_proposal_key);
     }
 
     @External
-    public void setCpsScore(Address _score){
+    public void setCpsScore(Address _score) {
         validateAdminScore(_score);
         cpsScore.set(_score);
     }
 
     @External(readonly = true)
-    public Address getCpsScore(){
+    public Address getCpsScore() {
         return cpsScore.get();
     }
 
     @External
-    public void setCpfTreasuryScore(Address _score){
+    public void setCpfTreasuryScore(Address _score) {
         validateAdminScore(_score);
         cpfTreasuryScore.set(_score);
     }
 
     @External(readonly = true)
-    public Address getCpfTreasuryScore(){
+    public Address getCpfTreasuryScore() {
         return cpfTreasuryScore.get();
     }
 
     @External
-    public void setBnUSDScore(Address _score){
+    public void setBnUSDScore(Address _score) {
         validateAdminScore(_score);
         balancedDollar.set(_score);
     }
 
     @External
-    public Address getBnUSDScore(){
+    public Address getBnUSDScore() {
         return balancedDollar.get();
     }
 
     @External(readonly = true)
-    public Map<String, ?> get_contributor_projected_fund(Address _wallet_address){
+    public Map<String, ?> get_contributor_projected_fund(Address _wallet_address) {
         ProposalData proposalData = new ProposalData();
         BigInteger totalAmountToBePaidICX = BigInteger.ZERO;
         BigInteger totalAmountToBePaidbnUSD = BigInteger.ZERO;
         List<Map<String, String>> projectDetails = new ArrayList<>();
-        for (int i = 0; i < proposalsKeys.size(); i++){
+        for (int i = 0; i < proposalsKeys.size(); i++) {
             String _ipfs_key = proposalsKeys.get(i);
             Map<String, ?> proposal_details = proposalData.getDataFromProposalDB(_ipfs_key);
-            if (proposal_details.get(consts.STATUS).equals(DISQUALIFIED)){
-                if (proposal_details.get(consts.SPONSOR_ADDRESS).equals(_wallet_address.toString())){
+            if (proposal_details.get(consts.STATUS).equals(DISQUALIFIED)) {
+                if (proposal_details.get(consts.SPONSOR_ADDRESS).equals(_wallet_address.toString())) {
                     int totalInstallment = (int) proposal_details.get(consts.PROJECT_DURATION);
                     int totalPaidCount = (int) proposal_details.get(consts.INSTALLMENT_COUNT);
-                    if (totalPaidCount < totalInstallment){
+                    if (totalPaidCount < totalInstallment) {
                         String flag = (String) proposal_details.get(consts.TOKEN);
                         BigInteger totalBudget = (BigInteger) proposal_details.get(consts.TOTAL_BUDGET);
                         BigInteger totalPaidAmount = (BigInteger) proposal_details.get(consts.WITHDRAW_AMOUNT);
@@ -183,10 +184,9 @@ public class CPSTreasury extends ProposalData{
                                 consts.INSTALLMENT_AMOUNT, totalBudget.divide(BigInteger.valueOf(totalInstallment)).toString());
 
                         projectDetails.add(project_details);
-                        if (flag.equals(consts.ICX)){
+                        if (flag.equals(consts.ICX)) {
                             totalAmountToBePaidICX = totalAmountToBePaidICX.add(totalBudget.divide(BigInteger.valueOf(totalInstallment)));
-                        }
-                        else {
+                        } else {
                             totalAmountToBePaidbnUSD = totalAmountToBePaidbnUSD.add(totalBudget.divide(BigInteger.valueOf(totalInstallment)));
                         }
                     }
@@ -203,21 +203,21 @@ public class CPSTreasury extends ProposalData{
 
 
     @External(readonly = true)
-    public Map<String, ?> get_sponsor_projected_fund(Address _wallet_address){
+    public Map<String, ?> get_sponsor_projected_fund(Address _wallet_address) {
         ProposalData proposalData = new ProposalData();
         BigInteger totalAmountToBePaidICX = BigInteger.ZERO;
         BigInteger totalAmountToBePaidbnUSD = BigInteger.ZERO;
         BigInteger totalSponsorBondICX = BigInteger.ZERO;
         BigInteger totalSponsorBondbnUSD = BigInteger.ZERO;
         List<Map<String, String>> projectDetails = new ArrayList<>();
-        for (int i = 0; i < proposalsKeys.size(); i++){
+        for (int i = 0; i < proposalsKeys.size(); i++) {
             String _ipfs_key = proposalsKeys.get(i);
             Map<String, ?> proposal_details = proposalData.getDataFromProposalDB(_ipfs_key);
-            if (proposal_details.get(consts.STATUS).equals(DISQUALIFIED)){
-                if (proposal_details.get(consts.SPONSOR_ADDRESS).equals(_wallet_address.toString())){
+            if (proposal_details.get(consts.STATUS).equals(DISQUALIFIED)) {
+                if (proposal_details.get(consts.SPONSOR_ADDRESS).equals(_wallet_address.toString())) {
                     int totalInstallment = (int) proposal_details.get(consts.PROJECT_DURATION);
                     int totalPaidCount = (int) proposal_details.get(consts.INSTALLMENT_COUNT);
-                    if (totalPaidCount < totalInstallment){
+                    if (totalPaidCount < totalInstallment) {
                         String flag = (String) proposal_details.get(consts.TOKEN);
                         BigInteger totalBudget = (BigInteger) proposal_details.get(consts.TOTAL_BUDGET);
                         BigInteger totalPaidAmount = (BigInteger) proposal_details.get(consts.WITHDRAW_AMOUNT);
@@ -234,11 +234,10 @@ public class CPSTreasury extends ProposalData{
                                 consts.SPONSOR_BOND_AMOUNT, depositedSponsorBond.toString());
 
                         projectDetails.add(project_details);
-                        if (flag.equals(consts.ICX)){
+                        if (flag.equals(consts.ICX)) {
                             totalAmountToBePaidICX = totalAmountToBePaidICX.add(totalBudget.divide(BigInteger.valueOf(totalInstallment)));
                             totalSponsorBondICX = totalSponsorBondICX.add(depositedSponsorBond);
-                        }
-                        else {
+                        } else {
                             totalAmountToBePaidbnUSD = totalAmountToBePaidbnUSD.add(totalBudget.divide(BigInteger.valueOf(totalInstallment)));
                             totalSponsorBondbnUSD = totalSponsorBondbnUSD.add(depositedSponsorBond);
                         }
@@ -256,7 +255,7 @@ public class CPSTreasury extends ProposalData{
         );
     }
 
-    private void depositProposalFund(ProposalData.ProposalAttributes _proposals, BigInteger _value){
+    private void depositProposalFund(ProposalData.ProposalAttributes _proposals, BigInteger _value) {
         addRecord(_proposals);
         ProposalFundDeposited(_proposals.ipfs_hash, "Received " + _proposals.ipfs_hash + " " + _value + " " +
                 consts.bnUSD + " fund from CPF");
@@ -265,7 +264,7 @@ public class CPSTreasury extends ProposalData{
     @External
     @Payable
     public void update_proposal_fund(String _ipfs_key, BigInteger _added_budget, BigInteger _added_sponsor_reward,
-                                     int _added_installment_count){
+                                     int _added_installment_count) {
         ProposalData proposalData = new ProposalData();
         Context.require(proposalExists(_ipfs_key), TAG + ": Invalid IPFS hash.");
         String proposalPrefix = proposalPrefix(_ipfs_key);
@@ -285,14 +284,14 @@ public class CPSTreasury extends ProposalData{
         setRemainingAmount(proposalPrefix, remainingAmount.add(_added_budget));
         setSponsorRemainingAmount(proposalPrefix, sponsorRemainingAmount.add(_added_sponsor_reward));
         setInstallmentCount(proposalPrefix, installmentCount + _added_installment_count);
-        setSponsorRewardCount(proposalPrefix, sponsorRewardCount+ _added_installment_count);
+        setSponsorRewardCount(proposalPrefix, sponsorRewardCount + _added_installment_count);
 
         ProposalFundDeposited(_ipfs_key, _ipfs_key + ": Added Budget: " + _added_budget + " " +
                 flag + "and Added time: " + _added_installment_count + " Successfully");
     }
 
     @External
-    public void send_installment_to_contributor(String _ipfs_key){
+    public void send_installment_to_contributor(String _ipfs_key) {
         validateCpsScore();
         Context.require(proposalExists(_ipfs_key), TAG + ": Invalid IPFS Hash.");
         BigInteger installmentAmount = BigInteger.ZERO;
@@ -305,16 +304,12 @@ public class CPSTreasury extends ProposalData{
         Address contributorAddress = (Address) proposalData.get(consts.CONTRIBUTOR_ADDRESS);
         String flag = (String) proposalData.get(consts.TOKEN);
 
-        try {
-            if (installmentCount == 1) {
-                installmentAmount = remainingAmount;
-            } else {
-                installmentAmount = remainingAmount.divide(BigInteger.valueOf(installmentCount));
-            }
-            int newInstallmentCount = installmentCount - 1;
-//            ProposalData.installmentCount.at(prefix).set(newInstallmentCount);
-//            ProposalData.remainingAmount.at(prefix).set(remainingAmount.subtract(installmentAmount));
-//            ProposalData.withdrawAmount.at(prefix).set(withdrawAmount.add(installmentAmount));
+        if (installmentCount == 1) {
+            installmentAmount = remainingAmount;
+        } else {
+            installmentAmount = remainingAmount.divide(BigInteger.valueOf(installmentCount));
+        }
+        int newInstallmentCount = installmentCount - 1;
 
         setInstallmentCount(prefix, newInstallmentCount);
         setRemainingAmount(prefix, remainingAmount.subtract(installmentAmount));
@@ -323,18 +318,13 @@ public class CPSTreasury extends ProposalData{
                 installmentFundRecord.at(contributorAddress.toString()).get(flag).add(installmentAmount));
         ProposalFundSent(contributorAddress, "new installment " + installmentAmount + " " + flag + " sent to contributors address.");
 
-            if (newInstallmentCount == 0){
-//                ProposalData.status.at(prefix).set(COMPLETED);
-                setStatus(prefix, COMPLETED);
-            }
-        }
-        catch (Exception e){
-            Context.revert(TAG + ": Network problem. Sending project funds to contributor. " + e);
+        if (newInstallmentCount == 0) {
+            setStatus(prefix, COMPLETED);
         }
     }
 
     @External
-    public void send_reward_to_sponsor(String _ipfs_key){
+    public void send_reward_to_sponsor(String _ipfs_key) {
         validateCpsScore();
 
         Context.require(proposalExists(_ipfs_key), TAG + ": Invalid IPFS Hash.");
@@ -347,16 +337,12 @@ public class CPSTreasury extends ProposalData{
         Address sponsorAddress = getSponsorAddress(prefix);
         String flag = getToken(prefix);
 
-        try {
-            if (sponsorRewardCount == 1) {
-                installmentAmount = sponsorRemainingAmount;
-            } else {
-                installmentAmount = sponsorRemainingAmount.divide(BigInteger.valueOf(sponsorRewardCount));
-            }
-            int newSponsorRewardCount = sponsorRewardCount - 1;
-//            ProposalData.sponsorRewardCount.at(prefix).set(newSponsorRewardCount);
-//            ProposalData.sponsorWithdrawAmount.at(prefix).set(sponsorWithdrawAmount.add(installmentAmount));
-//            ProposalData.sponsorRemainingAmount.at(prefix).set(sponsorRemainingAmount.subtract(installmentAmount));
+        if (sponsorRewardCount == 1) {
+            installmentAmount = sponsorRemainingAmount;
+        } else {
+            installmentAmount = sponsorRemainingAmount.divide(BigInteger.valueOf(sponsorRewardCount));
+        }
+        int newSponsorRewardCount = sponsorRewardCount - 1;
 
         setSponsorRewardCount(prefix, newSponsorRewardCount);
         setSponsorWithdrawAmount(prefix, sponsorWithdrawAmount.add(installmentAmount));
@@ -367,17 +353,11 @@ public class CPSTreasury extends ProposalData{
     }
 
     @External
-    public void disqualify_project(String _ipfs_key){
+    public void disqualify_project(String _ipfs_key) {
         validateCpsScore();
         Context.require(proposalExists(_ipfs_key), TAG + ": Project not found. Invalid IPFS hash.");
         String prefix = proposalPrefix(_ipfs_key);
         setStatus(prefix, DISQUALIFIED);
-
-//        BigInteger totalBudget = ProposalData.totalBudget.at(prefix).getOrDefault(BigInteger.ZERO);
-//        BigInteger withdrawAmount = ProposalData.withdrawAmount.at(prefix).getOrDefault(BigInteger.ZERO);
-//        BigInteger sponsorReward = ProposalData.sponsorReward.at(prefix).getOrDefault(BigInteger.ZERO);
-//        BigInteger sponsorWithdrawAmount = ProposalData.sponsorWithdrawAmount.at(prefix).getOrDefault(BigInteger.ZERO);
-//        String flag = ProposalData.token.at(prefix).get();
 
         BigInteger totalBudget = getTotalBudget(prefix);
         BigInteger withdrawAmount = getWithdrawAmount(prefix);
@@ -409,40 +389,28 @@ public class CPSTreasury extends ProposalData{
     }
 
     @External
-    public void claim_reward(){
+    public void claim_reward() {
         BigInteger availableAmountICX = installmentFundRecord.at(Context.getCaller().toString()).get(consts.ICX);
         BigInteger availableAmountbnUSD = installmentFundRecord.at(Context.getCaller().toString()).get(consts.bnUSD);
-        if (availableAmountICX.compareTo(BigInteger.ZERO) > 0){
-            try{
-                installmentFundRecord.at(Context.getCaller().toString()).set(consts.ICX, BigInteger.ZERO);
-                Context.transfer(Context.getCaller(), availableAmountICX);
-                ProposalFundWithdrawn(Context.getCaller(), availableAmountICX + " " + consts.ICX + " withdrawn to " + Context.getCaller());
-            }
-            catch (Exception e){
-                Context.revert(TAG + ": Network problem while claiming reward.");
-            }
-        }
-        else if(availableAmountbnUSD.compareTo(BigInteger.ZERO) > 0){
-            try {
-                installmentFundRecord.at(Context.getCaller().toString()).set(consts.bnUSD, BigInteger.ZERO);
-                callScore(balancedDollar.get(), "transfer",Context.getCaller(), availableAmountbnUSD);
-            }
-            catch (Exception e){
-                Context.revert(TAG + ": Network problem while claiming reward.");
-            }
-        }
-        else{
+        if (availableAmountICX.compareTo(BigInteger.ZERO) > 0) {
+            installmentFundRecord.at(Context.getCaller().toString()).set(consts.ICX, BigInteger.ZERO);
+            Context.transfer(Context.getCaller(), availableAmountICX);
+            ProposalFundWithdrawn(Context.getCaller(), availableAmountICX + " " + consts.ICX + " withdrawn to " + Context.getCaller());
+        } else if (availableAmountbnUSD.compareTo(BigInteger.ZERO) > 0) {
+            installmentFundRecord.at(Context.getCaller().toString()).set(consts.bnUSD, BigInteger.ZERO);
+            callScore(balancedDollar.get(), "transfer", Context.getCaller(), availableAmountbnUSD);
+        } else {
             Context.revert(TAG + ": Claim Reward Fails. Available amount(ICX) = " + availableAmountICX + " and Available amount(bnUSD) = " + availableAmountbnUSD);
         }
     }
 
     @External
-    public void tokenFallback(Address _from, BigInteger _value, byte[] _data){
+    public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
         Context.require(_from.equals(cpfTreasuryScore.get()), TAG + "Only receiving from " + cpfTreasuryScore.get());
         String unpacked_data = new String(_data);
         JsonObject jsonObject = Json.parse(unpacked_data).asObject();
         JsonObject params = jsonObject.get("params").asObject();
-        if (jsonObject.get("method").asString().equals("deposit_proposal_fund")){
+        if (jsonObject.get("method").asString().equals("deposit_proposal_fund")) {
             String ipfs_hash = params.get("ipfs_hash").asString();
             int project_duration = Integer.parseInt(params.get("project_duration").asString());
             BigInteger total_budget = new BigInteger(params.get("total_budget").asString());
@@ -460,16 +428,14 @@ public class CPSTreasury extends ProposalData{
             proposalAttributes.sponsor_address = sponsor_address;
             proposalAttributes.status = ACTIVE;
             depositProposalFund(proposalAttributes, _value);
-        }
-        else if (jsonObject.get("method").asString().equals("budget_adjustment")){
+        } else if (jsonObject.get("method").asString().equals("budget_adjustment")) {
             String ipfs_key = params.get("_ipfs_key").asString();
             BigInteger added_budget = new BigInteger(params.get("_added_budget").asString());
             BigInteger added_sponsor_reward = new BigInteger(params.get("_added_sponsor_reward").asString());
             int added_installment_count = Integer.parseInt(params.get("_added_installment_count").asString());
 
             update_proposal_fund(ipfs_key, added_budget, added_sponsor_reward, added_installment_count);
-        }
-        else{
+        } else {
             Context.revert(TAG + jsonObject.get("method").asString() + " Not a valid method.");
         }
 
@@ -489,24 +455,31 @@ public class CPSTreasury extends ProposalData{
     }
 
     @EventLog(indexed = 1)
-    public void FundReturned(Address _sponsor_address, String note){}
+    public void FundReturned(Address _sponsor_address, String note) {
+    }
 
     @EventLog(indexed = 1)
-    public void ProposalFundTransferred(String _ipfs_key, String note){}
+    public void ProposalFundTransferred(String _ipfs_key, String note) {
+    }
 
     @EventLog(indexed = 1)
-    public void ProposalDisqualified(String _ipfs_key, String note){}
+    public void ProposalDisqualified(String _ipfs_key, String note) {
+    }
 
     @EventLog(indexed = 1)
-    public void FundReceived(Address _sponsor_address, String note){}
+    public void FundReceived(Address _sponsor_address, String note) {
+    }
 
     @EventLog(indexed = 1)
-    public void ProposalFundDeposited(String _ipfs_key, String note){}
+    public void ProposalFundDeposited(String _ipfs_key, String note) {
+    }
 
     @EventLog(indexed = 1)
-    public void ProposalFundSent(Address _receiver_address, String note){}
+    public void ProposalFundSent(Address _receiver_address, String note) {
+    }
 
     @EventLog(indexed = 1)
-    public void ProposalFundWithdrawn(Address _receiver_address, String note){}
+    public void ProposalFundWithdrawn(Address _receiver_address, String note) {
+    }
 
 }
