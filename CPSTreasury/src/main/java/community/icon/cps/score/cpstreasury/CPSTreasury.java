@@ -370,23 +370,22 @@ public class CPSTreasury extends ProposalData {
         BigInteger remainingReward = sponsorReward.subtract(sponsorWithdrawAmount);
         BigInteger totalReturnAmount = remainingBudget.add(remainingReward);
 
-        try{
-            if (flag.equals(consts.ICX)){
-                callScore(totalReturnAmount, cpfTreasuryScore.get(), "disqualify_proposal_fund", _ipfs_key);
-            }
-            else if(flag.equals(consts.bnUSD)){
-                String _data = "" + "{\"method\":\"disqualify_project\",\"params\":{\"ipfs_key\":" + "\"" + _ipfs_key + "\"" + "}}";
-                callScore(balancedDollar.get(), "transfer", cpfTreasuryScore.get(), totalReturnAmount, _data.getBytes());
-            }
-            else{
-                Context.revert(TAG + ": Not supported token.");
-            }
-            ProposalDisqualified(_ipfs_key, _ipfs_key + ", Proposal disqualified");
+        if (flag.equals(consts.ICX)) {
+            callScore(totalReturnAmount, cpfTreasuryScore.get(), "disqualify_proposal_fund", _ipfs_key);
+        } else if (flag.equals(consts.bnUSD)) {
+            JsonObject disqualifyProjectParams = new JsonObject();
+            disqualifyProjectParams.add("method", "disqualify_project");
+            JsonObject params = new JsonObject();
+            params.add("ipfs_key", _ipfs_key);
+            disqualifyProjectParams.add("params", params);
+
+            callScore(balancedDollar.get(), "transfer", cpfTreasuryScore.get(), totalReturnAmount, disqualifyProjectParams.toString().getBytes());
+        } else {
+            Context.revert(TAG + ": Not supported token.");
         }
-        catch (Exception e){
-            Context.revert(TAG + ": Network problem. Sending proposal funds to CPF after project disqualification.");
-        }
+        ProposalDisqualified(_ipfs_key, _ipfs_key + ", Proposal disqualified");
     }
+
 
     @External
     public void claim_reward() {
