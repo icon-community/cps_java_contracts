@@ -1,4 +1,5 @@
 package community.icon.cps.score.cpstreasury;
+
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
@@ -20,7 +21,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-public class CPSTreasuryTest extends TestBase{
+public class CPSTreasuryTest extends TestBase {
     private static final Address ZERO_ADDRESS = new Address(new byte[Address.LENGTH]);
     private static final Address treasury_score = new Address(new byte[Address.LENGTH]);
     private static final Address score_address = Address.fromString("cx0000000000000000000000000000000000000000");
@@ -58,7 +59,7 @@ public class CPSTreasuryTest extends TestBase{
     }
 
     @Test
-    void name(){
+    void name() {
         assertEquals(tokenScore.call("name"), name);
     }
 
@@ -77,40 +78,40 @@ public class CPSTreasuryTest extends TestBase{
     }
 
     @Test
-    void fallback(){
+    void fallback() {
         Executable fallback = () -> fallbackExceptions(owner);
         expectErrorMessage(fallback, "Reverted(0):" + " " + TAG + ": ICX can only be send by CPF Treasury Score");
     }
 
     @Test
-    void setCpsScore(){
+    void setCpsScore() {
         doReturn(Boolean.TRUE).when(scoreSpy).callScore(eq(Boolean.class), any(), eq("is_admin"), eq(owner.getAddress()));
         tokenScore.invoke(owner, "setCpsScore", score_address);
     }
 
     @Test
-    void setCPFTreasuryScore(){
+    void setCPFTreasuryScore() {
         doReturn(Boolean.TRUE).when(scoreSpy).callScore(eq(Boolean.class), any(), eq("is_admin"), eq(owner.getAddress()));
         tokenScore.invoke(owner, "setCpfTreasuryScore", score_address);
     }
 
     @Test
-    void setBnUSDScore(){
+    void setBnUSDScore() {
         doReturn(Boolean.TRUE).when(scoreSpy).callScore(eq(Boolean.class), any(), eq("is_admin"), eq(owner.getAddress()));
         tokenScore.invoke(owner, "setBnUSDScore", score_address);
     }
 
-    void setCpsScoreExceptions(Boolean isAdmin, Address score_address){
+    void setCpsScoreExceptions(Boolean isAdmin, Address score_address) {
         doReturn(isAdmin).when(scoreSpy).callScore(eq(Boolean.class), any(), eq("is_admin"), eq(owner.getAddress()));
         tokenScore.invoke(owner, "setCpsScore", score_address);
     }
 
-    void setCpfTreasuryScoreExceptions(Boolean isAdmin, Address score_address){
+    void setCpfTreasuryScoreExceptions(Boolean isAdmin, Address score_address) {
         doReturn(isAdmin).when(scoreSpy).callScore(eq(Boolean.class), any(), eq("is_admin"), eq(owner.getAddress()));
         tokenScore.invoke(owner, "setCpfTreasuryScore", score_address);
     }
 
-    void setBnUSDScoreExceptions(Boolean isAdmin, Address score_address){
+    void setBnUSDScoreExceptions(Boolean isAdmin, Address score_address) {
         doReturn(isAdmin).when(scoreSpy).callScore(eq(Boolean.class), any(), eq("is_admin"), eq(owner.getAddress()));
         tokenScore.invoke(owner, "setBnUSDScore", score_address);
     }
@@ -134,19 +135,19 @@ public class CPSTreasuryTest extends TestBase{
     }
 
     @Test
-    void setCPSScoreNotContract(){
+    void setCPSScoreNotContract() {
         Executable setCpsScoreNotAdmin = () -> setCpsScoreExceptions(true, testing_account.getAddress());
         expectErrorMessage(setCpsScoreNotAdmin, TAG + "Target " + testing_account.getAddress() + " is not a score.");
     }
 
     @Test
-    void setCPFTreasuryScoreNotContract(){
+    void setCPFTreasuryScoreNotContract() {
         Executable setCpfTreasuryScoreNotContract = () -> setCpfTreasuryScoreExceptions(true, testing_account.getAddress());
         expectErrorMessage(setCpfTreasuryScoreNotContract, TAG + "Target " + testing_account.getAddress() + " is not a score.");
     }
 
     @Test
-    void setBnUSDScoreNotContract(){
+    void setBnUSDScoreNotContract() {
         Executable setBnUSDScoreContract = () -> setBnUSDScoreExceptions(true, testing_account.getAddress());
         expectErrorMessage(setBnUSDScoreContract, TAG + "Target " + testing_account.getAddress() + " is not a score.");
     }
