@@ -151,4 +151,143 @@ public class CPSTreasuryTest extends TestBase {
         Executable setBnUSDScoreContract = () -> setBnUSDScoreExceptions(true, testing_account.getAddress());
         expectErrorMessage(setBnUSDScoreContract, TAG + "Target " + testing_account.getAddress() + " is not a score.");
     }
+
+    @Test
+    void depositProposalFund() {
+        depositProposalFundMethod();
+        @SuppressWarnings("unchecked")
+        Map<String, ?> proposalDataDetails = (Map<String, ?>) tokenScore.call("get_contributor_projected_fund", testing_account2.getAddress());
+        @SuppressWarnings("unchecked")
+        List<Map<String, String>> proposalDetails = (List<Map<String, String>>) proposalDataDetails.get("data");
+        Map<String, String> expectedData = Map.of(
+                consts.IPFS_HASH, "Proposal 1",
+                consts.TOKEN, "bnUSD",
+                consts.TOTAL_BUDGET, BigInteger.valueOf(100).multiply(MULTIPLIER).toString(),
+                consts.TOTAL_INSTALLMENT_PAID, BigInteger.ZERO.toString(),
+                consts.TOTAL_INSTALLMENT_COUNT, "2",
+                consts.TOTAL_TIMES_INSTALLMENT_PAID, "0",
+                consts.INSTALLMENT_AMOUNT, BigInteger.valueOf(50).multiply(MULTIPLIER).toString());
+        assertEquals(proposalDetails.get(0), expectedData);
+    }
+
+    private void depositProposalFundMethod() {
+        JsonObject depositProposal = new JsonObject();
+        depositProposal.add("method", "deposit_proposal_fund");
+        JsonObject params = new JsonObject();
+        params.add("ipfs_hash", "Proposal 1");
+        params.add("project_duration", 2);
+        params.add("sponsor_address", testing_account.getAddress().toString());
+        params.add("contributor_address", testing_account2.getAddress().toString());
+        params.add("total_budget", BigInteger.valueOf(100).multiply(MULTIPLIER).toString(16));
+        params.add("sponsor_reward", BigInteger.valueOf(2).multiply(MULTIPLIER).toString(16));
+        params.add("token", "bnUSD");
+        depositProposal.add("params", params);
+        setCPFTreasuryScoreMethod();
+        tokenScore.invoke(owner, "tokenFallback", cpfTreasury, BigInteger.valueOf(102).multiply(MULTIPLIER), depositProposal.toString().getBytes());
+    }
+
+    @Test
+    void updateProposalFund() {
+        depositProposalFundMethod();
+        JsonObject budgetAdjustmentData = new JsonObject();
+        budgetAdjustmentData.add("method", "budget_adjustment");
+        JsonObject params = new JsonObject();
+        params.add("_ipfs_key", "Proposal 1");
+        params.add("_added_budget", BigInteger.valueOf(100).multiply(MULTIPLIER).toString(16));
+        params.add("_added_sponsor_reward", BigInteger.valueOf(2).multiply(MULTIPLIER).toString(16));
+        params.add("_added_installment_count", 1);
+        budgetAdjustmentData.add("params", params);
+
+        tokenScore.invoke(owner, "tokenFallback", cpfTreasury, BigInteger.valueOf(102).multiply(MULTIPLIER), budgetAdjustmentData.toString().getBytes());
+
+        @SuppressWarnings("unchecked")
+        Map<String, ?> proposalDataDetails = (Map<String, ?>) tokenScore.call("get_contributor_projected_fund", testing_account2.getAddress());
+        @SuppressWarnings("unchecked")
+        List<Map<String, String>> proposalDetails = (List<Map<String, String>>) proposalDataDetails.get("data");
+        Map<String, String> expectedData = Map.of(
+                consts.IPFS_HASH, "Proposal 1",
+                consts.TOKEN, "bnUSD",
+                consts.TOTAL_BUDGET, BigInteger.valueOf(200).multiply(MULTIPLIER).toString(),
+                consts.TOTAL_INSTALLMENT_PAID, BigInteger.ZERO.toString(),
+                consts.TOTAL_INSTALLMENT_COUNT, "3",
+                consts.TOTAL_TIMES_INSTALLMENT_PAID, "0",
+                consts.INSTALLMENT_AMOUNT, "66666666666666666666");
+        assertEquals(proposalDetails.get(0), expectedData);
+    }
+
+    @Test
+    void sendInstallmentToContributor() {
+        depositProposalFundMethod();
+        setCpsScoreMethod();
+        try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
+            theMock.when(() -> Context.getCaller()).thenReturn(score_address);
+            tokenScore.invoke(owner, "send_installment_to_contributor", "Proposal 1");
+        }
+        @SuppressWarnings("unchecked")
+        Map<String, ?> proposalDataDetails = (Map<String, ?>) tokenScore.call("get_contributor_projected_fund", testing_account2.getAddress());
+        assertEquals(proposalDataDetails.get("withdraw_amount_bnUSD"), BigInteger.valueOf(50).multiply(MULTIPLIER));
+
+        try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
+            theMock.when(() -> Context.getCaller()).thenReturn(score_address);
+            tokenScore.invoke(owner, "send_installment_to_contributor", "Proposal 1");
+        }
+        @SuppressWarnings("unchecked")
+        Map<String, ?> proposalDataDetails2 = (Map<String, ?>) tokenScore.call("get_contributor_projected_fund", testing_account2.getAddress());
+        assertEquals(proposalDataDetails2.get("withdraw_amount_bnUSD"), BigInteger.valueOf(100).multiply(MULTIPLIER));
+    }
+
+    @Test
+    void sendRewardToSponsor() {
+        depositProposalFundMethod();
+        setCpsScoreMethod();
+        sendRewardToSponsorMethod();
+        @SuppressWarnings("unchecked")
+        Map<String, ?> proposalDataDetails = (Map<String, ?>) tokenScore.call("get_sponsor_projected_fund", testing_account.getAddress());
+        assertEquals(proposalDataDetails.get("withdraw_amount_bnUSD"), BigInteger.valueOf(1).multiply(MULTIPLIER));
+
+        try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
+            theMock.when(() -> Context.getCaller()).thenReturn(score_address);
+            tokenScore.invoke(owner, "send_reward_to_sponsor", "Proposal 1");
+        }
+        @SuppressWarnings("unchecked")
+        Map<String, ?> proposalDataDetails2 = (Map<String, ?>) tokenScore.call("get_sponsor_projected_fund", testing_account.getAddress());
+        assertEquals(proposalDataDetails2.get("withdraw_amount_bnUSD"), BigInteger.valueOf(2).multiply(MULTIPLIER));
+    }
+
+    private void sendRewardToSponsorMethod() {
+        try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
+            theMock.when(() -> Context.getCaller()).thenReturn(score_address);
+            tokenScore.invoke(owner, "send_reward_to_sponsor", "Proposal 1");
+        }
+    }
+
+    @Test
+    void disqualifyProject(){
+        depositProposalFundMethod();
+        setCPFTreasuryScoreMethod();
+        setCpsScoreMethod();
+        setBnUSDScoreMethod();
+        try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
+            theMock.when(() -> Context.getCaller()).thenReturn(score_address);
+            tokenScore.invoke(owner, "disqualify_project", "Proposal 1");
+            JsonObject disqualifyProjectParams = new JsonObject();
+            disqualifyProjectParams.add("method", "disqualify_project");
+            JsonObject params = new JsonObject();
+            params.add("ipfs_key", "Proposal 1");
+            disqualifyProjectParams.add("params", params);
+            theMock.verify(() -> Context.call(bnUSDScore, "transfer", cpfTreasury, BigInteger.valueOf(102).multiply(MULTIPLIER), disqualifyProjectParams.toString().getBytes()), times(1));
+        }
+    }
+
+    @Test
+    void claimReward(){
+        depositProposalFundMethod();
+        sendRewardToSponsorMethod();
+        setBnUSDScoreMethod();
+        try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
+            theMock.when(() -> Context.getCaller()).thenReturn(testing_account.getAddress());
+            tokenScore.invoke(testing_account, "claim_reward");
+            theMock.verify(() -> Context.call(bnUSDScore, "transfer", testing_account.getAddress(), BigInteger.valueOf(1).multiply(MULTIPLIER)), times(1));
+        }
+    }
 }
