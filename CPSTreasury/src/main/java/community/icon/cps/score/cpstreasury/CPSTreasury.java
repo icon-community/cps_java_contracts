@@ -315,7 +315,7 @@ public class CPSTreasury extends ProposalData {
         setRemainingAmount(prefix, remainingAmount.subtract(installmentAmount));
         setWithdrawAmount(prefix, withdrawAmount.add(installmentAmount));
         installmentFundRecord.at(contributorAddress.toString()).set(flag,
-                installmentFundRecord.at(contributorAddress.toString()).get(flag).add(installmentAmount));
+                installmentFundRecord.at(contributorAddress.toString()).getOrDefault(flag, BigInteger.ZERO).add(installmentAmount));
         ProposalFundSent(contributorAddress, "new installment " + installmentAmount + " " + flag + " sent to contributors address.");
 
         if (newInstallmentCount == 0) {
@@ -347,7 +347,7 @@ public class CPSTreasury extends ProposalData {
         setSponsorRewardCount(prefix, newSponsorRewardCount);
         setSponsorWithdrawAmount(prefix, sponsorWithdrawAmount.add(installmentAmount));
         setSponsorRemainingAmount(prefix, sponsorRemainingAmount.subtract(installmentAmount));
-        installmentFundRecord.at(sponsorAddress.toString()).set(flag, installmentFundRecord.at(sponsorAddress.toString()).get(flag).add(installmentAmount));
+        installmentFundRecord.at(sponsorAddress.toString()).set(flag, installmentFundRecord.at(sponsorAddress.toString()).getOrDefault(flag, BigInteger.ZERO).add(installmentAmount));
         ProposalFundSent(sponsorAddress, "New installment " + installmentAmount + " " +
                 flag + " sent to sponsor address.");
     }
@@ -389,8 +389,8 @@ public class CPSTreasury extends ProposalData {
 
     @External
     public void claim_reward() {
-        BigInteger availableAmountICX = installmentFundRecord.at(Context.getCaller().toString()).get(consts.ICX);
-        BigInteger availableAmountbnUSD = installmentFundRecord.at(Context.getCaller().toString()).get(consts.bnUSD);
+        BigInteger availableAmountICX = installmentFundRecord.at(Context.getCaller().toString()).getOrDefault(consts.ICX, BigInteger.ZERO);
+        BigInteger availableAmountbnUSD = installmentFundRecord.at(Context.getCaller().toString()).getOrDefault(consts.bnUSD, BigInteger.ZERO);
         if (availableAmountICX.compareTo(BigInteger.ZERO) > 0) {
             installmentFundRecord.at(Context.getCaller().toString()).set(consts.ICX, BigInteger.ZERO);
             Context.transfer(Context.getCaller(), availableAmountICX);
