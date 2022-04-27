@@ -31,7 +31,7 @@ public class CPSTreasuryTest extends TestBase {
     private static final Address ZERO_ADDRESS = new Address(new byte[Address.LENGTH]);
     private static final Address treasury_score = new Address(new byte[Address.LENGTH]);
     private static final Address score_address = Address.fromString("cx0000000000000000000000000000000000000000");
-    private static final Address sicxScore = Address.fromString("cx0000000000000000000000000000000000000001");
+    private static final Address cpfTreasury = Address.fromString("cx0000000000000000000000000000000000000001");
     private static final Address bnUSDScore = Address.fromString("cx0000000000000000000000000000000000000002");
     private static final Address dexScore = Address.fromString("cx0000000000000000000000000000000000000003");
     private static final Address cpsTreasuryScore = Address.fromString("cx0000000000000000000000000000000000000004");
