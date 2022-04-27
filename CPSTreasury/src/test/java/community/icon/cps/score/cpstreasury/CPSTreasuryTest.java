@@ -91,20 +91,34 @@ public class CPSTreasuryTest extends TestBase {
 
     @Test
     void setCpsScore() {
+        setCpsScoreMethod();
+    }
+
+    private void setCpsScoreMethod() {
         doReturn(Boolean.TRUE).when(scoreSpy).callScore(eq(Boolean.class), any(), eq("is_admin"), eq(owner.getAddress()));
         tokenScore.invoke(owner, "setCpsScore", score_address);
     }
 
     @Test
     void setCPFTreasuryScore() {
+        setCPFTreasuryScoreMethod();
+    }
+
+    private void setCPFTreasuryScoreMethod() {
         doReturn(Boolean.TRUE).when(scoreSpy).callScore(eq(Boolean.class), any(), eq("is_admin"), eq(owner.getAddress()));
-        tokenScore.invoke(owner, "setCpfTreasuryScore", score_address);
+        tokenScore.invoke(owner, "setCpfTreasuryScore", cpfTreasury);
+        assertEquals(cpfTreasury, tokenScore.call("getCpfTreasuryScore"));
     }
 
     @Test
     void setBnUSDScore() {
+        setBnUSDScoreMethod();
+    }
+
+    private void setBnUSDScoreMethod() {
         doReturn(Boolean.TRUE).when(scoreSpy).callScore(eq(Boolean.class), any(), eq("is_admin"), eq(owner.getAddress()));
-        tokenScore.invoke(owner, "setBnUSDScore", score_address);
+        tokenScore.invoke(owner, "setBnUSDScore", bnUSDScore);
+        assertEquals(bnUSDScore, tokenScore.call("getBnUSDScore"));
     }
 
     void setCpsScoreExceptions(Boolean isAdmin, Address score_address) {
