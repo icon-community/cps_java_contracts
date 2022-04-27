@@ -168,8 +168,7 @@ public class CPSTreasury extends ProposalData {
             String proposalPrefix = proposalPrefix(_ipfs_key);
             Map<String, ?> proposal_details = proposalData.getDataFromProposalDB(proposalPrefix);
             if (!proposal_details.get(consts.STATUS).equals(DISQUALIFIED)) {
-                 String contributorAddress = proposal_details.get(consts.CONTRIBUTOR_ADDRESS).toString();
-                if (contributorAddress.equals(_wallet_address.toString())) {
+                if (proposal_details.get(consts.CONTRIBUTOR_ADDRESS).equals(_wallet_address)) {
                     int totalInstallment = (int) proposal_details.get(consts.PROJECT_DURATION);
                     int totalPaidCount = totalInstallment - (int) proposal_details.get(consts.INSTALLMENT_COUNT);
                     if (totalPaidCount < totalInstallment) {
