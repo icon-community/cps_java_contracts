@@ -66,7 +66,8 @@ public class ProposalData {
                 Map.entry(consts.SPONSOR_WITHDRAW_AMOUNT, sponsorWithdrawAmount.at(prefix).getOrDefault(BigInteger.ZERO)),
                 Map.entry(consts.REMAINING_AMOUNT, remainingAmount.at(prefix).getOrDefault(BigInteger.ZERO)),
                 Map.entry(consts.SPONSOR_REMAINING_AMOUNT, sponsorRemainingAmount.at(prefix).getOrDefault(BigInteger.ZERO)),
-                Map.entry(consts.TOKEN, token.at(prefix).getOrDefault(""))
+                Map.entry(consts.TOKEN, token.at(prefix).getOrDefault("")),
+                Map.entry(consts.STATUS, status.at(prefix).getOrDefault(""))
         );
     }
 
