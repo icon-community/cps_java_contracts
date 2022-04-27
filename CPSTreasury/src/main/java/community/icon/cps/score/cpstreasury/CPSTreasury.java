@@ -225,7 +225,7 @@ public class CPSTreasury extends ProposalData {
                         String flag = (String) proposal_details.get(consts.TOKEN);
                         BigInteger totalBudget = (BigInteger) proposal_details.get(consts.TOTAL_BUDGET);
                         BigInteger totalPaidAmount = (BigInteger) proposal_details.get(consts.WITHDRAW_AMOUNT);
-                        BigInteger depositedSponsorBond = (BigInteger) proposal_details.get(consts.TOTAL_BUDGET);
+                        BigInteger depositedSponsorBond = ((BigInteger) proposal_details.get(consts.TOTAL_BUDGET)).divide(BigInteger.TEN);
 
                         Map<String, String> project_details = Map.of(
                                 consts.IPFS_HASH, _ipfs_key,
