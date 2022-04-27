@@ -114,7 +114,8 @@ public class CPSTreasury extends ProposalData {
         String ipfs_hash = _proposal.ipfs_hash;
         Context.require(!proposalExists(ipfs_hash), TAG + ": Already have this project");
         proposalsKeys.add(ipfs_hash);
-        proposalData.addDataToProposalDB(_proposal, ipfs_hash);
+        String proposalPrefix = proposalPrefix(ipfs_hash);
+        proposalData.addDataToProposalDB(_proposal, proposalPrefix);
         proposalsKeyListIndex.set(ipfs_hash, proposalsKeys.size() - 1);
     }
 
@@ -164,9 +165,11 @@ public class CPSTreasury extends ProposalData {
         List<Map<String, String>> projectDetails = new ArrayList<>();
         for (int i = 0; i < proposalsKeys.size(); i++) {
             String _ipfs_key = proposalsKeys.get(i);
-            Map<String, ?> proposal_details = proposalData.getDataFromProposalDB(_ipfs_key);
-            if (proposal_details.get(consts.STATUS).equals(DISQUALIFIED)) {
-                if (proposal_details.get(consts.SPONSOR_ADDRESS).equals(_wallet_address.toString())) {
+            String proposalPrefix = proposalPrefix(_ipfs_key);
+            Map<String, ?> proposal_details = proposalData.getDataFromProposalDB(proposalPrefix);
+            if (!proposal_details.get(consts.STATUS).equals(DISQUALIFIED)) {
+                 String contributorAddress = proposal_details.get(consts.CONTRIBUTOR_ADDRESS).toString();
+                if (contributorAddress.equals(_wallet_address.toString())) {
                     int totalInstallment = (int) proposal_details.get(consts.PROJECT_DURATION);
                     int totalPaidCount = totalInstallment - (int) proposal_details.get(consts.INSTALLMENT_COUNT);
                     if (totalPaidCount < totalInstallment) {
@@ -212,7 +215,8 @@ public class CPSTreasury extends ProposalData {
         List<Map<String, String>> projectDetails = new ArrayList<>();
         for (int i = 0; i < proposalsKeys.size(); i++) {
             String _ipfs_key = proposalsKeys.get(i);
-            Map<String, ?> proposal_details = proposalData.getDataFromProposalDB(_ipfs_key);
+            String proposalPrefix = proposalPrefix(_ipfs_key);
+            Map<String, ?> proposal_details = proposalData.getDataFromProposalDB(proposalPrefix);
             if (proposal_details.get(consts.STATUS).equals(DISQUALIFIED)) {
                 if (proposal_details.get(consts.SPONSOR_ADDRESS).equals(_wallet_address.toString())) {
                     int totalInstallment = (int) proposal_details.get(consts.PROJECT_DURATION);
