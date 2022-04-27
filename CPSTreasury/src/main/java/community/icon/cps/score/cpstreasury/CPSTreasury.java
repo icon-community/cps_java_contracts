@@ -220,7 +220,7 @@ public class CPSTreasury extends ProposalData {
             if (proposal_details.get(consts.STATUS).equals(DISQUALIFIED)) {
                 if (proposal_details.get(consts.SPONSOR_ADDRESS).equals(_wallet_address.toString())) {
                     int totalInstallment = (int) proposal_details.get(consts.PROJECT_DURATION);
-                    int totalPaidCount = (int) proposal_details.get(consts.INSTALLMENT_COUNT);
+                    int totalPaidCount = totalInstallment - (int) proposal_details.get(consts.SPONSOR_REWARD_COUNT);
                     if (totalPaidCount < totalInstallment) {
                         String flag = (String) proposal_details.get(consts.TOKEN);
                         BigInteger totalBudget = (BigInteger) proposal_details.get(consts.TOTAL_BUDGET);
