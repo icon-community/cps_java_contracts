@@ -129,7 +129,7 @@ public class CPSTreasury extends ProposalData {
         cpsScore.set(_score);
     }
 
-    @External(readonly = true)
+    @External(readonly = true) //Todo java convention in get methods??
     public Address getCpsScore() {
         return cpsScore.get();
     }
@@ -164,7 +164,8 @@ public class CPSTreasury extends ProposalData {
         for (int i = 0; i < proposalsKeys.size(); i++) {
             String _ipfs_key = proposalsKeys.get(i);
             String proposalPrefix = proposalPrefix(_ipfs_key);
-            Map<String, ?> proposal_details = proposalData.getDataFromProposalDB(proposalPrefix);
+            // todo: getting entire proposal details or getting individual values?
+            Map<String, ?> proposal_details = getDataFromProposalDB(proposalPrefix);
             if (!proposal_details.get(consts.STATUS).equals(DISQUALIFIED)) {
                 if (proposal_details.get(consts.CONTRIBUTOR_ADDRESS).equals(_wallet_address)) {
                     int totalInstallment = (int) proposal_details.get(consts.PROJECT_DURATION);
