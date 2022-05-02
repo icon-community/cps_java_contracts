@@ -206,6 +206,21 @@ public class CPSTreasuryTest extends TestBase {
         tokenScore.invoke(owner, "tokenFallback", cpfTreasury, BigInteger.valueOf(102).multiply(MULTIPLIER), depositProposal.toString().getBytes());
     }
 
+    void depositProposalFundExceptions(){
+        try{
+            depositProposalFundMethod();
+        }
+        catch (Exception e){
+            throw e;
+        }
+    }
+    @Test
+    void depositProposalFundProposalAlreadyExists(){
+        depositProposalFundMethod();
+        Executable depositProposalFundProposalAlreadyExists = () -> depositProposalFundExceptions();
+        expectErrorMessage(depositProposalFundProposalAlreadyExists, "CPS_TREASURY: Already have this project");
+    }
+
     @Test
     void updateProposalFund() {
         depositProposalFundMethod();
@@ -233,6 +248,31 @@ public class CPSTreasuryTest extends TestBase {
                 consts.TOTAL_TIMES_INSTALLMENT_PAID, "0",
                 consts.INSTALLMENT_AMOUNT, "66666666666666666666");
         assertEquals(proposalDetails.get(0), expectedData);
+    }
+
+    void updateProposalFundProposalException(){
+        try {
+            setCPFTreasuryScoreMethod();
+            JsonObject budgetAdjustmentData = new JsonObject();
+            budgetAdjustmentData.add("method", "budget_adjustment");
+            JsonObject params = new JsonObject();
+            params.add("_ipfs_key", "Proposal 1");
+            params.add("_added_budget", BigInteger.valueOf(100).multiply(MULTIPLIER).toString(16));
+            params.add("_added_sponsor_reward", BigInteger.valueOf(2).multiply(MULTIPLIER).toString(16));
+            params.add("_added_installment_count", 1);
+            budgetAdjustmentData.add("params", params);
+
+            tokenScore.invoke(owner, "tokenFallback", cpfTreasury, BigInteger.valueOf(102).multiply(MULTIPLIER), budgetAdjustmentData.toString().getBytes());
+        }
+        catch (Exception e){
+            throw e;
+        }
+    }
+
+    @Test
+    void updateProposalFundProposalDoesnotExist(){
+        Executable updateProposalFundProposalDoesnotExist = () -> updateProposalFundProposalException();
+        expectErrorMessage(updateProposalFundProposalDoesnotExist, "CPS_TREASURY: Invalid IPFS hash.");
     }
 
     @Test
