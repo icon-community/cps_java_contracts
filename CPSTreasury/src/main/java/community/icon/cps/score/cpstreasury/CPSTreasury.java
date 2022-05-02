@@ -109,13 +109,12 @@ public class CPSTreasury extends ProposalData {
                 TAG + ": Only CPF Treasury score " + cpfTreasuryScore.get() + " can send fund using this method.");
     }
 
-    private void addRecord(ProposalData.ProposalAttributes _proposal) {
-        ProposalData proposalData = new ProposalData();
+    private void addRecord(ProposalAttributes _proposal) {
         String ipfs_hash = _proposal.ipfs_hash;
         Context.require(!proposalExists(ipfs_hash), TAG + ": Already have this project");
         proposalsKeys.add(ipfs_hash);
         String proposalPrefix = proposalPrefix(ipfs_hash);
-        proposalData.addDataToProposalDB(_proposal, proposalPrefix);
+        addDataToProposalDB(_proposal, proposalPrefix);
         proposalsKeyListIndex.set(ipfs_hash, proposalsKeys.size() - 1);
     }
 
@@ -159,7 +158,6 @@ public class CPSTreasury extends ProposalData {
 
     @External(readonly = true)
     public Map<String, ?> get_contributor_projected_fund(Address _wallet_address) {
-        ProposalData proposalData = new ProposalData();
         BigInteger totalAmountToBePaidICX = BigInteger.ZERO;
         BigInteger totalAmountToBePaidbnUSD = BigInteger.ZERO;
         List<Map<String, String>> projectDetails = new ArrayList<>();
