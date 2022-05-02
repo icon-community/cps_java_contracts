@@ -193,6 +193,7 @@ public class CPSTreasury extends ProposalData {
                 }
             }
         }
+        DictDB<String, BigInteger> installmentRecord = installmentFundRecord.at(_wallet_address.toString());
         return Map.of(
                 "data", projectDetails,
                 "project_count", projectDetails.size(),
