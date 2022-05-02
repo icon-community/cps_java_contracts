@@ -179,15 +179,15 @@ public class CPSTreasuryTest extends TestBase {
         @SuppressWarnings("unchecked")
         Map<String, ?> proposalDataDetails = (Map<String, ?>) tokenScore.call("get_contributor_projected_fund", testing_account2.getAddress());
         @SuppressWarnings("unchecked")
-        List<Map<String, String>> proposalDetails = (List<Map<String, String>>) proposalDataDetails.get("data");
-        Map<String, String> expectedData = Map.of(
+        List<Map<String, ?>> proposalDetails = (List<Map<String, ?>>) proposalDataDetails.get("data");
+        Map<String, ?> expectedData = Map.of(
                 consts.IPFS_HASH, "Proposal 1",
                 consts.TOKEN, "bnUSD",
-                consts.TOTAL_BUDGET, BigInteger.valueOf(100).multiply(MULTIPLIER).toString(),
-                consts.TOTAL_INSTALLMENT_PAID, BigInteger.ZERO.toString(),
-                consts.TOTAL_INSTALLMENT_COUNT, "2",
-                consts.TOTAL_TIMES_INSTALLMENT_PAID, "0",
-                consts.INSTALLMENT_AMOUNT, BigInteger.valueOf(50).multiply(MULTIPLIER).toString());
+                consts.TOTAL_BUDGET, BigInteger.valueOf(100).multiply(MULTIPLIER),
+                consts.TOTAL_INSTALLMENT_PAID, BigInteger.ZERO,
+                consts.TOTAL_INSTALLMENT_COUNT, 2,
+                consts.TOTAL_TIMES_INSTALLMENT_PAID, 0,
+                consts.INSTALLMENT_AMOUNT, BigInteger.valueOf(50).multiply(MULTIPLIER));
         assertEquals(proposalDetails.get(0), expectedData);
     }
 
@@ -239,15 +239,15 @@ public class CPSTreasuryTest extends TestBase {
         @SuppressWarnings("unchecked")
         Map<String, ?> proposalDataDetails = (Map<String, ?>) tokenScore.call("get_contributor_projected_fund", testing_account2.getAddress());
         @SuppressWarnings("unchecked")
-        List<Map<String, String>> proposalDetails = (List<Map<String, String>>) proposalDataDetails.get("data");
-        Map<String, String> expectedData = Map.of(
+        List<Map<String, ?>> proposalDetails = (List<Map<String, ?>>) proposalDataDetails.get("data");
+        Map<String, ?> expectedData = Map.of(
                 consts.IPFS_HASH, "Proposal 1",
                 consts.TOKEN, "bnUSD",
-                consts.TOTAL_BUDGET, BigInteger.valueOf(200).multiply(MULTIPLIER).toString(),
-                consts.TOTAL_INSTALLMENT_PAID, BigInteger.ZERO.toString(),
-                consts.TOTAL_INSTALLMENT_COUNT, "3",
-                consts.TOTAL_TIMES_INSTALLMENT_PAID, "0",
-                consts.INSTALLMENT_AMOUNT, "66666666666666666666");
+                consts.TOTAL_BUDGET, BigInteger.valueOf(200).multiply(MULTIPLIER),
+                consts.TOTAL_INSTALLMENT_PAID, BigInteger.ZERO,
+                consts.TOTAL_INSTALLMENT_COUNT, 3,
+                consts.TOTAL_TIMES_INSTALLMENT_PAID, 0,
+                consts.INSTALLMENT_AMOUNT, new BigInteger("66666666666666666666"));
         assertEquals(proposalDetails.get(0), expectedData);
     }
 
