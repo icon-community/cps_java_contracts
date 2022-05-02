@@ -36,8 +36,8 @@ public class CPSTreasuryTest extends TestBase {
     private static final Address dexScore = Address.fromString("cx0000000000000000000000000000000000000003");
     private static final Address cpsTreasuryScore = Address.fromString("cx0000000000000000000000000000000000000004");
 
-    private static final String name = "CPS_Treasury";
-    public static final String TAG = "CPS_Treasury";
+    private static final String name = "CPS_TREASURY";
+    public static final String TAG = "CPS_TREASURY";
     CPSTreasury cpsTreasury;
     private static final BigInteger MULTIPLIER = new BigInteger("1000000000000000000");
 
