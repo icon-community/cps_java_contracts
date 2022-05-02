@@ -89,8 +89,7 @@ public class CPSTreasury extends ProposalData {
 
     private void validateAdmins() {
         Boolean isAdmin = callScore(Boolean.class, cpsScore.get(), "is_admin", Context.getCaller());
-        Context.require(isAdmin,
-                TAG + ": Only admins can call this method");
+        Context.require(isAdmin, TAG + ": Only admins can call this method");
 
     }
 
@@ -100,8 +99,7 @@ public class CPSTreasury extends ProposalData {
     }
 
     private void validateCpsScore() {
-        Context.require(Context.getCaller().equals(cpsScore.get()),
-                TAG + ": Only CPS score " + cpsScore.get() + " can send fund using this method.");
+        Context.require(Context.getCaller().equals(cpsScore.get()), TAG + ": Only CPS score " + cpsScore.get() + " can send fund using this method.");
     }
 
     private void validateCpfTreasuryScore() {
@@ -441,9 +439,7 @@ public class CPSTreasury extends ProposalData {
         } else {
             Context.revert(TAG + jsonObject.get("method").asString() + " Not a valid method.");
         }
-
     }
-
 
     public <T> T callScore(Class<T> t, Address address, String method, Object... params) {
         return Context.call(t, address, method, params);
