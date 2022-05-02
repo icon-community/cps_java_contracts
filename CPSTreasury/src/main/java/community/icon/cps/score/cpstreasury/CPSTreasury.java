@@ -178,11 +178,11 @@ public class CPSTreasury extends ProposalData {
                         Map<String, ?> project_details = Map.of(
                                 consts.IPFS_HASH, _ipfs_key,
                                 consts.TOKEN, flag,
-                                consts.TOTAL_BUDGET, totalBudget.toString(),
-                                consts.TOTAL_INSTALLMENT_PAID, totalPaidAmount.toString(),
-                                consts.TOTAL_INSTALLMENT_COUNT, String.valueOf(totalInstallment),
-                                consts.TOTAL_TIMES_INSTALLMENT_PAID, String.valueOf(totalPaidCount),
-                                consts.INSTALLMENT_AMOUNT, totalBudget.divide(BigInteger.valueOf(totalInstallment)).toString());
+                                consts.TOTAL_BUDGET, totalBudget,
+                                consts.TOTAL_INSTALLMENT_PAID, totalPaidAmount,
+                                consts.TOTAL_INSTALLMENT_COUNT, totalInstallment,
+                                consts.TOTAL_TIMES_INSTALLMENT_PAID, totalPaidCount,
+                                consts.INSTALLMENT_AMOUNT, totalBudget.divide(BigInteger.valueOf(totalInstallment)));
 
                         projectDetails.add(project_details);
                         if (flag.equals(consts.ICX)) {
@@ -199,8 +199,8 @@ public class CPSTreasury extends ProposalData {
                 "data", projectDetails,
                 "project_count", projectDetails.size(),
                 "total_amount", Map.of("ICX", totalAmountToBePaidICX, "bnUSD", totalAmountToBePaidbnUSD),
-                "withdraw_amount_icx", installmentFundRecord.at(_wallet_address.toString()).getOrDefault(consts.ICX, BigInteger.ZERO),
-                "withdraw_amount_bnUSD", installmentFundRecord.at(_wallet_address.toString()).getOrDefault(consts.bnUSD, BigInteger.ZERO));
+                "withdraw_amount_icx", installmentRecord.getOrDefault(consts.ICX, BigInteger.ZERO),
+                "withdraw_amount_bnUSD", installmentRecord.getOrDefault(consts.bnUSD, BigInteger.ZERO));
     }
 
 
