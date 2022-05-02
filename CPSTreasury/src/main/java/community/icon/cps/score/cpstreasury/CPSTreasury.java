@@ -102,11 +102,6 @@ public class CPSTreasury extends ProposalData {
         Context.require(Context.getCaller().equals(cpsScore.get()), TAG + ": Only CPS score " + cpsScore.get() + " can send fund using this method.");
     }
 
-    private void validateCpfTreasuryScore() {
-        Context.require(Context.getCaller().equals(cpfTreasuryScore.get()),
-                TAG + ": Only CPF Treasury score " + cpfTreasuryScore.get() + " can send fund using this method.");
-    }
-
     private void addRecord(ProposalAttributes _proposal) {
         String ipfs_hash = _proposal.ipfs_hash;
         Context.require(!proposalExists(ipfs_hash), TAG + ": Already have this project");
@@ -454,19 +449,7 @@ public class CPSTreasury extends ProposalData {
     }
 
     @EventLog(indexed = 1)
-    public void FundReturned(Address _sponsor_address, String note) {
-    }
-
-    @EventLog(indexed = 1)
-    public void ProposalFundTransferred(String _ipfs_key, String note) {
-    }
-
-    @EventLog(indexed = 1)
     public void ProposalDisqualified(String _ipfs_key, String note) {
-    }
-
-    @EventLog(indexed = 1)
-    public void FundReceived(Address _sponsor_address, String note) {
     }
 
     @EventLog(indexed = 1)
