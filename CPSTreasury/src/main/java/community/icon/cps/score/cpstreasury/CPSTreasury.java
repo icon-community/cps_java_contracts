@@ -16,7 +16,7 @@ import java.util.Map;
 import community.icon.cps.score.cpstreasury.utils.consts;
 
 public class CPSTreasury extends ProposalData {
-    private static final String TAG = "CPS_Treasury";
+    private static final String TAG = "CPS_TREASURY";
     private static final String PROPOSAL_DB_PREFIX = "proposal";
 
     private static final String ID = "id";
@@ -169,6 +169,7 @@ public class CPSTreasury extends ProposalData {
                 if (proposal_details.get(consts.CONTRIBUTOR_ADDRESS).equals(_wallet_address)) {
                     int totalInstallment = (int) proposal_details.get(consts.PROJECT_DURATION);
                     int totalPaidCount = totalInstallment - (int) proposal_details.get(consts.INSTALLMENT_COUNT);
+
                     if (totalPaidCount < totalInstallment) {
                         String flag = (String) proposal_details.get(consts.TOKEN);
                         BigInteger totalBudget = (BigInteger) proposal_details.get(consts.TOTAL_BUDGET);

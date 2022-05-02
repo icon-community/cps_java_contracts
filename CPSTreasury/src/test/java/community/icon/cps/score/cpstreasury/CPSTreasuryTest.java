@@ -97,6 +97,7 @@ public class CPSTreasuryTest extends TestBase {
     private void setCpsScoreMethod() {
         doReturn(Boolean.TRUE).when(scoreSpy).callScore(eq(Boolean.class), any(), eq("is_admin"), eq(owner.getAddress()));
         tokenScore.invoke(owner, "setCpsScore", score_address);
+        assertEquals(score_address, tokenScore.call("getCpsScore"));
     }
 
     @Test
