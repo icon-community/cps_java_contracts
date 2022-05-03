@@ -205,7 +205,7 @@ public class CPSTreasury extends ProposalData {
         BigInteger totalAmountToBePaidbnUSD = BigInteger.ZERO;
         BigInteger totalSponsorBondICX = BigInteger.ZERO;
         BigInteger totalSponsorBondbnUSD = BigInteger.ZERO;
-        List<Map<String, String>> projectDetails = new ArrayList<>();
+        List<Map<String, ?>> projectDetails = new ArrayList<>();
         for (int i = 0; i < proposalsKeys.size(); i++) {
             String _ipfs_key = proposalsKeys.get(i);
             String proposalPrefix = proposalPrefix(_ipfs_key);
@@ -220,7 +220,7 @@ public class CPSTreasury extends ProposalData {
                         BigInteger totalPaidAmount = (BigInteger) proposal_details.get(consts.WITHDRAW_AMOUNT);
                         BigInteger depositedSponsorBond = ((BigInteger) proposal_details.get(consts.TOTAL_BUDGET)).divide(BigInteger.TEN);
 
-                        Map<String, String> project_details = Map.of(
+                        Map<String, ?> project_details = Map.of(
                                 consts.IPFS_HASH, _ipfs_key,
                                 consts.TOKEN, flag,
                                 consts.TOTAL_BUDGET, totalBudget,
