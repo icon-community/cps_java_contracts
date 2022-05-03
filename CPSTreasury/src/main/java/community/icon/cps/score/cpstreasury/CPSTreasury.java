@@ -223,12 +223,12 @@ public class CPSTreasury extends ProposalData {
                         Map<String, String> project_details = Map.of(
                                 consts.IPFS_HASH, _ipfs_key,
                                 consts.TOKEN, flag,
-                                consts.TOTAL_BUDGET, totalBudget.toString(),
-                                consts.TOTAL_INSTALLMENT_PAID, totalPaidAmount.toString(),
-                                consts.TOTAL_INSTALLMENT_COUNT, String.valueOf(totalInstallment),
-                                consts.TOTAL_TIMES_INSTALLMENT_PAID, String.valueOf(totalPaidCount),
-                                consts.INSTALLMENT_AMOUNT, totalBudget.divide(BigInteger.valueOf(totalInstallment)).toString(),
-                                consts.SPONSOR_BOND_AMOUNT, depositedSponsorBond.toString());
+                                consts.TOTAL_BUDGET, totalBudget,
+                                consts.TOTAL_INSTALLMENT_PAID, totalPaidAmount,
+                                consts.TOTAL_INSTALLMENT_COUNT, totalInstallment,
+                                consts.TOTAL_TIMES_INSTALLMENT_PAID, totalPaidCount,
+                                consts.INSTALLMENT_AMOUNT, totalBudget.divide(BigInteger.valueOf(totalInstallment)),
+                                consts.SPONSOR_BOND_AMOUNT, depositedSponsorBond);
 
                         projectDetails.add(project_details);
                         if (flag.equals(consts.ICX)) {
