@@ -242,12 +242,13 @@ public class CPSTreasury extends ProposalData {
                 }
             }
         }
+        DictDB<String, BigInteger> installmentRecord = installmentFundRecord.at(_wallet_address.toString());
         return Map.of(
                 "data", projectDetails,
                 "project_count", projectDetails.size(),
                 "total_amount", Map.of("ICX", totalAmountToBePaidICX, "bnUSD", totalAmountToBePaidbnUSD),
-                "withdraw_amount_icx", installmentFundRecord.at(_wallet_address.toString()).getOrDefault(consts.ICX, BigInteger.ZERO),
-                "withdraw_amount_bnUSD", installmentFundRecord.at(_wallet_address.toString()).getOrDefault(consts.bnUSD, BigInteger.ZERO),
+                "withdraw_amount_icx", installmentRecord.getOrDefault(consts.ICX, BigInteger.ZERO),
+                "withdraw_amount_bnUSD", installmentRecord.getOrDefault(consts.bnUSD, BigInteger.ZERO),
                 "total_sponsor_bond", Map.of("ICX", totalSponsorBondICX, "bnUSD", totalSponsorBondbnUSD)
         );
     }
