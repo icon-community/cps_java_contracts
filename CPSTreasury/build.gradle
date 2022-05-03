@@ -34,7 +34,11 @@ deployJar {
         sejong{
             uri = 'https://sejong.net.solidwallet.io/api/v3'
             nid = 0x53
-
+        }
+        berlin{
+            uri = 'https://berlin.net.solidwallet.io/api/v3'
+            nid = 0x7
+            to = 'cx3e2a9648e4365added55bfa6a84e515d99f1bb67'
         }
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
