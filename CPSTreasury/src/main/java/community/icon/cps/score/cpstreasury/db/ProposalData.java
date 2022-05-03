@@ -19,7 +19,7 @@ public class ProposalData {
     }
     private final BranchDB<String, VarDB<String>> ipfsHash = Context.newBranchDB(consts.IPFS_HASH, String.class);
     private final BranchDB<String, VarDB<BigInteger>> totalBudget = Context.newBranchDB(consts.TOTAL_BUDGET, BigInteger.class);
-    private final BranchDB<String, VarDB<BigInteger>> sponsorReward = Context.newBranchDB(consts.SPONSORS_REWARDS, BigInteger.class);
+    private final BranchDB<String, VarDB<BigInteger>> sponsorReward = Context.newBranchDB(consts.SPONSOR_REWARD, BigInteger.class);
     private final BranchDB<String, VarDB<Integer>> projectDuration = Context.newBranchDB(consts.PROJECT_DURATION, Integer.class);
     private final BranchDB<String, VarDB<Address>> sponsorAddress = Context.newBranchDB(consts.SPONSOR_ADDRESS, Address.class);
     private final BranchDB<String, VarDB<Address>> contributorAddress = Context.newBranchDB(consts.CONTRIBUTOR_ADDRESS, Address.class);
@@ -56,7 +56,7 @@ public class ProposalData {
         return Map.ofEntries(
                 Map.entry(consts.IPFS_HASH, ipfsHash.at(prefix).getOrDefault("")),
                 Map.entry(consts.TOTAL_BUDGET, totalBudget.at(prefix).getOrDefault(BigInteger.ZERO)),
-                Map.entry(consts.SPONSORS_REWARDS, sponsorReward.at(prefix).getOrDefault(BigInteger.ZERO)),
+                Map.entry(consts.SPONSOR_REWARD, sponsorReward.at(prefix).getOrDefault(BigInteger.ZERO)),
                 Map.entry(consts.PROJECT_DURATION, projectDuration.at(prefix).getOrDefault(0)),
                 Map.entry(consts.SPONSOR_ADDRESS, sponsorAddress.at(prefix).get()),
                 Map.entry(consts.CONTRIBUTOR_ADDRESS, contributorAddress.at(prefix).get()),

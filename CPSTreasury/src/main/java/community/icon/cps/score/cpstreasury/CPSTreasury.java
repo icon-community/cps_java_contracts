@@ -267,7 +267,7 @@ public class CPSTreasury extends ProposalData {
         String proposalPrefix = proposalPrefix(_ipfs_key);
         Map<String, ?> proposalDetails = proposalData.getDataFromProposalDB(proposalPrefix);
         BigInteger totalBudget = (BigInteger) proposalDetails.get(consts.TOTAL_BUDGET);
-        BigInteger sponsorReward = (BigInteger) proposalDetails.get(consts.SPONSORS_REWARDS);
+        BigInteger sponsorReward = (BigInteger) proposalDetails.get(consts.SPONSOR_REWARD);
         int totalDuration = (int) proposalDetails.get(consts.PROJECT_DURATION);
         BigInteger remainingAmount = (BigInteger) proposalDetails.get(consts.REMAINING_AMOUNT);
         BigInteger sponsorRemainingAmount = (BigInteger) proposalDetails.get(consts.SPONSOR_REMAINING_AMOUNT);

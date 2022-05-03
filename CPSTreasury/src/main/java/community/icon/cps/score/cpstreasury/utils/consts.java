@@ -117,7 +117,7 @@ public class consts {
     public static final String ICX = "ICX";
     public static final String bnUSD = "bnUSD";
 
-    public static final String SPONSORS_REWARDS = "sponsor_reward";
+    public static final String SPONSOR_REWARD = "sponsor_reward";
     public static final String SPONSOR_ADDRESS = "sponsor_address";
     public static final String CONTRIBUTOR_ADDRESS = "contributor_address";
     public static final String WITHDRAW_AMOUNT = "withdraw_amount";
