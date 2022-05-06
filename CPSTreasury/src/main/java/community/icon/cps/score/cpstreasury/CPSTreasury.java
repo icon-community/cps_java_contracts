@@ -46,7 +46,8 @@ public class CPSTreasury extends ProposalData {
     private static final String ACTIVE = "active";
     private static final String DISQUALIFIED = "disqualified";
     private static final String COMPLETED = "completed";
-
+    private static final String CONTRIBUTOR_PROJECTS = "contributor_projects";
+    private static final String SPONSOR_PROJECTS = "sponsor_projects";
 
     private final VarDB<String> id = Context.newVarDB(ID, String.class);
     private final ArrayDB<String> proposalsKeys = Context.newArrayDB(PROPOSALS_KEYS, String.class);
@@ -57,6 +58,8 @@ public class CPSTreasury extends ProposalData {
     private final VarDB<Address> cpfTreasuryScore = Context.newVarDB(CPF_TREASURY_SCORE, Address.class);
     private final VarDB<Address> cpsScore = Context.newVarDB(CPS_SCORE, Address.class);
     private final VarDB<Address> balancedDollar = Context.newVarDB(BALANCED_DOLLAR, Address.class);
+    private final BranchDB<String, ArrayDB<String>> contributorProjects = Context.newBranchDB(CONTRIBUTOR_PROJECTS, String.class);
+    private final BranchDB<String, ArrayDB<String>> sponsorProjects = Context.newBranchDB(SPONSOR_PROJECTS, String.class);
 
     public CPSTreasury() {
     }
@@ -106,6 +109,8 @@ public class CPSTreasury extends ProposalData {
         String ipfs_hash = _proposal.ipfs_hash;
         Context.require(!proposalExists(ipfs_hash), TAG + ": Already have this project");
         proposalsKeys.add(ipfs_hash);
+        sponsorProjects.at(_proposal.sponsor_address).add(ipfs_hash);
+        contributorProjects.at(_proposal.contributor_address).add(ipfs_hash);
         String proposalPrefix = proposalPrefix(ipfs_hash);
         addDataToProposalDB(_proposal, proposalPrefix);
         proposalsKeyListIndex.set(ipfs_hash, proposalsKeys.size() - 1);
@@ -197,6 +202,23 @@ public class CPSTreasury extends ProposalData {
                 "withdraw_amount_bnUSD", installmentRecord.getOrDefault(consts.bnUSD, BigInteger.ZERO));
     }
 
+    @External
+    public List<String> getContributorProjects(Address address){
+        List<String> contributorProjects = new ArrayList<>();
+        for (int i = 0; i < this.contributorProjects.at(address.toString()).size(); i++){
+            contributorProjects.add(this.contributorProjects.at(address.toString()).get(i));
+        }
+        return contributorProjects;
+    }
+
+    @External
+    public List<String> getSponsorProjects(Address address){
+        List<String> sponsorProjects = new ArrayList<>();
+        for (int i = 0; i < this.sponsorProjects.at(address.toString()).size(); i++){
+            sponsorProjects.add(this.sponsorProjects.at(address.toString()).get(i));
+        }
+        return sponsorProjects;
+    }
 
     @External(readonly = true)
     public Map<String, ?> get_sponsor_projected_fund(Address _wallet_address) {
@@ -434,6 +456,19 @@ public class CPSTreasury extends ProposalData {
             update_proposal_fund(ipfs_key, added_budget, added_sponsor_reward, added_installment_count);
         } else {
             Context.revert(TAG + jsonObject.get("method").asString() + " Not a valid method.");
+        }
+    }
+
+//    for migration into java contract
+    @External
+    public void updateSponsorAndContributorProjects(){
+        for (int i = 0; i < proposalsKeys.size(); i++){
+            String proposalKey = proposalsKeys.get(i);
+            String proposalPrefix = proposalPrefix(proposalKey);
+            Address contributorAddress = getContributorAddress(proposalPrefix);
+            Address sponsorAddress = getSponsorAddress(proposalPrefix);
+            contributorProjects.at(contributorAddress.toString()).add(proposalKey);
+            sponsorProjects.at(sponsorAddress.toString()).add(proposalKey);
         }
     }
 
