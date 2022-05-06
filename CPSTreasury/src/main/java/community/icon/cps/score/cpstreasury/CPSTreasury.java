@@ -202,7 +202,7 @@ public class CPSTreasury extends ProposalData {
                 "withdraw_amount_bnUSD", installmentRecord.getOrDefault(consts.bnUSD, BigInteger.ZERO));
     }
 
-    @External
+    @External(readonly = true)
     public List<String> getContributorProjects(Address address){
         List<String> contributorProjects = new ArrayList<>();
         for (int i = 0; i < this.contributorProjects.at(address.toString()).size(); i++){
@@ -211,7 +211,7 @@ public class CPSTreasury extends ProposalData {
         return contributorProjects;
     }
 
-    @External
+    @External(readonly = true)
     public List<String> getSponsorProjects(Address address){
         List<String> sponsorProjects = new ArrayList<>();
         for (int i = 0; i < this.sponsorProjects.at(address.toString()).size(); i++){
