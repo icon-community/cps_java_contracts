@@ -8,4 +8,15 @@ lib
 CPSTreasury.iml
 CPFTreasury/build
 CPSTreasury/build
+gochain-local/
+goloop/
+CPSTreasury/.DS_Store
+CPSTreasury/src/.DS_Store
+.DS_Store
+score-client/build
+score-lib/build
+test-lib/build
+testinteg/build
+
+
 

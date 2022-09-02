@@ -13,9 +13,11 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+import community.icon.cps.score.lib.interfaces.CPSTreasuryInterface;
+
 import community.icon.cps.score.cpstreasury.utils.consts;
 
-public class CPSTreasury extends ProposalData {
+public class CPSTreasury extends ProposalData implements CPSTreasuryInterface{
     private static final String TAG = "CPS_TREASURY";
     private static final String PROPOSAL_DB_PREFIX = "proposal";
 
@@ -64,11 +66,13 @@ public class CPSTreasury extends ProposalData {
     public CPSTreasury() {
     }
 
+    @Override
     @External(readonly = true)
     public String name() {
         return TAG;
     }
 
+    @Override
     @Payable
     public void fallback() {
         Context.revert(TAG + ": ICX can only be send by CPF Treasury Score");
@@ -121,39 +125,46 @@ public class CPSTreasury extends ProposalData {
         return proposalData.getDataFromProposalDB(_proposal_key);
     }
 
+    @Override
     @External
     public void setCpsScore(Address _score) {
         validateAdminScore(_score);
         cpsScore.set(_score);
     }
 
+    @Override
     @External(readonly = true) //Todo java convention in get methods??
     public Address getCpsScore() {
         return cpsScore.get();
     }
 
+    @Override
     @External
     public void setCpfTreasuryScore(Address _score) {
         validateAdminScore(_score);
         cpfTreasuryScore.set(_score);
     }
 
+    @Override
     @External(readonly = true)
     public Address getCpfTreasuryScore() {
         return cpfTreasuryScore.get();
     }
 
+    @Override
     @External
     public void setBnUSDScore(Address _score) {
         validateAdminScore(_score);
         balancedDollar.set(_score);
     }
 
+    @Override
     @External
     public Address getBnUSDScore() {
         return balancedDollar.get();
     }
 
+    @Override
     @External(readonly = true)
     public Map<String, ?> get_contributor_projected_fund(Address _wallet_address) {
         BigInteger totalAmountToBePaidICX = BigInteger.ZERO;
@@ -202,6 +213,7 @@ public class CPSTreasury extends ProposalData {
                 "withdraw_amount_bnUSD", installmentRecord.getOrDefault(consts.bnUSD, BigInteger.ZERO));
     }
 
+    @Override
     @External(readonly = true)
     public List<String> getContributorProjects(Address address){
         List<String> contributorProjects = new ArrayList<>();
@@ -211,6 +223,7 @@ public class CPSTreasury extends ProposalData {
         return contributorProjects;
     }
 
+    @Override
     @External(readonly = true)
     public List<String> getSponsorProjects(Address address){
         List<String> sponsorProjects = new ArrayList<>();
@@ -220,6 +233,7 @@ public class CPSTreasury extends ProposalData {
         return sponsorProjects;
     }
 
+    @Override
     @External(readonly = true)
     public Map<String, ?> get_sponsor_projected_fund(Address _wallet_address) {
         ProposalData proposalData = new ProposalData();
@@ -281,6 +295,7 @@ public class CPSTreasury extends ProposalData {
                 consts.bnUSD + " fund from CPF");
     }
 
+    @Override
     @External
     @Payable
     public void update_proposal_fund(String _ipfs_key, BigInteger _added_budget, BigInteger _added_sponsor_reward,
@@ -310,6 +325,7 @@ public class CPSTreasury extends ProposalData {
                 flag + "and Added time: " + _added_installment_count + " Successfully");
     }
 
+    @Override
     @External
     public void send_installment_to_contributor(String _ipfs_key) {
         validateCpsScore();
@@ -343,6 +359,7 @@ public class CPSTreasury extends ProposalData {
         }
     }
 
+    @Override
     @External
     public void send_reward_to_sponsor(String _ipfs_key) {
         validateCpsScore();
@@ -372,6 +389,7 @@ public class CPSTreasury extends ProposalData {
                 flag + " sent to sponsor address.");
     }
 
+    @Override
     @External
     public void disqualify_project(String _ipfs_key) {
         validateCpsScore();
@@ -407,6 +425,7 @@ public class CPSTreasury extends ProposalData {
     }
 
 
+    @Override
     @External
     public void claim_reward() {
         BigInteger availableAmountICX = installmentFundRecord.at(Context.getCaller().toString()).getOrDefault(consts.ICX, BigInteger.ZERO);
@@ -423,6 +442,7 @@ public class CPSTreasury extends ProposalData {
         }
     }
 
+    @Override
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
         Context.require(_from.equals(cpfTreasuryScore.get()), TAG + "Only receiving from " + cpfTreasuryScore.get());
@@ -460,6 +480,7 @@ public class CPSTreasury extends ProposalData {
     }
 
 //    for migration into java contract
+    @Override
     @External
     public void updateSponsorAndContributorProjects(){
         for (int i = 0; i < proposalsKeys.size(); i++){
@@ -484,18 +505,22 @@ public class CPSTreasury extends ProposalData {
         Context.call(amount, address, method, params);
     }
 
+    @Override
     @EventLog(indexed = 1)
     public void ProposalDisqualified(String _ipfs_key, String note) {
     }
 
+    @Override
     @EventLog(indexed = 1)
     public void ProposalFundDeposited(String _ipfs_key, String note) {
     }
 
+    @Override
     @EventLog(indexed = 1)
     public void ProposalFundSent(Address _receiver_address, String note) {
     }
 
+    @Override
     @EventLog(indexed = 1)
     public void ProposalFundWithdrawn(Address _receiver_address, String note) {
     }
