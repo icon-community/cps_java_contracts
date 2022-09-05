@@ -1,3 +1,12 @@
 rootProject.name = 'cps_java_contracts'
-include ('CPFTreasury',
-'CPSTreasury')
+
+include (':CPFTreasury')
+
+include (':CPSTreasury')
+project(':CPSTreasury').projectDir = file("CPSTreasury")
+
+include ('score-client')
+
+include ('test-lib')
+
+include ('score-lib')
