@@ -26,6 +26,7 @@ public class Constants {
 
     public static final String SWAP_STATE = "swap_state";
     public static final String SWAP_COUNT = "swap_count";
+    public static final String SWAP_FLAG = "swap_flag";
     public static final Address SYSTEM_ADDRESS = Address.fromString("cx0000000000000000000000000000000000000000");
 
     public static final int sICXICXPoolID = 1;
