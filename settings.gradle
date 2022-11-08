@@ -1,12 +1,32 @@
 rootProject.name = 'cps_java_contracts'
 
 include (':CPFTreasury')
+project(':CPFTreasury').projectDir = file("CPFTreasury")
 
 include (':CPSTreasury')
 project(':CPSTreasury').projectDir = file("CPSTreasury")
+
+include (':CPSMain')
+project(':CPSMain').projectDir = file("CPSMain")
 
 include ('score-client')
 
 include ('test-lib')
 
 include ('score-lib')
+
+include (':Router')
+project(':Router').projectDir = file("dummy/Router")
+
+include (':Dex')
+project(':Dex').projectDir = file("dummy/Dex")
+
+include (':sICX')
+project(':sICX').projectDir = file("dummy/sICX")
+
+include (':bnUSD')
+project(':bnUSD').projectDir = file("dummy/bnUSD")
+
+
+
+
