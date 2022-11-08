@@ -33,8 +33,10 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     private final VarDB<Integer> swapState = Context.newVarDB(SWAP_STATE, Integer.class);
     private final VarDB<Integer> swapCount = Context.newVarDB(SWAP_COUNT, Integer.class);
 
-    public CPFTreasury() {
+    private final VarDB<Boolean> swapFlag = Context.newVarDB(SWAP_FLAG, Boolean.class);
 
+    public CPFTreasury() {
+        swapFlag.set(true);
     }
 
     private boolean proposalExists(String ipfsKey) {
@@ -65,6 +67,17 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     public void setMaximumTreasuryFundBnusd(BigInteger _value) {
         validateAdmins();
         treasuryFundbnUSD.set(_value);
+    }
+
+    @External
+    public void toggleSwapFlag() {
+        validateAdmins();
+        swapFlag.set(!swapFlag.getOrDefault(false));
+    }
+
+    @External(readonly = true)
+    public boolean getSwapFlag() {
+        return swapFlag.getOrDefault(false);
     }
 
 
@@ -216,9 +229,11 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     @Override
     @External
     public void swapIcxBnusd(BigInteger amount) {
-        Address[] path = new Address[]{sICXScore.get(), balancedDollar.get()};
-        Object[] params = new Object[]{path};
-        Context.call(amount, routerScore.get(), "route", params);
+        if (getSwapFlag()) {
+            Address[] path = new Address[]{sICXScore.get(), balancedDollar.get()};
+            Object[] params = new Object[]{path};
+            Context.call(amount, routerScore.get(), "route", params);
+        }
     }
 
     @Override
