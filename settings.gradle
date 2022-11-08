@@ -6,8 +6,8 @@ project(':CPFTreasury').projectDir = file("CPFTreasury")
 include (':CPSTreasury')
 project(':CPSTreasury').projectDir = file("CPSTreasury")
 
-include (':CPSMain')
-project(':CPSMain').projectDir = file("CPSMain")
+include (':CPSCore')
+project(':CPSCore').projectDir = file("CPSCore")
 
 include ('score-client')
 
