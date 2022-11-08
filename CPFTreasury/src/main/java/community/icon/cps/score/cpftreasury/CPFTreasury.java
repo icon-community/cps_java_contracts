@@ -243,13 +243,13 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
                 } else {
                     BigInteger remainingICXToSwap = bnUSDRemainingToSwap.multiply(EXA).divide(icxbnUSDPrice.multiply(BigInteger.valueOf(count)));
                     BigInteger icxBalance = Context.getBalance(Context.getAddress());
+                    swapCount.set(swapCountValue + 1);
                     if (remainingICXToSwap.compareTo(icxBalance) > 0) {
                         remainingICXToSwap = icxBalance;
                     }
 
                     if (remainingICXToSwap.compareTo(BigInteger.valueOf(5).multiply(EXA)) > 0) {
                         swapIcxBnusd(remainingICXToSwap);
-                        swapCount.set(swapCountValue + 1);
                     }
                 }
             }
