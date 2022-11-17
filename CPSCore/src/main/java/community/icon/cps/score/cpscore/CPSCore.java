@@ -33,8 +33,6 @@ public class CPSCore implements CPSCoreInterface {
     private final ArrayDB<String> budgetApprovalsList = Context.newArrayDB(BUDGET_APPROVALS_LIST, String.class);
 
     private final ArrayDB<String> activeProposals = Context.newArrayDB(ACTIVE_PROPOSALS, String.class);
-    private final ArrayDB<String> votingProposals = Context.newArrayDB(VOTING_PROPOSALS, String.class);
-    private final ArrayDB<String> votingProgressReports = Context.newArrayDB(VOTING_PROGRESS_REPORTS, String.class);
 
     private final ArrayDB<Address> contributors = Context.newArrayDB(CONTRIBUTORS, Address.class);
     private final ArrayDB<Address> sponsors = Context.newArrayDB(SPONSORS, Address.class);
@@ -198,13 +196,6 @@ public class CPSCore implements CPSCoreInterface {
     }
 
     @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External(readonly = true)
-    public boolean is_admin(Address _address) {
-        return isAdmin(_address);
-    }
-
-    @Override
     @External
     public void toggleBudgetAdjustmentFeature() {
         SetterGetter setterGetter = new SetterGetter();
@@ -225,12 +216,6 @@ public class CPSCore implements CPSCoreInterface {
         setterGetter.maintenance.set(!setterGetter.maintenance.getOrDefault(Boolean.TRUE));
     }
 
-    @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External
-    public void toggle_maintenance() {
-        toggleMaintenance();
-    }
 
     @Override
     @External(readonly = true)
@@ -242,14 +227,14 @@ public class CPSCore implements CPSCoreInterface {
     @Override
     @Payable
     public void fallback() {
-        Context.revert("ICX can only be sent while submitting a proposal or paying the penalty.");
+        Context.revert(TAG + ": ICX can only be sent while submitting a proposal or paying the penalty.");
     }
 
     private void burn(BigInteger amount, @Optional Address token) {
-        SetterGetter setterGetter = new SetterGetter();
         if (token == null) {
             token = SYSTEM_ADDRESS;
         }
+        SetterGetter setterGetter = new SetterGetter();
         if (token.equals(SYSTEM_ADDRESS)) {
             callScore(amount, SYSTEM_ADDRESS, "burn");
         } else {
@@ -281,12 +266,6 @@ public class CPSCore implements CPSCoreInterface {
         }
     }
 
-    @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External
-    public void add_admin(Address _address) {
-        addAdmin(_address);
-    }
 
     @External
     public void removeAdmin(Address address) { // change made
@@ -297,12 +276,6 @@ public class CPSCore implements CPSCoreInterface {
         ArrayDBUtils.removeArrayItem(admins, address);
     }
 
-    @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External
-    public void remove_admin(Address _address) { // change made
-        removeAdmin(_address);
-    }
 
     @External
     public void unregisterPrep() {
@@ -331,6 +304,7 @@ public class CPSCore implements CPSCoreInterface {
 
     @External
     public void registerPrep() {
+//        todo: check PRep list for candidate PRep after snapshot
         checkMaintenance();
         update_period();
         Address caller = Context.getCaller();
@@ -746,6 +720,7 @@ public class CPSCore implements CPSCoreInterface {
         PeriodController period = new PeriodController();
         Context.require(period.periodName.get().equals(APPLICATION_PERIOD),
                 TAG + ": Proposals can only be submitted on Application Period ");
+        Context.require(proposalsKeyListIndex.getOrDefault(proposals.ipfs_hash, 0) != 0, TAG + ": Proposal key already exists.");
         Context.require(!Context.getCaller().isContract(), TAG + ": Contract Address not supported.");
         Context.require(proposals.project_duration <= MAX_PROJECT_PERIOD,
                 TAG + ": Maximum Project Duration exceeds " + MAX_PROJECT_PERIOD + " months.");
@@ -765,7 +740,6 @@ public class CPSCore implements CPSCoreInterface {
         String ipfsHash = proposals.ipfs_hash;
         String ipfsHashPrefix = proposalPrefix(ipfsHash);
 
-//        TODO Check if prefix is already added or not
         addDataToProposalDB(proposals, ipfsHashPrefix);
         proposalsKeyList.add(proposals.ipfs_hash);
         proposalsKeyListIndex.set(ipfsHash, proposalsKeyList.size() - 1);
@@ -919,8 +893,10 @@ public class CPSCore implements CPSCoreInterface {
         Context.require(!progressSubmitted, TAG + ": Progress Report is already submitted this cycle.");
 
         String reportHash = progressReport.report_hash;
+        String ipfsHash = progressReport.ipfs_hash;
         Context.require(!_progress_key_exists(reportHash), TAG + ": Report key already exists.");
-        addNewProgressReportKey(progressReport.ipfs_hash, reportHash);
+        Context.require(proposalKeyExists(ipfsHash));
+        addNewProgressReportKey(ipfsHash, reportHash);
         String reportHashPrefix = progressReportPrefix(reportHash);
         addDataToProgressReportDB(progressReport, reportHashPrefix);
         int percentageCompleted = progressReport.percentage_completed;
@@ -1728,16 +1704,9 @@ public class CPSCore implements CPSCoreInterface {
         for (int i = startIndex; i < endIndex; i++) {
             String progressReportKey = progressReportKeys.get(i);
             Map<String, Object> progressReportDetails = this.getProgressReportDetails(progressReportKey);
-            String ipfsKey = (String) progressReportDetails.get(IPFS_HASH);
             String progressStatus = (String) progressReportDetails.get(STATUS);
 
             if (progressStatus.equals(status)) {
-                Map<String, Object> proposalDetails = getProposalDetails(ipfsKey);
-                String projectTitle = (String) proposalDetails.get(PROJECT_TITLE);
-                String contributorAddress = proposalDetails.get(CONTRIBUTOR_ADDRESS).toString();
-//          TODO: add them to hash map
-//                progressReportDetails.put(PROJECT_TITLE, projectTitle);
-//                progressReportDetails.put(CONTRIBUTOR_ADDRESS, contributorAddress);
                 progressReportList.add(progressReportDetails);
             }
         }
@@ -2537,5 +2506,14 @@ public class CPSCore implements CPSCoreInterface {
 //                "cpsBalance", Context.getBalance(Context.getAddress())
 //        );
 //    }
+
+    @External(readonly = true)
+    public BigInteger dummy(){
+        BigInteger hello = BigInteger.ONE.negate();
+
+        hello = BigInteger.ZERO;
+        return hello;
+
+    }
 
 }
