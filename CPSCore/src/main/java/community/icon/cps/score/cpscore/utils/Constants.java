@@ -186,4 +186,6 @@ public class Constants {
 
     public static final Integer PENALTY_LEVELS = 3;
 
+    //    migration
+    public static final int MIGRATION_BATCH = 10;
 }
