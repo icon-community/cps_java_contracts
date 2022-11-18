@@ -14,37 +14,6 @@ task buildContracts(type: Exec) {
     commandLine './gradlew', 'optimizedJar'
 }
 
-//apply plugin: 'deploy-contracts'
-//deployCPSContracts {
-//    envs {
-//        local {
-//            env = "local"
-//        }
-//        berlin {
-//            env = "berlin"
-//            configFile = "contracts-sample.json"
-//            keystore = rootProject.findProperty('keystoreName') ?: ''
-//            password = rootProject.findProperty('keystorePass') ?: ''
-//        }
-//        sejong {
-//            env = "sejong"
-//            configFile = "contracts-sample.json"
-//            keystore = rootProject.findProperty('keystoreName') ?: ''
-//            password = rootProject.findProperty('keystorePass') ?: ''
-//        }
-//    }
-//}
-
-
-//executeBalancedActions {
-//    contractAddressFile = "sample.json"
-//    propertiesFile = "sample.properties"
-//    actionsFile = "actions-sample.json"
-//    keystore = rootProject.findProperty('keystoreName') ?: ''
-//    password = rootProject.findProperty('keystorePass') ?: ''
-//}
-
-
 subprojects {
     repositories {
         mavenCentral()

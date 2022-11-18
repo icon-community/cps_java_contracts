@@ -1,7 +1,9 @@
 package community.icon.cps.score.test.integration;
 
+import community.icon.cps.score.lib.interfaces.SystemInterface;
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.icx.Wallet;
+import foundation.icon.icx.data.Bytes;
 import foundation.icon.jsonrpc.Address;
 import foundation.icon.jsonrpc.model.Hash;
 import foundation.icon.jsonrpc.model.TransactionResult;
@@ -9,14 +11,20 @@ import foundation.icon.score.client.DefaultScoreClient;
 import foundation.icon.score.client.RevertedException;
 
 import community.icon.cps.score.lib.interfaces.SystemInterfaceScoreClient;
+import net.bytebuddy.pool.TypePool;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.function.Executable;
 import score.UserRevertedException;
 
+import java.io.BufferedReader;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.PrintStream;
 import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
+import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.util.List;
@@ -31,6 +39,8 @@ import java.util.stream.Stream;
 import static community.icon.cps.score.test.integration.Env.Chain;
 import static community.icon.cps.score.test.integration.Env.getDefaultChain;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static community.icon.cps.score.lib.interfaces.SystemInterface.Delegation;
+import static community.icon.cps.score.lib.interfaces.SystemInterface.Bond;
 
 @Tag("integration")
 @TestMethodOrder(value = MethodOrderer.OrderAnnotation.class)
@@ -41,38 +51,130 @@ public interface ScoreIntegrationTest {
     DefaultScoreClient client = new DefaultScoreClient(chain.getEndpointURL(), chain.networkId, null, null);
 
     SystemInterfaceScoreClient systemScore = new SystemInterfaceScoreClient(godClient);
+    public static final BigInteger EXA = BigInteger.valueOf(1_000_000_000_000_000_000L);
 
     @SuppressWarnings("unchecked")
     static void registerPreps() throws Exception {
 
         Map<String, Object> getPreps;
+        String privateKey = "";
 
         try {
-            getPreps = systemScore.getPReps(BigInteger.ONE, BigInteger.valueOf(100));
+            getPreps = systemScore.getPReps(BigInteger.ONE, BigInteger.valueOf(7));
         } catch (Exception e) {
-            registerPrep();
-            getPreps = systemScore.getPReps(BigInteger.ONE, BigInteger.valueOf(100));
+            privateKey = registerPrep();
+            getPreps = systemScore.getPReps(BigInteger.ONE, BigInteger.valueOf(7));
         }
 
         List<Map<String, Object>> prepList = (List<Map<String, Object>>) getPreps.get("preps");
         int prepCount = prepList.size();
-        if (prepCount >= 100) {
+        if (prepCount >= 7) {
             return;
         }
-        int remainingPrepsToRegister = 100 - prepCount;
+        int remainingPrepsToRegister = 7 - prepCount;
         for (int i = 0; i < remainingPrepsToRegister; i++) {
-            registerPrep();
+            privateKey = privateKey + registerPrep();
         }
+        PrintStream out = new PrintStream(new FileOutputStream("privateKey.txt"));
+        System.out.println("private keys: " + privateKey);
+        out.println(privateKey);
+        BufferedReader br = new BufferedReader(new FileReader("privateKey.txt"));
+        System.out.println("Reading the content of the file: " + br.readLine());
     }
 
-    private static void registerPrep() throws Exception {
+    private static String registerPrep() throws Exception {
         KeyWallet owner = createWalletWithBalance(BigInteger.TEN.pow(24));
+        String privateKey = String.valueOf(owner.getPrivateKey());
+//            PrintStream out = new PrintStream(new FileOutputStream("privateKey.txt"));
+//        System.out.println("private keys: " + privateKey);
+//            out.println(privateKey);
         DefaultScoreClient godClient = new DefaultScoreClient(chain.getEndpointURL(), chain.networkId, owner,
                 DefaultScoreClient.ZERO_ADDRESS);
         SystemInterfaceScoreClient systemScore = new SystemInterfaceScoreClient(godClient);
         systemScore.registerPRep(BigInteger.valueOf(2000).multiply(BigInteger.TEN.pow(18)), "test",
                 "kokoa@example.com", "USA", "New York", "https://icon.kokoa.com",
                 "https://icon.kokoa.com/json/details.json", "localhost:9082");
+        return privateKey;
+    }
+
+    public static void registerGodClient() {
+        systemScore.registerPRep(BigInteger.valueOf(2000).multiply(BigInteger.TEN.pow(18)), "test",
+                "kokoa@example.com", "USA", "New York", "https://icon.kokoa.com",
+                "https://icon.kokoa.com/json/details.json", "localhost:9082");
+
+    }
+
+    public static void registerPrepByPrivateKey(KeyWallet owner){
+        DefaultScoreClient godClient = new DefaultScoreClient(chain.getEndpointURL(), chain.networkId, owner,
+                DefaultScoreClient.ZERO_ADDRESS);
+        SystemInterfaceScoreClient systemScore = new SystemInterfaceScoreClient(godClient);
+        systemScore.registerPRep(BigInteger.valueOf(2000).multiply(BigInteger.TEN.pow(18)), "test",
+                "kokoa@example.com", "USA", "New York", "https://icon.kokoa.com",
+                "https://icon.kokoa.com/json/details.json", "localhost:9082");
+    }
+
+    public static void setStake(KeyWallet[] owner) {
+        for (int i = 0; i < owner.length; i++) {
+            DefaultScoreClient godClient = new DefaultScoreClient(chain.getEndpointURL(), chain.networkId, owner[i],
+                    DefaultScoreClient.ZERO_ADDRESS);
+            SystemInterfaceScoreClient systemScore = new SystemInterfaceScoreClient(godClient);
+            systemScore.setStake(BigInteger.valueOf(1000).multiply(EXA));
+        }
+    }
+
+    public static void setGodStake(){
+        systemScore.setStake(BigInteger.valueOf(9000000).multiply(EXA));
+        Delegation[] delegation = new Delegation[1];
+        delegation[0] = new Delegation();
+        delegation[0].address = score.Address.fromString(chain.godWallet.getAddress().toString());
+        delegation[0].value = BigInteger.valueOf(8000000).multiply(EXA);
+        systemScore.setDelegation(delegation);
+
+        score.Address[] addresses = new score.Address[1];
+        addresses[0] = score.Address.fromString(chain.godWallet.getAddress().toString());
+        systemScore.setBonderList(addresses);
+
+        Bond[] bonds = new Bond[1];
+        bonds[0] = new Bond();
+        bonds[0].address = score.Address.fromString(chain.godWallet.getAddress().toString());
+        bonds[0].value = BigInteger.valueOf(1000000).multiply(EXA);
+        systemScore.setBond(bonds);
+    }
+    public static void setDelegation(KeyWallet[] owner){
+        for (int i = 0; i < owner.length; i++) {
+            Delegation[] delegations = new Delegation[1];
+            delegations[0] = new Delegation();
+            delegations[0].address = score.Address.fromString(owner[i].getAddress().toString());
+            delegations[0].value = BigInteger.valueOf(400).multiply(EXA);
+            DefaultScoreClient godClient = new DefaultScoreClient(chain.getEndpointURL(), chain.networkId, owner[i],
+                    DefaultScoreClient.ZERO_ADDRESS);
+            SystemInterfaceScoreClient systemScore = new SystemInterfaceScoreClient(godClient);
+            systemScore.setDelegation(delegations);
+        }
+    }
+
+    public static void setBond(KeyWallet[] owner) {
+        for (int i = 0; i < owner.length; i++) {
+            Bond[] bond = new Bond[1];
+            bond[0] = new Bond();
+            bond[0].address = score.Address.fromString(owner[i].getAddress().toString());
+            bond[0].value = BigInteger.valueOf(400).multiply(EXA);
+            DefaultScoreClient godClient = new DefaultScoreClient(chain.getEndpointURL(), chain.networkId, owner[i],
+                    DefaultScoreClient.ZERO_ADDRESS);
+            SystemInterfaceScoreClient systemScore = new SystemInterfaceScoreClient(godClient);
+            systemScore.setBond(bond);
+        }
+    }
+
+    public static void setBonderList(KeyWallet[] owner){
+        for (int i = 0; i < owner.length; i++) {
+            score.Address[] bonderList = new score.Address[1];
+            bonderList[0] = score.Address.fromString(owner[i].getAddress().toString());
+            DefaultScoreClient godClient = new DefaultScoreClient(chain.getEndpointURL(), chain.networkId, owner[i],
+                    DefaultScoreClient.ZERO_ADDRESS);
+            SystemInterfaceScoreClient systemScore = new SystemInterfaceScoreClient(godClient);
+            systemScore.setBonderList(bonderList);
+        }
     }
 
     static KeyWallet createWalletWithBalance(BigInteger amount) throws Exception {
