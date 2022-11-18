@@ -23,6 +23,7 @@ import static community.icon.cps.score.cpscore.utils.Constants.*;
 import static community.icon.cps.score.cpscore.utils.Checkers.*;
 import static community.icon.cps.score.cpscore.utils.ArrayDBUtils.*;
 import community.icon.cps.score.lib.interfaces.CPSCoreInterface;
+import community.icon.cps.score.cpscore.utils.Migration;
 
 public class CPSCore implements CPSCoreInterface {
 
@@ -846,14 +847,16 @@ public class CPSCore implements CPSCoreInterface {
     }
 
     @External
-    public void migrateAbstainVotes(){
+    public void migrateAbstainVotes(Migration[] migrations){
         validateAdmins();
-        PeriodController periodController = new PeriodController();
-        Context.require(periodController.periodName.get().equals(APPLICATION_PERIOD));
-        int size = proposalsKeyList.size();
-        for(int i = 0; i < size; i++){
-            String proposalPrefix = proposalPrefix(proposalsKeyList.get(i));
-            abstainedVotes.at(proposalPrefix).set(BigInteger.ZERO);
+        Context.require(migrations.length <= MIGRATION_BATCH, TAG + ": The length of data should be " +
+                "smaller than or equal to " + MIGRATION_BATCH);
+        for (Migration migration : migrations) {
+            String proposalPrefix = proposalPrefix(migration.ipfsHash);
+            for (int j = 0; j < migration.abstainVoters.length; j++) {
+                abstainVoters.at(proposalPrefix).add(migration.abstainVoters[j]);
+            }
+            abstainedVotes.at(proposalPrefix).set(migration.abstainVotes);
         }
     }
 
