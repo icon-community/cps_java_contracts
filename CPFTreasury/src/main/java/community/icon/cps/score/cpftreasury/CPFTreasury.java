@@ -283,7 +283,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         Address cpsScoreAddress = cpsScore.get();
         Address caller = Context.getCaller();
 
-        boolean checkCaller = caller.equals(cpsScoreAddress) || (Boolean) Context.call(cpsScoreAddress, "is_admin", caller);
+        boolean checkCaller = caller.equals(cpsScoreAddress) || (Boolean) Context.call(cpsScoreAddress, "isAdmin", caller);
         Context.require(checkCaller, TAG + ": Only admin can call this method.");
         swapState.set(SwapContinue);
         swapCount.set(SwapReset);
