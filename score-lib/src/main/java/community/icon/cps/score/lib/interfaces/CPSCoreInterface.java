@@ -82,7 +82,7 @@ public interface CPSCoreInterface {
 
     
     @External(readonly = true)
-    boolean is_admin(Address _address);
+    boolean isAdmin(Address address);
 
     @External
     void toggleBudgetAdjustmentFeature();
@@ -92,7 +92,7 @@ public interface CPSCoreInterface {
 
     
     @External
-    void toggle_maintenance();
+    void toggleMaintenance();
 
     @External(readonly = true)
     boolean getMaintenanceMode();
@@ -102,11 +102,11 @@ public interface CPSCoreInterface {
 
     
     @External
-    void add_admin(Address _address);
+    void addAdmin(Address address);
 
     
     @External
-    void remove_admin(Address _address);
+    void removeAdmin(Address address);
 
     
     @External

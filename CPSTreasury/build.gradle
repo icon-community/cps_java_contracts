@@ -28,6 +28,7 @@ deployJar {
         lisbon {
             uri = 'https://lisbon.net.solidwallet.io/api/v3'
             nid = 0x2
+            to = 'cxda945837404c889bf001546cc6705bd6ac40f077'
         }
         local {
             uri = 'http://localhost:9082/api/v3'
@@ -45,7 +46,9 @@ deployJar {
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
-    parameters {}
+    parameters {
+        arg('score', 'cx0355e153f269c05f64100d34d3c48a002b404dc5')
+    }
 }
 
 test {

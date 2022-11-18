@@ -11,8 +11,8 @@ import static community.icon.cps.score.cpscore.utils.Constants.*;
 import static community.icon.cps.score.lib.interfaces.CPSCoreInterface.ProposalAttributes;
 
 public class ProposalDataDb {
-    private static final BranchDB<String, VarDB<String>> ipfsHash = Context.newBranchDB(IPFS_HASH, String.class);
-    private static final BranchDB<String, VarDB<String>> projectTitle = Context.newBranchDB(PROJECT_TITLE, String.class);
+    public static final BranchDB<String, VarDB<String>> ipfsHash = Context.newBranchDB(IPFS_HASH, String.class);
+    public static final BranchDB<String, VarDB<String>> projectTitle = Context.newBranchDB(PROJECT_TITLE, String.class);
     public static final BranchDB<String, VarDB<BigInteger>> timestamp = Context.newBranchDB(TIMESTAMP, BigInteger.class);
     public static final BranchDB<String, VarDB<BigInteger>> totalBudget = Context.newBranchDB(TOTAL_BUDGET, BigInteger.class);
     public static final BranchDB<String, VarDB<Integer>> projectDuration = Context.newBranchDB(PROJECT_DURATION, Integer.class);
