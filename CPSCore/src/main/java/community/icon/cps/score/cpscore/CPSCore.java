@@ -343,6 +343,10 @@ public class CPSCore implements CPSCoreInterface {
         return (List<Map<String, Object>>) prepDict.get("preps");
     }
 
+    private Map<String, Object> getPRepInfo(Address address){
+        return callScore(Map.class, SYSTEM_ADDRESS, "getPRep", address);
+    }
+
 
     private List<Address> getPrepsAddress() {
         List<Address> prepsList = new ArrayList<>();
@@ -354,23 +358,11 @@ public class CPSCore implements CPSCoreInterface {
     }
 
     private String getPrepName(Address address) {
-        for (Map<String, Object> preps : getPrepTerm()) {
-            Address prepAddress = (Address) preps.get("address");
-            if (prepAddress.equals(address)) {
-                return (String) preps.get("name");
-            }
-        }
-        return "";
+        return (String) getPRepInfo(address).get("name");
     }
 
     private BigInteger getStake(Address address) {
-        for (Map<String, Object> preps : getPrepTerm()) {
-            Address prepAddress = (Address) preps.get("address");
-            if (prepAddress.equals(address)) {
-                return (BigInteger) preps.get("power");
-            }
-        }
-        return BigInteger.ZERO;
+        return (BigInteger) getPRepInfo(address).get("power");
     }
 
     private void  setPreps() {
@@ -720,7 +712,7 @@ public class CPSCore implements CPSCoreInterface {
         PeriodController period = new PeriodController();
         Context.require(period.periodName.get().equals(APPLICATION_PERIOD),
                 TAG + ": Proposals can only be submitted on Application Period ");
-        Context.require(proposalsKeyListIndex.getOrDefault(proposals.ipfs_hash, 0) != 0, TAG + ": Proposal key already exists.");
+        Context.require(proposalsKeyListIndex.getOrDefault(proposals.ipfs_hash, 0) == 0, TAG + ": Proposal key already exists.");
         Context.require(!Context.getCaller().isContract(), TAG + ": Contract Address not supported.");
         Context.require(proposals.project_duration <= MAX_PROJECT_PERIOD,
                 TAG + ": Maximum Project Duration exceeds " + MAX_PROJECT_PERIOD + " months.");
@@ -2328,7 +2320,7 @@ public class CPSCore implements CPSCoreInterface {
     /***
                 Returns a dict of proposals of provided status
                 :param walletAddress : user Signing in
-                :type walletAddress : 'iconservice.base.address'
+                :type walletAddress : "iconservice.base.address"
                 :return: List of all proposals_details
                 ***/
     @External(readonly =true)
@@ -2452,17 +2444,14 @@ public class CPSCore implements CPSCoreInterface {
     /******************************************************************************************************************
                                         To be removed in production
      ****************************************************************************************************************/
-
+//
 //    @External
 //    public void register_prep_(Address caller) {
 //        validateAdmins();
 //        checkMaintenance();
 //        update_period();
-//        List<Address> prepList = getPrepsAddress();
 //        PReps pReps = new PReps();
 //
-//        Context.require(prepList.contains(caller),
-//                TAG + ": Not a P-Rep.");
 //        Context.require(!ArrayDBUtils.containsInArrayDb(caller, pReps.registeredPreps),
 //                TAG + ": P-Rep is already registered.");
 //        Context.require(!ArrayDBUtils.containsInArrayDb(caller, pReps.denylist),
@@ -2507,13 +2496,30 @@ public class CPSCore implements CPSCoreInterface {
 //        );
 //    }
 
-    @External(readonly = true)
-    public BigInteger dummy(){
-        BigInteger hello = BigInteger.ONE.negate();
+//    @External(readonly = true)
+//    public BigInteger dummy(){
+//        BigInteger hello = BigInteger.ONE.negate();
+//
+//        hello = BigInteger.ZERO;
+//        return hello;
+//    }
 
-        hello = BigInteger.ZERO;
-        return hello;
+//    @External(readonly = true)
+//    public Map<String, Object> getPrepInfo(Address address){
+//        return getPRepInfo(address);
+//    }
+//
+//    @External(readonly = true)
+//    public String getName(Address address){
+//        return getPrepName(address);
+//    }
+//
+//    @External(readonly = true)
+//    public BigInteger stake(Address address){
+//        return getStake(address);
+//    }
 
-    }
+
+
 
 }
