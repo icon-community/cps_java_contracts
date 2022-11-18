@@ -1421,7 +1421,7 @@ public class CPSCore implements CPSCoreInterface {
         Map<String, Object> _report_result = getProgressReportDetails(_budget_key);
         String _prefix = progressReportPrefix(_budget_key);
 
-        Map<String, Object> _vote_result = get_budget_adjustment_vote_result(_budget_key);
+        Map<String, Object> _vote_result = getBudgetAdjustmentVoteResult(_budget_key);
         int _approve_voters = (int) _vote_result.get(APPROVE_VOTERS);
         int _total_voters = (int) _vote_result.get(TOTAL_VOTERS);
         BigInteger _approved_votes = (BigInteger) _vote_result.get(APPROVED_VOTES);
