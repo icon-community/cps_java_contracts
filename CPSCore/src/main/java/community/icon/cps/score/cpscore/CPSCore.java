@@ -519,7 +519,7 @@ public class CPSCore implements CPSCoreInterface {
     }
 
     @External(readonly = true)
-    public Map<String, BigInteger> loginPrep(Address address) { // added for is prep but not registered
+    public Map<String, BigInteger> loginPrep(Address address) {
         Map<String, BigInteger> loginData = new HashMap<>();
         List<Address> allPreps = getPrepsAddress();
         PReps pReps = new PReps();
@@ -537,7 +537,6 @@ public class CPSCore implements CPSCoreInterface {
                 loginData.put("votingPRep", BigInteger.ZERO);
                 loginData.put("penaltyAmount", getPenaltyAmount(address));
             }
-//  If a P-Rep registers on Voting period, P-Rep status will be registered.
             else if (ArrayDBUtils.containsInArrayDb(address, pReps.registeredPreps)) {
                 loginData.put("isRegistered", BigInteger.ONE);
                 loginData.put("payPenalty", BigInteger.ZERO);
@@ -642,7 +641,7 @@ public class CPSCore implements CPSCoreInterface {
     }
 
     @External(readonly = true)
-    public Map<String, ?> getPeriodStatus() { // added getOrDefault in next block
+    public Map<String, ?> getPeriodStatus() {
         PeriodController period = new PeriodController();
         BigInteger remainingTime = period.nextBlock.getOrDefault(BigInteger.ZERO).subtract(BigInteger.valueOf(Context.getBlockHeight())).multiply(BigInteger.valueOf(2));
         if (remainingTime.compareTo(BigInteger.ZERO) < 0) {
@@ -1192,7 +1191,7 @@ public class CPSCore implements CPSCoreInterface {
     }
 
     @External
-    public void updatePeriod() { // changed the checking
+    public void updatePeriod() {
         checkMaintenance();
         BigInteger currentBlock = BigInteger.valueOf(Context.getBlockHeight());
         PeriodController period = new PeriodController();
@@ -1275,7 +1274,6 @@ public class CPSCore implements CPSCoreInterface {
             PRepPenalty(prep, "P-Rep added to Denylist.");
 
         }
-//Clear all data from the ArrayDB
         ArrayDBUtils.clearArrayDb(pReps.inactivePreps);
     }
 
@@ -1563,24 +1561,6 @@ public class CPSCore implements CPSCoreInterface {
     }
 
     private void checkInactivePreps(ArrayDB<Address> prepList) {
-//        Map<Address, Integer> voters = new HashMap<>();
-//        for (int i = 0; i < prepList.size(); i++) {
-//            Address prep = (Address) prepList.get(i);
-//            voters.put(prep, 0);
-//        }
-//        PReps pReps = new PReps();
-//        List<Address> notVoters = new ArrayList<>();
-//        for (int i = 0; i < pReps.validPreps.size(); i++) {
-//            Address prep = pReps.validPreps.get(i);
-//            if (voters.containsKey(prep)) {
-//                notVoters.add(prep);
-//            }
-//        }
-//        for (Address prep : notVoters) {
-//            if (!ArrayDBUtils.containsInArrayDb(prep, pReps.inactivePreps)) {
-//                pReps.inactivePreps.add(prep);
-//            }
-//        }
         PReps pReps = new PReps();
         for(int i = 0; i < pReps.validPreps.size(); i++){
             Address prep = pReps.validPreps.get(i);
@@ -1837,42 +1817,40 @@ public class CPSCore implements CPSCoreInterface {
         :type _wallet_address: str
         :return: list of details of proposal or progress report what they need to vote on the same voting period
         ***/
-//    @External(readonly = true)
-//    public List<Map<String, Object>> get_remaining_project(String _project_type, Address _wallet_address) {
-//
-//    List<Map<String, Object>> _remaining_proposals = new ArrayList<>();
-//    List<Map<String, Object>> _remaining_progress_report = new ArrayList<>();
-//    if (_project_type.equals(PROPOSAL)) {
-//        List<String> _proposal_keys = get_proposals_keys_by_status(PENDING);
-//
-//        for (String _ipfs_key: _proposal_keys) {
-//            String prefix = proposalPrefix(_ipfs_key);
-//
-//            if (!containsInArrayDb(_wallet_address, ProposalDataDb.votersList.at(prefix))){
-//                Map<String, Object> _proposal_details = getProposalDetails(_ipfs_key);
-//                _remaining_proposals.add(_proposal_details);
-//            }
-//        }
-//        return _remaining_proposals;
-//    }
-//
-//    if (_project_type.equals(PROGRESS_REPORTS)) {
-//        for (int i = 0; i < waitingProgressReports.size(); i++) {
-//            prefix = self.progress_report_prefix(_report_key)
-//            _voters_list = self.progress_reports[prefix].voters_list
-//
-//            if (!containsInArrayDb(_wallet_address, ProgressReportDataDb.votersList.at(pre)))
-//            _progress_reports_details = self._get_progress_reports_details(_report_key)
-//            _ipfs_hash = _progress_reports_details.get(IPFS_HASH)
-//            _progress_reports_details[PROJECT_TITLE] = self._get_proposal_details(_ipfs_hash).
-//
-//                    get(PROJECT_TITLE)
-//            _remaining_progress_report.append(_progress_reports_details)
-//        }
-//
-//        return _remaining_progress_report
-//    }
-//}
+    @External(readonly = true)
+    public List<Map<String, Object>> get_remaining_project(String _project_type, Address _wallet_address) {
+        List<Map<String, Object>> _remaining_proposals = new ArrayList<>();
+        List<Map<String, Object>> _remaining_progress_report = new ArrayList<>();
+        if (_project_type.equals(PROPOSAL)) {
+            List<String> _proposal_keys = get_proposals_keys_by_status(PENDING);
+
+            for (String _ipfs_key : _proposal_keys) {
+                String prefix = proposalPrefix(_ipfs_key);
+
+                if (!containsInArrayDb(_wallet_address, ProposalDataDb.votersList.at(prefix))) {
+                    Map<String, Object> _proposal_details = getProposalDetails(_ipfs_key);
+                    _remaining_proposals.add(_proposal_details);
+                }
+            }
+            return _remaining_proposals;
+        }
+
+        if (_project_type.equals(PROGRESS_REPORTS)) {
+            for (int i = 0; i < waitingProgressReports.size(); i++) {
+                String reportHash = waitingProgressReports.get(i);
+                String prefix = progressReportPrefix(reportHash);
+
+                if (!containsInArrayDb(_wallet_address, ProgressReportDataDb.votersList.at(prefix))) {
+                    Map<String, Object> progressReportDetails = getProgressReportDetails(reportHash);
+                    _remaining_progress_report.add(progressReportDetails);
+                }
+            }
+
+            return _remaining_progress_report;
+        }
+        return List.of(Map.of("", ""));
+    }
+
 
      /***
         Get vote results by proposal
@@ -2439,87 +2417,4 @@ public class CPSCore implements CPSCoreInterface {
     private void logger(String msg){
         Context.println(msg);
     }
-
-
-    /******************************************************************************************************************
-                                        To be removed in production
-     ****************************************************************************************************************/
-//
-//    @External
-//    public void register_prep_(Address caller) {
-//        validateAdmins();
-//        checkMaintenance();
-//        update_period();
-//        PReps pReps = new PReps();
-//
-//        Context.require(!ArrayDBUtils.containsInArrayDb(caller, pReps.registeredPreps),
-//                TAG + ": P-Rep is already registered.");
-//        Context.require(!ArrayDBUtils.containsInArrayDb(caller, pReps.denylist),
-//                TAG + ": You are in denylist. To register, You've to pay Penalty.");
-//
-//        if (ArrayDBUtils.containsInArrayDb(caller, pReps.unregisteredPreps)) {
-//            ArrayDBUtils.removeArrayItem(pReps.unregisteredPreps, caller);
-//        }
-//        pReps.registeredPreps.add(caller);
-//        RegisterPRep(caller, "P-Rep Registered.");
-//        PeriodController period = new PeriodController();
-//        pReps.validPreps.add(caller);
-//
-//    }
-//
-//    @External
-//    public void payPrepPenalty_(Address from, BigInteger _value) {
-//        validateAdmins();
-//        checkMaintenance();
-//        update_period();
-//        PReps pReps = new PReps();
-//        Context.require(ArrayDBUtils.containsInArrayDb(from, pReps.denylist),
-//                TAG + " " + from + " not in denylist.");
-//        ArrayDBUtils.removeArrayItem(pReps.denylist, from);
-//        pReps.registeredPreps.add(from);
-//        pReps.validPreps.add(from);
-//        PRepPenalty(from, _value + " bnUSD Penalty Received. P-Rep removed from Denylist.");
-//
-//    }
-//
-//    @External
-//    public void setProposalFees(BigInteger value){
-//        validateAdmins();
-//        proposalFees.set(value);
-//    }
-//
-//    @External(readonly = true)
-//    public Map<String, BigInteger> getProposalFees(){
-//        return Map.of(
-//                "proposalFees", proposalFees.get(),
-//                "cpsBalance", Context.getBalance(Context.getAddress())
-//        );
-//    }
-
-//    @External(readonly = true)
-//    public BigInteger dummy(){
-//        BigInteger hello = BigInteger.ONE.negate();
-//
-//        hello = BigInteger.ZERO;
-//        return hello;
-//    }
-
-//    @External(readonly = true)
-//    public Map<String, Object> getPrepInfo(Address address){
-//        return getPRepInfo(address);
-//    }
-//
-//    @External(readonly = true)
-//    public String getName(Address address){
-//        return getPrepName(address);
-//    }
-//
-//    @External(readonly = true)
-//    public BigInteger stake(Address address){
-//        return getStake(address);
-//    }
-
-
-
-
 }
