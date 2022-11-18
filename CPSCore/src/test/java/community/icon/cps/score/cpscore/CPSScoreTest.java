@@ -106,7 +106,7 @@ public class CPSScoreTest extends TestBase{
 
     @Test
     void addAdmin(){
-        cpsScore.invoke(owner, "add_admin", testingAccount.getAddress());
+        cpsScore.invoke(owner, "addAdmin", testingAccount.getAddress());
         assertEquals(List.of(testingAccount.getAddress()), cpsScore.call("get_admins"));
     }
 
@@ -118,9 +118,9 @@ public class CPSScoreTest extends TestBase{
 
     @Test
     void removeAdmin(){
-        cpsScore.invoke(owner, "add_admin", testingAccount.getAddress());
+        cpsScore.invoke(owner, "addAdmin", testingAccount.getAddress());
         assertEquals(List.of(testingAccount.getAddress()), cpsScore.call("getAdmins"));
-        cpsScore.invoke(owner, "remove_admin", testingAccount.getAddress());
+        cpsScore.invoke(owner, "removeAdmin", testingAccount.getAddress());
         assertEquals(0, ((List) cpsScore.call("getAdmins")).size());
     }
 
@@ -165,7 +165,8 @@ public class CPSScoreTest extends TestBase{
 
         addAdminMethod();
         doReturn(preps).when(scoreSpy).callScore(eq(Map.class), eq(SYSTEM_ADDRESS), eq("getPRepTerm"));
-        cpsScore.invoke(owner, "toggle_maintenance");
+        doReturn(prepDict.get(0)).when(scoreSpy).callScore(eq(Map.class), eq(SYSTEM_ADDRESS), eq("getPRep"), any());
+        cpsScore.invoke(owner, "toggleMaintenance");
         cpsScore.invoke(owner, "setInitialBlock");
         cpsScore.invoke(owner, "register_prep");
         Executable register = () -> cpsScore.invoke(owner, "register_prep");
@@ -187,6 +188,7 @@ public class CPSScoreTest extends TestBase{
 
         addAdminMethod();
         doReturn(preps).when(scoreSpy).callScore(eq(Map.class), eq(SYSTEM_ADDRESS), eq("getPRepTerm"));
+        doReturn(prepDict.get(0)).when(scoreSpy).callScore(eq(Map.class), eq(SYSTEM_ADDRESS), eq("getPRep"), any());
         cpsScore.invoke(owner, "toggleMaintenance");
         cpsScore.invoke(owner, "setInitialBlock");
         Executable register = () -> cpsScore.invoke(testingAccount6, "register_prep");
@@ -210,6 +212,7 @@ public class CPSScoreTest extends TestBase{
 
         addAdminMethod();
         doReturn(preps).when(scoreSpy).callScore(eq(Map.class), eq(SYSTEM_ADDRESS), eq("getPRepTerm"));
+        doReturn(prepDict.get(0)).when(scoreSpy).callScore(eq(Map.class), eq(SYSTEM_ADDRESS), eq("getPRep"), any());
         cpsScore.invoke(owner, "toggleMaintenance");
         cpsScore.invoke(owner, "setInitialBlock");
 //        contextMock.when()
@@ -232,6 +235,7 @@ public class CPSScoreTest extends TestBase{
 
         addAdminMethod();
         doReturn(preps).when(scoreSpy).callScore(eq(Map.class), eq(SYSTEM_ADDRESS), eq("getPRepTerm"));
+        doReturn(prepDict.get(0)).when(scoreSpy).callScore(eq(Map.class), eq(SYSTEM_ADDRESS), eq("getPRep"), any());
         cpsScore.invoke(owner, "toggleMaintenance");
         cpsScore.invoke(owner, "setInitialBlock");
 
@@ -265,6 +269,7 @@ public class CPSScoreTest extends TestBase{
 
         addAdminMethod();
         doReturn(preps).when(scoreSpy).callScore(eq(Map.class), eq(SYSTEM_ADDRESS), eq("getPRepTerm"));
+        doReturn(prepDict.get(0)).when(scoreSpy).callScore(eq(Map.class), eq(SYSTEM_ADDRESS), eq("getPRep"), any());
         cpsScore.invoke(owner, "toggleMaintenance");
         cpsScore.invoke(owner, "setInitialBlock");
         cpsScore.invoke(owner, "register_prep");
@@ -288,6 +293,7 @@ public class CPSScoreTest extends TestBase{
 
         addAdminMethod();
         doReturn(preps).when(scoreSpy).callScore(eq(Map.class), eq(SYSTEM_ADDRESS), eq("getPRepTerm"));
+        doReturn(prepDict.get(0)).when(scoreSpy).callScore(eq(Map.class), eq(SYSTEM_ADDRESS), eq("getPRep"), any());
         cpsScore.invoke(owner, "toggleMaintenance");
         cpsScore.invoke(owner, "setInitialBlock");
         cpsScore.invoke(owner, "register_prep");
@@ -334,6 +340,7 @@ public class CPSScoreTest extends TestBase{
 
         addAdminMethod();
         doReturn(preps).when(scoreSpy).callScore(eq(Map.class), eq(SYSTEM_ADDRESS), eq("getPRepTerm"));
+        doReturn(prepDict.get(0)).when(scoreSpy).callScore(eq(Map.class), eq(SYSTEM_ADDRESS), eq("getPRep"), any());
         cpsScore.invoke(owner, "toggleMaintenance");
         cpsScore.invoke(owner, "setInitialBlock");
 
@@ -367,6 +374,7 @@ public class CPSScoreTest extends TestBase{
 
         addAdminMethod();
         doReturn(preps).when(scoreSpy).callScore(eq(Map.class), eq(SYSTEM_ADDRESS), eq("getPRepTerm"));
+        doReturn(prepDict.get(0)).when(scoreSpy).callScore(eq(Map.class), eq(SYSTEM_ADDRESS), eq("getPRep"), any());
         cpsScore.invoke(owner, "toggleMaintenance");
         cpsScore.invoke(owner, "setInitialBlock");
         cpsScore.invoke(owner, "register_prep");
@@ -1107,9 +1115,9 @@ public class CPSScoreTest extends TestBase{
 
         JsonObject burnTokens = new JsonObject();
         burnTokens.add("method", "burn_amount");
-        doNothing().when(scoreSpy).callScore(eq(bnUSDScore), eq("transfer"), eq(cpfTreasury), eq(new BigInteger("1250000000000000000")), eq(burnTokens.toString().getBytes()));
+        doNothing().when(scoreSpy).callScore(eq(bnUSDScore), eq("transfer"), eq(cpfTreasury), eq(new BigInteger("5000000000000000000")), eq(burnTokens.toString().getBytes()));
         contextMock.when(caller()).thenReturn(bnUSDScore);
-        cpsScore.invoke(owner, "tokenFallback", testingAccount5.getAddress(), new BigInteger("1250000000000000000"), payPenalty.toString().getBytes());
+        cpsScore.invoke(owner, "tokenFallback", testingAccount5.getAddress(), new BigInteger("5000000000000000000"), payPenalty.toString().getBytes());
     }
 
     @Test
@@ -1331,7 +1339,7 @@ public class CPSScoreTest extends TestBase{
     @Test
     void fallback(){
         Executable fallback = () -> cpsScore.invoke(owner, "fallback");
-        expectErrorMessage(fallback, "Reverted(0): " + "ICX can only be sent while submitting a proposal or paying the penalty.");
+        expectErrorMessage(fallback, "Reverted(0): " + TAG +": ICX can only be sent while submitting a proposal or paying the penalty.");
     }
 
     @Test
