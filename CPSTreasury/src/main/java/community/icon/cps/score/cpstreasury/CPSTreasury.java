@@ -87,7 +87,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface{
     }
 
     private String proposalPrefix(String _proposal_key) {
-        return PROPOSAL_DB_PREFIX + "|" + id.get() + "|" + _proposal_key;
+        return PROPOSAL_DB_PREFIX + "|" + id.getOrDefault("") + "|" + _proposal_key;
     }
 
     private Boolean proposalExists(String _ipfs_key) {
@@ -483,6 +483,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface{
     @Override
     @External
     public void updateSponsorAndContributorProjects(){
+        validateAdmins();
         for (int i = 0; i < proposalsKeys.size(); i++){
             String proposalKey = proposalsKeys.get(i);
             String proposalPrefix = proposalPrefix(proposalKey);
