@@ -196,9 +196,16 @@ public class CPSCore implements CPSCoreInterface {
         return ArrayDBUtils.containsInArrayDb(address, admins);
     }
 
+    @Deprecated
+    @External
+    public boolean is_admin(Address _address) {
+        return isAdmin(_address);
+    }
+
     @Override
     @External
     public void toggleBudgetAdjustmentFeature() {
+        validateAdmins();
         SetterGetter setterGetter = new SetterGetter();
         setterGetter.budgetAdjustment.set(!setterGetter.budgetAdjustment.getOrDefault(false));
     }
