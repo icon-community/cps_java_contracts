@@ -17,31 +17,16 @@ import community.icon.cps.score.lib.interfaces.CPSTreasuryInterface;
 
 import community.icon.cps.score.cpstreasury.utils.consts;
 
-public class CPSTreasury extends ProposalData implements CPSTreasuryInterface{
+public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
     private static final String TAG = "CPS_TREASURY";
     private static final String PROPOSAL_DB_PREFIX = "proposal";
     private static final String PROPOSALS_KEYS = "_proposals_keys";
     private static final String PROPOSALS_KEY_LIST_INDEX = "proposals_key_list_index";
-    private static final String FUND_RECORD = "fund_record";
     private static final String INSTALLMENT_FUND_RECORD = "installment_fund_record";
 
-    private static final String TOTAL_INSTALLMENT_COUNT = "_total_installment_count";
-    private static final String TOTAL_TIMES_INSTALLMENT_PAID = "_total_times_installment_paid";
-    private static final String TOTAL_TIMES_REWARD_PAID = "_total_times_reward_paid";
-    private static final String TOTAL_INSTALLMENT_PAID = "_total_installment_paid";
-    private static final String TOTAL_REWARD_PAID = "_total_reward_paid";
-    private static final String INSTALLMENT_AMOUNT = "installment_amount";
-    private static final String SPONSOR_BOND_AMOUNT = "sponsor_bond_amount";
     private static final String CPS_SCORE = "_cps_score";
     private static final String CPF_TREASURY_SCORE = "_cpf_treasury_score";
     private static final String BALANCED_DOLLAR = "balanced_dollar";
-
-    private static final String SPONSOR_ADDRESS = "sponsor_address";
-    private static final String CONTRIBUTOR_ADDRESS = "contributor_address";
-    private static final String STATUS = "status";
-    private static final String IPFS_HASH = "ipfs_hash";
-    private static final String SPONSOR_REWARD = "sponsor_reward";
-    private static final String TOTAL_BUDGET = "total_budget";
 
     private static final String ACTIVE = "active";
     private static final String DISQUALIFIED = "disqualified";
@@ -51,7 +36,6 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface{
 
     private final ArrayDB<String> proposalsKeys = Context.newArrayDB(PROPOSALS_KEYS, String.class);
     private final DictDB<String, Integer> proposalsKeyListIndex = Context.newDictDB(PROPOSALS_KEY_LIST_INDEX, Integer.class);
-    private final DictDB<String, BigInteger> fundRecord = Context.newDictDB(FUND_RECORD, BigInteger.class);
     private final BranchDB<String, DictDB<String, BigInteger>> installmentFundRecord = Context.newBranchDB(INSTALLMENT_FUND_RECORD, BigInteger.class);
 
     private final VarDB<Address> cpfTreasuryScore = Context.newVarDB(CPF_TREASURY_SCORE, Address.class);
@@ -74,14 +58,6 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface{
     @Payable
     public void fallback() {
         Context.revert(TAG + ": ICX can only be send by CPF Treasury Score");
-    }
-
-    private void setId(String _val) {
-        id.set(_val);
-    }
-
-    private String getId() {
-        return id.get();
     }
 
     private String proposalPrefix(String _proposal_key) {
@@ -118,11 +94,6 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface{
         proposalsKeyListIndex.set(ipfs_hash, proposalsKeys.size() - 1);
     }
 
-    private Map<String, ?> getProjects(String _proposal_key) {
-        ProposalData proposalData = new ProposalData();
-        return proposalData.getDataFromProposalDB(_proposal_key);
-    }
-
     @Override
     @External
     public void setCpsScore(Address _score) {
@@ -131,7 +102,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface{
     }
 
     @Override
-    @External(readonly = true) //Todo java convention in get methods??
+    @External(readonly = true)
     public Address getCpsScore() {
         return cpsScore.get();
     }
@@ -173,7 +144,6 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface{
         for (int i = 0; i < proposalKeysSize; i++) {
             String _ipfs_key = proposalKeysArray.get(i);
             String proposalPrefix = proposalPrefix(_ipfs_key);
-            // todo: getting entire proposal details or getting individual values?
             Map<String, ?> proposal_details = getDataFromProposalDB(proposalPrefix);
             if (!proposal_details.get(consts.STATUS).equals(DISQUALIFIED)) {
                 if (proposal_details.get(consts.CONTRIBUTOR_ADDRESS).equals(_wallet_address)) {
@@ -215,9 +185,9 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface{
 
     @Override
     @External(readonly = true)
-    public List<String> getContributorProjects(Address address){
+    public List<String> getContributorProjects(Address address) {
         List<String> contributorProjects = new ArrayList<>();
-        for (int i = 0; i < this.contributorProjects.at(address.toString()).size(); i++){
+        for (int i = 0; i < this.contributorProjects.at(address.toString()).size(); i++) {
             contributorProjects.add(this.contributorProjects.at(address.toString()).get(i));
         }
         return contributorProjects;
@@ -225,9 +195,9 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface{
 
     @Override
     @External(readonly = true)
-    public List<String> getSponsorProjects(Address address){
+    public List<String> getSponsorProjects(Address address) {
         List<String> sponsorProjects = new ArrayList<>();
-        for (int i = 0; i < this.sponsorProjects.at(address.toString()).size(); i++){
+        for (int i = 0; i < this.sponsorProjects.at(address.toString()).size(); i++) {
             sponsorProjects.add(this.sponsorProjects.at(address.toString()).get(i));
         }
         return sponsorProjects;
@@ -332,7 +302,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface{
     public void send_installment_to_contributor(String _ipfs_key) {
         validateCpsScore();
         Context.require(proposalExists(_ipfs_key), TAG + ": Invalid IPFS Hash.");
-        BigInteger installmentAmount = BigInteger.ZERO;
+        BigInteger installmentAmount;
         String prefix = proposalPrefix(_ipfs_key);
         Map<String, ?> proposalData = getDataFromProposalDB(prefix);
 
@@ -352,8 +322,9 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface{
         setInstallmentCount(prefix, newInstallmentCount);
         setRemainingAmount(prefix, remainingAmount.subtract(installmentAmount));
         setWithdrawAmount(prefix, withdrawAmount.add(installmentAmount));
-        installmentFundRecord.at(contributorAddress.toString()).set(flag,
-                installmentFundRecord.at(contributorAddress.toString()).getOrDefault(flag, BigInteger.ZERO).add(installmentAmount));
+        DictDB<String, BigInteger> installmentFund = this.installmentFundRecord.at(contributorAddress.toString());
+        BigInteger installmentFundAmount = installmentFund.getOrDefault(flag, BigInteger.ZERO);
+        installmentFund.set(flag, installmentFundAmount.add(installmentAmount));
         ProposalFundSent(contributorAddress, "new installment " + installmentAmount + " " + flag + " sent to contributors address.");
 
         if (newInstallmentCount == 0) {
@@ -367,7 +338,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface{
         validateCpsScore();
 
         Context.require(proposalExists(_ipfs_key), TAG + ": Invalid IPFS Hash.");
-        BigInteger installmentAmount = BigInteger.ZERO;
+        BigInteger installmentAmount;
         String prefix = proposalPrefix(_ipfs_key);
 
         int sponsorRewardCount = getSponsorRewardCount(prefix);
@@ -386,7 +357,8 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface{
         setSponsorRewardCount(prefix, newSponsorRewardCount);
         setSponsorWithdrawAmount(prefix, sponsorWithdrawAmount.add(installmentAmount));
         setSponsorRemainingAmount(prefix, sponsorRemainingAmount.subtract(installmentAmount));
-        installmentFundRecord.at(sponsorAddress.toString()).set(flag, installmentFundRecord.at(sponsorAddress.toString()).getOrDefault(flag, BigInteger.ZERO).add(installmentAmount));
+        DictDB<String, BigInteger> installmentFunds = installmentFundRecord.at(sponsorAddress.toString());
+        installmentFunds.set(flag, installmentFunds.getOrDefault(flag, BigInteger.ZERO).add(installmentAmount));
         ProposalFundSent(sponsorAddress, "New installment " + installmentAmount + " " +
                 flag + " sent to sponsor address.");
     }
@@ -405,13 +377,13 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface{
         BigInteger sponsorWithdrawAmount = getSponsorWithdrawAmount(prefix);
         String flag = getToken(prefix);
 
-
         BigInteger remainingBudget = totalBudget.subtract(withdrawAmount);
         BigInteger remainingReward = sponsorReward.subtract(sponsorWithdrawAmount);
         BigInteger totalReturnAmount = remainingBudget.add(remainingReward);
 
+        Address cpfTreasuryAddres = cpfTreasuryScore.get();
         if (flag.equals(consts.ICX)) {
-            callScore(totalReturnAmount, cpfTreasuryScore.get(), "disqualify_proposal_fund", _ipfs_key);
+            callScore(totalReturnAmount, cpfTreasuryAddres, "disqualify_proposal_fund", _ipfs_key);
         } else if (flag.equals(consts.bnUSD)) {
             JsonObject disqualifyProjectParams = new JsonObject();
             disqualifyProjectParams.add("method", "disqualify_project");
@@ -419,7 +391,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface{
             params.add("ipfs_key", _ipfs_key);
             disqualifyProjectParams.add("params", params);
 
-            callScore(balancedDollar.get(), "transfer", cpfTreasuryScore.get(), totalReturnAmount, disqualifyProjectParams.toString().getBytes());
+            callScore(balancedDollar.get(), "transfer", cpfTreasuryAddres, totalReturnAmount, disqualifyProjectParams.toString().getBytes());
         } else {
             Context.revert(TAG + ": Not supported token.");
         }
@@ -430,17 +402,21 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface{
     @Override
     @External
     public void claim_reward() {
-        BigInteger availableAmountICX = installmentFundRecord.at(Context.getCaller().toString()).getOrDefault(consts.ICX, BigInteger.ZERO);
-        BigInteger availableAmountbnUSD = installmentFundRecord.at(Context.getCaller().toString()).getOrDefault(consts.bnUSD, BigInteger.ZERO);
+        Address caller = Context.getCaller();
+        DictDB<String, BigInteger> installmentFundRecord = this.installmentFundRecord.at(caller.toString());
+        BigInteger availableAmountICX = installmentFundRecord.getOrDefault(consts.ICX, BigInteger.ZERO);
+        BigInteger availableAmountbnUSD = installmentFundRecord.getOrDefault(consts.bnUSD, BigInteger.ZERO);
         if (availableAmountICX.compareTo(BigInteger.ZERO) > 0) {
-            installmentFundRecord.at(Context.getCaller().toString()).set(consts.ICX, BigInteger.ZERO);
-            Context.transfer(Context.getCaller(), availableAmountICX);
-            ProposalFundWithdrawn(Context.getCaller(), availableAmountICX + " " + consts.ICX + " withdrawn to " + Context.getCaller());
+            installmentFundRecord.set(consts.ICX, BigInteger.ZERO);
+            Context.transfer(caller, availableAmountICX);
+            ProposalFundWithdrawn(caller, availableAmountICX + " " + consts.ICX +
+                    " withdrawn to " + caller);
         } else if (availableAmountbnUSD.compareTo(BigInteger.ZERO) > 0) {
-            installmentFundRecord.at(Context.getCaller().toString()).set(consts.bnUSD, BigInteger.ZERO);
-            callScore(balancedDollar.get(), "transfer", Context.getCaller(), availableAmountbnUSD);
+            installmentFundRecord.set(consts.bnUSD, BigInteger.ZERO);
+            callScore(balancedDollar.get(), "transfer", caller, availableAmountbnUSD);
         } else {
-            Context.revert(TAG + ": Claim Reward Fails. Available amount(ICX) = " + availableAmountICX + " and Available amount(bnUSD) = " + availableAmountbnUSD);
+            Context.revert(TAG + ": Claim Reward Fails. Available amount(ICX) = " + availableAmountICX +
+                    " and Available amount(bnUSD) = " + availableAmountbnUSD);
         }
     }
 
@@ -451,7 +427,8 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface{
         String unpacked_data = new String(_data);
         JsonObject jsonObject = Json.parse(unpacked_data).asObject();
         JsonObject params = jsonObject.get("params").asObject();
-        if (jsonObject.get("method").asString().equals("deposit_proposal_fund")) {
+        String methodName = jsonObject.get("method").asString();
+        if (methodName.equals("deposit_proposal_fund")) {
             String ipfs_hash = params.get("ipfs_hash").asString();
             int project_duration = params.get("project_duration").asInt();
             BigInteger total_budget = new BigInteger(params.get("total_budget").asString(), 16);
@@ -469,7 +446,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface{
             proposalAttributes.sponsor_address = sponsor_address;
             proposalAttributes.status = ACTIVE;
             depositProposalFund(proposalAttributes, _value);
-        } else if (jsonObject.get("method").asString().equals("budget_adjustment")) {
+        } else if (methodName.equals("budget_adjustment")) {
             String ipfs_key = params.get("_ipfs_key").asString();
             BigInteger added_budget = new BigInteger(params.get("_added_budget").asString(), 16);
             BigInteger added_sponsor_reward = new BigInteger(params.get("_added_sponsor_reward").asString(), 16);
@@ -477,14 +454,14 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface{
 
             update_proposal_fund(ipfs_key, added_budget, added_sponsor_reward, added_installment_count);
         } else {
-            Context.revert(TAG + jsonObject.get("method").asString() + " Not a valid method.");
+            Context.revert(TAG + methodName + " Not a valid method.");
         }
     }
 
-//    for migration into java contract
+    //    for migration into java contract
     @Override
     @External
-    public void updateSponsorAndContributorProjects(){
+    public void updateSponsorAndContributorProjects() {
         validateAdmins();
         int startIndex = batchSize.getOrDefault(0);
         int size = proposalsKeys.size();
@@ -503,7 +480,8 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface{
         }
     }
 
-    public <T> T callScore(Class<T> t, Address address, String method, Object... params) {
+
+        public <T> T callScore(Class<T> t, Address address, String method, Object... params) {
         return Context.call(t, address, method, params);
     }
 
