@@ -168,8 +168,10 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface{
         BigInteger totalAmountToBePaidICX = BigInteger.ZERO;
         BigInteger totalAmountToBePaidbnUSD = BigInteger.ZERO;
         List<Map<String, ?>> projectDetails = new ArrayList<>();
-        for (int i = 0; i < proposalsKeys.size(); i++) {
-            String _ipfs_key = proposalsKeys.get(i);
+        ArrayDB<String> proposalKeysArray = contributorProjects.at(_wallet_address.toString());
+        int proposalKeysSize = proposalKeysArray.size();
+        for (int i = 0; i < proposalKeysSize; i++) {
+            String _ipfs_key = proposalKeysArray.get(i);
             String proposalPrefix = proposalPrefix(_ipfs_key);
             // todo: getting entire proposal details or getting individual values?
             Map<String, ?> proposal_details = getDataFromProposalDB(proposalPrefix);
@@ -240,8 +242,10 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface{
         BigInteger totalSponsorBondICX = BigInteger.ZERO;
         BigInteger totalSponsorBondbnUSD = BigInteger.ZERO;
         List<Map<String, ?>> projectDetails = new ArrayList<>();
-        for (int i = 0; i < proposalsKeys.size(); i++) {
-            String _ipfs_key = proposalsKeys.get(i);
+        ArrayDB<String> proposalKeysArray = sponsorProjects.at(_wallet_address.toString());
+        int proposalKeysSize = proposalKeysArray.size();
+        for (int i = 0; i < proposalKeysSize; i++) {
+            String _ipfs_key = proposalKeysArray.get(i);
             String proposalPrefix = proposalPrefix(_ipfs_key);
             Map<String, ?> proposal_details = proposalData.getDataFromProposalDB(proposalPrefix);
             if (!proposal_details.get(consts.STATUS).equals(DISQUALIFIED)) {
