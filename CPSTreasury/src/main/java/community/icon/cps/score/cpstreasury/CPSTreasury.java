@@ -20,8 +20,6 @@ import community.icon.cps.score.cpstreasury.utils.consts;
 public class CPSTreasury extends ProposalData implements CPSTreasuryInterface{
     private static final String TAG = "CPS_TREASURY";
     private static final String PROPOSAL_DB_PREFIX = "proposal";
-
-    private static final String ID = "id";
     private static final String PROPOSALS_KEYS = "_proposals_keys";
     private static final String PROPOSALS_KEY_LIST_INDEX = "proposals_key_list_index";
     private static final String FUND_RECORD = "fund_record";
@@ -51,7 +49,6 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface{
     private static final String CONTRIBUTOR_PROJECTS = "contributor_projects";
     private static final String SPONSOR_PROJECTS = "sponsor_projects";
 
-    private final VarDB<String> id = Context.newVarDB(ID, String.class);
     private final ArrayDB<String> proposalsKeys = Context.newArrayDB(PROPOSALS_KEYS, String.class);
     private final DictDB<String, Integer> proposalsKeyListIndex = Context.newDictDB(PROPOSALS_KEY_LIST_INDEX, Integer.class);
     private final DictDB<String, BigInteger> fundRecord = Context.newDictDB(FUND_RECORD, BigInteger.class);
@@ -87,7 +84,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface{
     }
 
     private String proposalPrefix(String _proposal_key) {
-        return PROPOSAL_DB_PREFIX + "|" + id.getOrDefault("") + "|" + _proposal_key;
+        return PROPOSAL_DB_PREFIX + "|" + "|" + _proposal_key;
     }
 
     private Boolean proposalExists(String _ipfs_key) {
