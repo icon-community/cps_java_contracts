@@ -71,10 +71,6 @@ public class ProposalData {
         );
     }
 
-    public String getIpfsHash(String prefix){
-        return ipfsHash.at(prefix).get();
-    }
-
     public Address getSponsorAddress(String prefix){
         return sponsorAddress.at(prefix).get();
     }
@@ -103,10 +99,6 @@ public class ProposalData {
         this.projectDuration.at(prefix).set(projectDuration);
     }
 
-    public int getProjectDuration(String prefix){
-        return projectDuration.at(prefix).getOrDefault(0);
-    }
-
     public void setWithdrawAmount(String prefix, BigInteger withdrawAmount){
         this.withdrawAmount.at(prefix).set(withdrawAmount);
     }
@@ -117,10 +109,6 @@ public class ProposalData {
 
     public void setInstallmentCount(String prefix, int installmentCount){
         this.installmentCount.at(prefix).set(installmentCount);
-    }
-
-    public int getInstallmentCount(String prefix){
-        return installmentCount.at(prefix).getOrDefault(0);
     }
 
     public void setSponsorRewardCount(String prefix, int sponsorRewardCount){
@@ -142,11 +130,6 @@ public class ProposalData {
     public void setRemainingAmount(String prefix, BigInteger remainingAmount){
         this.remainingAmount.at(prefix).set(remainingAmount);
     }
-
-    public BigInteger getRemainingAmount(String prefix){
-        return remainingAmount.at(prefix).getOrDefault(BigInteger.ZERO);
-    }
-
     public void setSponsorRemainingAmount(String prefix, BigInteger sponsorRemainingAmount){
         this.sponsorRemainingAmount.at(prefix).set(sponsorRemainingAmount);
     }
@@ -157,10 +140,6 @@ public class ProposalData {
 
     public void setStatus(String prefix, String status){
         this.status.at(prefix).set(status);
-    }
-
-    public String getStatus(String prefix){
-        return status.at(prefix).get();
     }
 
     public String getToken(String prefix){
