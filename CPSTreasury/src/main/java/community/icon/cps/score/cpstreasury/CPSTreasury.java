@@ -93,7 +93,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface{
     }
 
     private void validateAdmins() {
-        Boolean isAdmin = callScore(Boolean.class, cpsScore.get(), "isAdmin", Context.getCaller());
+        Boolean isAdmin = callScore(Boolean.class, cpsScore.get(), "is_admin", Context.getCaller());
         Context.require(isAdmin, TAG + ": Only admins can call this method");
 
     }
