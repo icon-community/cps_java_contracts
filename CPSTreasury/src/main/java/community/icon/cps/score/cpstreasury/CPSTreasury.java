@@ -59,6 +59,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface{
     private final VarDB<Address> balancedDollar = Context.newVarDB(BALANCED_DOLLAR, Address.class);
     private final BranchDB<String, ArrayDB<String>> contributorProjects = Context.newBranchDB(CONTRIBUTOR_PROJECTS, String.class);
     private final BranchDB<String, ArrayDB<String>> sponsorProjects = Context.newBranchDB(SPONSOR_PROJECTS, String.class);
+    private final VarDB<Integer> batchSize = Context.newVarDB("batch_size", Integer.class);
 
     public CPSTreasury() {
     }
@@ -481,13 +482,20 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface{
     @External
     public void updateSponsorAndContributorProjects(){
         validateAdmins();
-        for (int i = 0; i < proposalsKeys.size(); i++){
+        int startIndex = batchSize.getOrDefault(0);
+        int size = proposalsKeys.size();
+        int endIndex = startIndex + 10;
+        if (endIndex > size) {
+            endIndex = size;
+        }
+        for (int i = startIndex; i < endIndex; i++) {
             String proposalKey = proposalsKeys.get(i);
             String proposalPrefix = proposalPrefix(proposalKey);
             Address contributorAddress = getContributorAddress(proposalPrefix);
             Address sponsorAddress = getSponsorAddress(proposalPrefix);
             contributorProjects.at(contributorAddress.toString()).add(proposalKey);
             sponsorProjects.at(sponsorAddress.toString()).add(proposalKey);
+            batchSize.set(endIndex);
         }
     }
 
