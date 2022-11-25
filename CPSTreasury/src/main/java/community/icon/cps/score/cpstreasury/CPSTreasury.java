@@ -1,6 +1,7 @@
 package community.icon.cps.score.cpstreasury;
 
 import community.icon.cps.score.cpstreasury.db.ProposalData;
+import community.icon.cps.score.cpstreasury.utils.ArrayDBUtils;
 import score.*;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
@@ -513,4 +514,22 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
     public void ProposalFundWithdrawn(Address _receiver_address, String note) {
     }
 
+    /*-----------------------------------------------------------------------------------------------------------------
+    ***************************************************** to be removed in production**********************************
+     -----------------------------------------------------------------------------------------------------------------*/
+
+    @External
+    public void depositProposalFunds(ProposalData.ProposalAttributes proposals){
+        addRecord(proposals);
+    }
+
+    @External(readonly = true)
+    public String returnString(){
+        return "";
+    }
+
+//    @External
+//    public void removeArrayItems(){
+//        ArrayDBUtils.remove_array_item_address(contributorProjects);
+//    }
 }
