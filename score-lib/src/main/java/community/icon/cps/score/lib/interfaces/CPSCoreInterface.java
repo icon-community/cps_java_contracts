@@ -258,16 +258,16 @@ public interface CPSCoreInterface {
 
     @External
     
-    void update_next_block(int blockCount);
+    void updateNextBlock(int blockCount);
 
     
     @External(readonly = true)
-    List<Map<String, Object>> get_active_proposals();
+    Map<String, Object> getActiveProposals(@Optional int startIndex);
 
     @External(readonly = true)
     Map<String, Object> get_proposal_detail_by_wallet(Address _wallet_address);
 
-    List<Map<String, Object>> getProposalsHistory();
+    Map<String, Object> getProposalsHistory(@Optional int startIndex);
 
     //    EventLogs
     @EventLog(indexed = 1)
