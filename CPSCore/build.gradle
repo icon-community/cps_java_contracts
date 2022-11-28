@@ -30,7 +30,7 @@ deployJar {
         lisbon {
             uri = 'https://lisbon.net.solidwallet.io/api/v3'
             nid = 0x2
-            to = 'cx0546dc4c03491a0690b910b505eec537bbf377a5'
+            to = 'cxd82e5f0c1090f55f9b2f727ad35fb3a9e1de95c4'
         }
         local {
             uri = 'http://localhost:9082/api/v3'
