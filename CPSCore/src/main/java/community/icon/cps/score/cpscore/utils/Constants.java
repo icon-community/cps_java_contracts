@@ -143,7 +143,7 @@ public class Constants {
     public static final String PROPOSAL_RANK = "proposal_rank";
     public static final String PRIORITY_VOTED_PREPS = "priority_voted_preps";
     public static final String SPONSOR_PROJECTS = "sponsor_projects";
-    public static final String CONTRIBUTOR_PROJECTS = "sponsor_projects";
+    public static final String CONTRIBUTOR_PROJECTS = "contributor_projects";
 
 
     //    VOTE KEYS
