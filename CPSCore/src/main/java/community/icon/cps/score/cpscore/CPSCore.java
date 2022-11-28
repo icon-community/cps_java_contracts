@@ -853,7 +853,10 @@ public class CPSCore implements CPSCoreInterface {
         for (Migration migration : migrations) {
             String proposalPrefix = proposalPrefix(migration.ipfsHash);
             for (int j = 0; j < migration.abstainVoters.length; j++) {
-                abstainVoters.at(proposalPrefix).add(migration.abstainVoters[j]);
+                Address voter = migration.abstainVoters[j];
+                if (!ArrayDBUtils.containsInArrayDb(voter, abstainVoters.at(proposalPrefix))) {
+                    abstainVoters.at(proposalPrefix).add(migration.abstainVoters[j]);
+                }
             }
             abstainedVotes.at(proposalPrefix).set(migration.abstainVotes);
         }
@@ -1094,7 +1097,7 @@ public class CPSCore implements CPSCoreInterface {
     }
 
     @External(readonly = true)
-    public Map<String, Map<String, Map<String, BigInteger>>> getProjectAmounts() {
+    public Map<String, Object> getProjectAmounts() {
         List<String> statusList = List.of(PENDING, ACTIVE, PAUSED, COMPLETED, DISQUALIFIED);
         BigInteger pendingAmountIcx = BigInteger.ZERO;
         BigInteger activeAmountIcx = BigInteger.ZERO;
@@ -1142,11 +1145,11 @@ public class CPSCore implements CPSCoreInterface {
 
 
         }
-        return Map.of(statusList.get(0), Map.of(AMOUNT, Map.of(ICX, pendingAmountIcx, bnUSD, pendingAmountBnusd)),
-                statusList.get(1), Map.of(AMOUNT, Map.of(ICX, activeAmountIcx, bnUSD, activeAmountBnusd)),
-                statusList.get(2), Map.of(AMOUNT, Map.of(ICX, pausedAmountIcx, bnUSD, pausedAmountBnusd)),
-                statusList.get(3), Map.of(AMOUNT, Map.of(ICX, completedAmountIcx, bnUSD, completedAmountBnusd)),
-                statusList.get(4), Map.of(AMOUNT, Map.of(ICX, disqualifiedAmountIcx, bnUSD, disqualifiedAmountBnusd)));
+        return Map.of(statusList.get(0), Map.of(AMOUNT, Map.of(ICX, pendingAmountIcx, bnUSD, pendingAmountBnusd), "_count", proposalStatus.get(statusList.get(0)).size()),
+                statusList.get(1), Map.of(AMOUNT, Map.of(ICX, activeAmountIcx, bnUSD, activeAmountBnusd), "_count", proposalStatus.get(statusList.get(1)).size()),
+                statusList.get(2), Map.of(AMOUNT, Map.of(ICX, pausedAmountIcx, bnUSD, pausedAmountBnusd), "_count", proposalStatus.get(statusList.get(2)).size()),
+                statusList.get(3), Map.of(AMOUNT, Map.of(ICX, completedAmountIcx, bnUSD, completedAmountBnusd), "_count", proposalStatus.get(statusList.get(3)).size()),
+                statusList.get(4), Map.of(AMOUNT, Map.of(ICX, disqualifiedAmountIcx, bnUSD, disqualifiedAmountBnusd), "_count", proposalStatus.get(statusList.get(4)).size()));
 
 
     }
@@ -1154,7 +1157,7 @@ public class CPSCore implements CPSCoreInterface {
     @Override
     @Deprecated(since = "JAVA translation", forRemoval = true)
     @External(readonly = true)
-    public Map<String, Map<String, Map<String, BigInteger>>> get_project_amounts() {
+    public  Map<String, Object> get_project_amounts() {
         return getProjectAmounts();
     }
 
@@ -2231,7 +2234,7 @@ public class CPSCore implements CPSCoreInterface {
     }
 
     @External(readonly = true)
-    public Map<String, Object> getActiveProposals(@Optional int startIndex) {
+    public Map<String, Object> getActiveProposalsList(@Optional int startIndex) {
         List<String> proposalKeys = new ArrayList<>();
         List<Map<String, Object>> activeProposalsList = new ArrayList<>();
 
@@ -2252,6 +2255,44 @@ public class CPSCore implements CPSCoreInterface {
         }
         return Map.of(DATA, activeProposalsList, COUNT, size);
     }
+
+    /***
+     Returns the list of all all active or paused proposal from that address
+     :param walletAddress : wallet address of the contributor
+     :type walletAddress: Address
+     :return: list of active proposals of a contributor
+     ***/
+    @External(readonly = true)
+    public List<Map<String, Object>> getActiveProposals(Address walletAddress) {
+        List<Map<String, Object>> _proposal_titles = new ArrayList<>();
+
+        ArrayDB<String> contributorsAddress = contributorProjects.at(walletAddress);
+        for (int i = 0; i < contributorsAddress.size(); i++) {
+            String proposals = contributorsAddress.get(i);
+            String prefix = proposalPrefix(proposals);
+            String status = ProposalDataDb.status.at(prefix).getOrDefault("");
+            if (ArrayDBUtils.containsInList(status, List.of(ACTIVE, PAUSED))) {
+                int _project_duration = projectDuration.at(prefix).getOrDefault(0);
+                int _approved_reports_count = approvedReports.at(prefix).getOrDefault(0);
+                boolean _last_progress_report = _project_duration - _approved_reports_count == 1;
+                Map<String, Object> _proposals_details = Map.of(PROJECT_TITLE, projectTitle.at(prefix).getOrDefault(""),
+                        IPFS_HASH, proposals,
+                        NEW_PROGRESS_REPORT, submitProgressReport.at(prefix).getOrDefault(false),
+                        "last_progress_report", _last_progress_report);
+                _proposal_titles.add(_proposals_details);
+            }
+        }
+
+        return _proposal_titles;
+    }
+
+    @Deprecated(since = "JAVA translation", forRemoval = true)
+    @External(readonly = true)
+    public List<Map<String, Object>> get_active_proposals(Address _wallet_address) {
+        return getActiveProposals(_wallet_address);
+    }
+
+
 
     /***
      Returns a dict of proposals of provided status

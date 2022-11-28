@@ -261,7 +261,7 @@ public interface CPSCoreInterface {
 
     
     @External(readonly = true)
-    Map<String, Object> getActiveProposals(@Optional int startIndex);
+    Map<String, Object> getActiveProposalsList(@Optional int startIndex);
 
     @External(readonly = true)
     Map<String, Object> get_proposal_detail_by_wallet(Address _wallet_address);
