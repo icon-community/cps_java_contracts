@@ -316,7 +316,6 @@ public class CPSCore implements CPSCoreInterface {
 
     @External
     public void registerPrep() {
-//        todo: check PRep list for candidate PRep after snapshot
         checkMaintenance();
         updatePeriod();
         Address caller = Context.getCaller();
