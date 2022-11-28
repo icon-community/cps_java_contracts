@@ -1,5 +1,7 @@
 package community.icon.cps.score.lib.interfaces;
 
+import foundation.icon.score.client.ScoreClient;
+import foundation.icon.score.client.ScoreInterface;
 import score.Address;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -9,9 +11,6 @@ import score.annotation.Payable;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
-
-import foundation.icon.score.client.ScoreClient;
-import foundation.icon.score.client.ScoreInterface;
 
 @ScoreClient
 @ScoreInterface
@@ -74,11 +73,11 @@ public interface CPSCoreInterface {
 
     
     @External
-    void set_bnUSD_score(Address _score);
+    void setBnusdScore(Address _score);
 
     
     @External(readonly = true)
-    Address get_bnUSD_score();
+    Address getBnusdScore();
 
     
     @External(readonly = true)
@@ -130,11 +129,11 @@ public interface CPSCoreInterface {
 
     
     @External
-    void set_prep_penalty_amount(BigInteger[] _penalty);
+    void setPrepPenaltyAmount(BigInteger[] penalty);
 
     
     @External
-    void set_initialBlock();
+    void setInitialBlock();
 
     
     @External(readonly = true)
@@ -147,7 +146,7 @@ public interface CPSCoreInterface {
     @SuppressWarnings("unchecked")
     
     @External(readonly = true)
-    Map<String, BigInteger> get_remaining_fund();
+    Map<String, BigInteger> getRemainingFund();
 
     
     @External(readonly = true)

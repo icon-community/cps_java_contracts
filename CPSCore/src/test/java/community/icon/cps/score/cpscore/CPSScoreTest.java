@@ -1,64 +1,37 @@
 package community.icon.cps.score.cpscore;
 
-import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
-import com.eclipsesource.json.JsonValue;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
-import com.sun.management.DiagnosticCommandMBean;
-import community.icon.cps.score.cpscore.utils.ArrayDBUtils;
 import community.icon.cps.score.cpscore.utils.Constants;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.function.Executable;
-import org.mockito.Mock;
-import org.mockito.stubbing.Answer;
-import score.Address;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-
-import static community.icon.cps.score.cpscore.db.ProposalDataDb.rejectVoters;
-import static community.icon.cps.score.cpscore.db.ProposalDataDb.sponsorAddress;
-import static org.mockito.Mockito.*;
-
+import org.mockito.stubbing.Answer;
+import score.Address;
 import score.ArrayDB;
 import score.Context;
-import score.VarDB;
 
+import java.math.BigInteger;
+import java.util.List;
+import java.util.Map;
+
+import static community.icon.cps.score.cpscore.utils.Constants.*;
+import static community.icon.cps.score.lib.interfaces.CPSCoreInterface.ProgressReportAttributes;
+import static community.icon.cps.score.lib.interfaces.CPSCoreInterface.ProposalAttributes;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-
-import java.math.BigInteger;
-import java.nio.channels.MulticastChannel;
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-
-import static community.icon.cps.score.cpscore.utils.Constants.*;
-import static community.icon.cps.score.lib.interfaces.CPSCoreInterface.ProposalAttributes;
-import static community.icon.cps.score.lib.interfaces.CPSCoreInterface.ProgressReportAttributes;
+import static org.mockito.Mockito.*;
 
 public class CPSScoreTest extends TestBase{
-    private static final Address ZERO_ADDRESS = new Address(new byte[Address.LENGTH]);
     public static final Address SYSTEM_ADDRESS = Address.fromString("cx0000000000000000000000000000000000000000");
     private static final Address cpsTreasury = Address.fromString("cx0000000000000000000000000000000000000002");
     private static final Address cpfTreasury = Address.fromString("cx0000000000000000000000000000000000000003");
     private static final Address bnUSDScore = Address.fromString("cx0000000000000000000000000000000000000004");
-    private static final Address dividends = Address.fromString("cx0000000000000000000000000000000000000005");
-    private static final Address utap = Address.fromString("cx0000000000000000000000000000000000000006");
-    private static final Address rewards = Address.fromString("cx0000000000000000000000000000000000000006");
-
-    private static final Address dice = Address.fromString("cx0000000000000000000000000000000000000007");
-    private static final Address roulette = Address.fromString("cx0000000000000000000000000000000000000008");
-    private static final Address blackjack = Address.fromString("cx0000000000000000000000000000000000000009");
     public static final String TAG = "CPS Score";
     public static final BigInteger MULTIPLIER = new BigInteger("1000000000000000000");
 
@@ -71,10 +44,7 @@ public class CPSScoreTest extends TestBase{
     private static final Account testingAccount4 = sm.createAccount();
     private static final Account testingAccount5 = sm.createAccount();
     private static final Account testingAccount6 = sm.createAccount();
-    private static final Account notRevshareWallet = sm.createAccount();
-    public static final BigInteger decimal = new BigInteger("1000000000000000000");
     private Score cpsScore;
-    private final SecureRandom secureRandom = new SecureRandom();
     private static MockedStatic<Context> contextMock;
 
     CPSCore scoreSpy;
@@ -1131,8 +1101,8 @@ public class CPSScoreTest extends TestBase{
     void setbnUSDScore(){
         addAdminMethod();
         contextMock.when(caller()).thenReturn(owner.getAddress());
-        cpsScore.invoke(owner, "set_bnUSD_score", bnUSDScore);
-        assertEquals(bnUSDScore, cpsScore.call("get_bnUSD_score"));
+        cpsScore.invoke(owner, "setBnusdScore", bnUSDScore);
+        assertEquals(bnUSDScore, cpsScore.call("getBnusdScore"));
     }
 
     @Test

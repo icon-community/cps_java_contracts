@@ -5,28 +5,25 @@ import com.eclipsesource.json.JsonObject;
 import community.icon.cps.score.cpscore.db.ProgressReportDataDb;
 import community.icon.cps.score.cpscore.db.ProposalDataDb;
 import community.icon.cps.score.cpscore.utils.ArrayDBUtils;
+import community.icon.cps.score.cpscore.utils.Migration;
+import community.icon.cps.score.lib.interfaces.CPSCoreInterface;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
 import score.annotation.Payable;
+import scorex.util.ArrayList;
 import scorex.util.HashMap;
 
 import java.math.BigInteger;
-
-import scorex.util.ArrayList;
-
 import java.util.List;
 import java.util.Map;
 
 import static community.icon.cps.score.cpscore.db.ProgressReportDataDb.*;
 import static community.icon.cps.score.cpscore.db.ProposalDataDb.*;
-import static community.icon.cps.score.cpscore.utils.Constants.*;
-import static community.icon.cps.score.cpscore.utils.Checkers.*;
 import static community.icon.cps.score.cpscore.utils.ArrayDBUtils.*;
-
-import community.icon.cps.score.lib.interfaces.CPSCoreInterface;
-import community.icon.cps.score.cpscore.utils.Migration;
+import static community.icon.cps.score.cpscore.utils.Checkers.*;
+import static community.icon.cps.score.cpscore.utils.Constants.*;
 
 public class CPSCore implements CPSCoreInterface {
 
@@ -163,6 +160,7 @@ public class CPSCore implements CPSCoreInterface {
     }
 
 
+    @Override
     @External
     public void setBnusdScore(Address score) {
         validateAdminScore(score);
@@ -170,19 +168,14 @@ public class CPSCore implements CPSCoreInterface {
         setterGetter.balancedDollar.set(score);
     }
 
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External
-    public void set_bnUSD_score(Address _score) {
-        setBnusdScore(_score);
-    }
 
+    @Override
     @External(readonly = true)
     public Address getBnusdScore() {
         SetterGetter setterGetter = new SetterGetter();
         return setterGetter.balancedDollar.get();
     }
 
-    @Override
     @Deprecated(since = "JAVA translation", forRemoval = true)
     @External(readonly = true)
     public Address get_bnUSD_score() {
@@ -499,6 +492,7 @@ public class CPSCore implements CPSCoreInterface {
         PriorityVote(caller, "Priority voting done successfully.");
     }
 
+    @Override
     @External
     public void setPrepPenaltyAmount(BigInteger[] penalty) {
         checkMaintenance();
@@ -513,7 +507,7 @@ public class CPSCore implements CPSCoreInterface {
 
     }
 
-    @Override
+
     @Deprecated(since = "JAVA translation", forRemoval = true)
     @External
     public void set_prep_penalty_amount(BigInteger[] _penalty) {
@@ -521,6 +515,7 @@ public class CPSCore implements CPSCoreInterface {
     }
 
 
+    @Override
     @External
     public void setInitialBlock() {
         validateAdmins();
@@ -530,13 +525,6 @@ public class CPSCore implements CPSCoreInterface {
         period.nextBlock.set(BigInteger.valueOf(Context.getBlockHeight()).add(BLOCKS_DAY_COUNT.multiply(DAY_COUNT)));
         period.periodName.set(APPLICATION_PERIOD);
         period.previousPeriodName.set("None");
-    }
-
-    @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External
-    public void set_initialBlock() {
-        setInitialBlock();
     }
 
     @External(readonly = true)
@@ -605,6 +593,7 @@ public class CPSCore implements CPSCoreInterface {
         return getAdmins();
     }
 
+    @Override
     @External(readonly = true)
     public Map<String, BigInteger> getRemainingFund() {
         SetterGetter setterGetter = new SetterGetter();
@@ -612,7 +601,7 @@ public class CPSCore implements CPSCoreInterface {
         return callScore(Map.class, setterGetter.cpfScore.get(), "get_total_funds");
     }
 
-    @Override
+
     @Deprecated(since = "JAVA translation", forRemoval = true)
     @External(readonly = true)
     public Map<String, BigInteger> get_remaining_fund() {
@@ -683,13 +672,7 @@ public class CPSCore implements CPSCoreInterface {
 
     @External(readonly = true)
     public List<Address> getContributors() {
-        List<Address> contributors = new ArrayList<>();
-        PReps pReps = new PReps();
-        for (int i = 0; i < this.contributors.size(); i++) {
-            contributors.add(this.contributors.get(i));
-
-        }
-        return contributors;
+        return ArrayDBUtils.arrayDBtoList(this.contributors);
     }
 
     @Override
@@ -1292,8 +1275,7 @@ public class CPSCore implements CPSCoreInterface {
         PReps pReps = new PReps();
         List<Address> _main_preps_list = arrayDBtoList(pReps.validPreps);
 
-        for (int i = 0; i < waiting_progress_reports.size(); i++) {
-            String _reports = waiting_progress_reports.get(i);
+        for (String _reports : waiting_progress_reports) {
             Map<String, Object> _report_result = getProgressReportDetails(_reports);
 
             String _ipfs_hash = (String) _report_result.get(IPFS_HASH);
@@ -1307,15 +1289,12 @@ public class CPSCore implements CPSCoreInterface {
             int _approved_reports_count = (int) _proposal_details.get(APPROVED_REPORTS);
             Address _sponsor_address = (Address) _proposal_details.get(SPONSOR_ADDRESS);
             Address _contributor_address = (Address) _proposal_details.get(CONTRIBUTOR_ADDRESS);
-            int _completed = (int) _proposal_details.get(PERCENTAGE_COMPLETED);
             boolean _budget_adjustment = (boolean) _report_result.get(BUDGET_ADJUSTMENT);
             BigInteger _sponsor_deposit_amount = (BigInteger) _proposal_details.get(SPONSOR_DEPOSIT_AMOUNT);
             String flag = (String) _proposal_details.get("token");
 
             int _approve_voters = (int) _report_result.get(APPROVE_VOTERS);
-            int _reject_voters = (int) _report_result.get(REJECT_VOTERS);
             BigInteger _approved_votes = (BigInteger) _report_result.get(APPROVED_VOTES);
-            BigInteger _rejected_votes = (BigInteger) _report_result.get(REJECTED_VOTES);
             BigInteger _total_votes = (BigInteger) _report_result.get(TOTAL_VOTES);
             int _total_voters = (int) _report_result.get(TOTAL_VOTERS);
 
@@ -1350,7 +1329,7 @@ public class CPSCore implements CPSCoreInterface {
                     updateProposalStatus(_ipfs_hash, ACTIVE);
                 }
                 ProposalDataDb.approvedReports.at(proposal_prefix).set(_approved_reports_count);
-//                  Request CPS Treasury to add some installment amount to the contributor address
+//                  Request CPS Treasury to add some installments amount to the contributor address
                 callScore(getCpsTreasuryScore(), "send_installment_to_contributor", _ipfs_hash);
 //                  Request CPS Treasury to add some sponsor reward amount to the sponsor address
                 callScore(getCpsTreasuryScore(), "send_reward_to_sponsor", _ipfs_hash);
@@ -1450,14 +1429,14 @@ public class CPSCore implements CPSCoreInterface {
 
 
 //          After the budget adjustment is approved, Request new added fund to CPF
-            callScore(get_cpf_treasury_score(), "update_proposal_fund", _ipfs_hash, token_flag, _additional_budget, _additional_duration);
+            callScore(getCpfTreasuryScore(), "update_proposal_fund", _ipfs_hash, token_flag, _additional_budget, _additional_duration);
         } else {
             budgetAdjustmentStatus.at(_prefix).set(REJECTED);
         }
     }
 
     private void updateProposalsResult() {
-        BigInteger distributionAmount = get_remaining_fund().get(bnUSD);
+        BigInteger distributionAmount = getRemainingFund().get(bnUSD);
         List<String> proposals = sortPriorityProposals();
         PReps pReps = new PReps();
 
@@ -1494,7 +1473,7 @@ public class CPSCore implements CPSCoreInterface {
                     sponsors.add(sponsorAddress);
                     sponsorProjects.at(sponsorAddress).add(proposal);
                     ProposalDataDb.sponsorDepositStatus.at(proposalPrefix).set(BOND_APPROVED);
-                    callScore(get_cpf_treasury_score(), "transfer_proposal_fund_to_cps_treasury",
+                    callScore(getCpfTreasuryScore(), "transfer_proposal_fund_to_cps_treasury",
                             proposal, projectDuration, sponsorAddress, contributorAddress, flag, totalBudget);
                     distributionAmount = distributionAmount.subtract(totalBudget);
 
@@ -1749,7 +1728,7 @@ public class CPSCore implements CPSCoreInterface {
         }
         List<String> proposalKeys;
         List<Object> sponsorRequests = new ArrayList<>();
-        String prefix = "";
+        String prefix;
 
         if (status.equals(APPROVED)) {
             proposalKeys = arrayDBtoList(this.sponsorProjects.at(sponsorAddress));
@@ -2083,7 +2062,7 @@ public class CPSCore implements CPSCoreInterface {
     @Override
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
-        Context.require(Context.getCaller().equals(get_bnUSD_score()), TAG + " Only bnUSD token accepted.");
+        Context.require(Context.getCaller().equals(getBnusdScore()), TAG + " Only bnUSD token accepted.");
 
         String unpacked_data = new String(_data);
         JsonObject transferData = Json.parse(unpacked_data).asObject();
@@ -2185,7 +2164,7 @@ public class CPSCore implements CPSCoreInterface {
 
         } else if (amountBNUsd.compareTo(BigInteger.ZERO) > 0) {
             userAmounts.set(bnUSD, BigInteger.ZERO);
-            callScore(get_bnUSD_score(), "transfer", caller, amountBNUsd);
+            callScore(getBnusdScore(), "transfer", caller, amountBNUsd);
             SponsorBondClaimed(caller, amountIcx, amountBNUsd + " " + bnUSD + " withdrawn to " + caller);
         } else {
             Context.revert(TAG + " Claim Reward Fails. Available Amounts are " + amountIcx + " " + ICX + " and" + amountBNUsd + " " + bnUSD);
@@ -2204,7 +2183,7 @@ public class CPSCore implements CPSCoreInterface {
         BigInteger currentBlock = BigInteger.valueOf(Context.getBlockHeight());
         if (sbh.compareTo(currentBlock) < 0) {
             swapBlockHeight.set(currentBlock.add(SWAP_BLOCK_DIFF));
-            callScore(get_cpf_treasury_score(), "swap_tokens", swapCount.getOrDefault(0));
+            callScore(getCpfTreasuryScore(), "swap_tokens", swapCount.getOrDefault(0));
         }
     }
 
@@ -2245,8 +2224,8 @@ public class CPSCore implements CPSCoreInterface {
         JsonObject params = new JsonObject();
         params.add(SPONSOR_ADDRESS, sponsorAddress.toString());
         disqualifyProject.add("params", params);
-        Address cpfScore = get_cpf_treasury_score();
-        callScore(get_bnUSD_score(), "transfer", cpfScore,
+        Address cpfScore = getCpfTreasuryScore();
+        callScore(getBnusdScore(), "transfer", cpfScore,
                 sponsorDepositAmount, disqualifyProject.toString().getBytes());
         SponsorBondReturned(cpfScore, "Project Disqualified. " + sponsorDepositAmount + " " + flag +
                 " returned to CPF Treasury Address.");
@@ -2264,7 +2243,7 @@ public class CPSCore implements CPSCoreInterface {
 
         int endIndex = startIndex + 10;
         int size = proposalKeys.size();
-        if (endIndex > size){
+        if (endIndex > size) {
             endIndex = size;
         }
 
@@ -2313,7 +2292,7 @@ public class CPSCore implements CPSCoreInterface {
 
         int endIndex = startIndex + 10;
         int size = proposalKeys.size();
-        if (endIndex > size){
+        if (endIndex > size) {
             endIndex = size;
         }
 
