@@ -66,7 +66,7 @@ public class CPSCore implements CPSCoreInterface {
     );
 
     private final BranchDB<String, DictDB<String, BigInteger>> sponsorBondReturn = Context.newBranchDB(SPONSOR_BOND_RETURN, BigInteger.class);
-    private final DictDB<String, BigInteger> delegationSnapshot = Context.newDictDB(DELEGATION_SNAPSHOT, BigInteger.class);
+    private final DictDB<Address, BigInteger> delegationSnapshot = Context.newDictDB(DELEGATION_SNAPSHOT, BigInteger.class);
     private final VarDB<BigInteger> maxDelegation = Context.newVarDB(MAX_DELEGATION, BigInteger.class);
     private final VarDB<BigInteger> proposalFees = Context.newVarDB(PROPOSAL_FEES, BigInteger.class);
     private final VarDB<BigInteger> swapBlockHeight = Context.newVarDB(SWAP_BLOCK_HEIGHT, BigInteger.class);
@@ -798,7 +798,7 @@ public class CPSCore implements CPSCoreInterface {
         }
         Context.require(status.equals(PENDING), TAG + ": Proposal must be done in Voting state.");
 
-        BigInteger voterStake = delegationSnapshot.get(String.valueOf(caller));
+        BigInteger voterStake = delegationSnapshot.get(caller);
         BigInteger totalVotes = (BigInteger) proposalDetails.get(TOTAL_VOTES);
         BigInteger approvedVotes = (BigInteger) proposalDetails.get(APPROVED_VOTES);
         BigInteger rejectedVotes = (BigInteger) proposalDetails.get(REJECTED_VOTES);
@@ -818,7 +818,7 @@ public class CPSCore implements CPSCoreInterface {
         } else {
             Context.require(votersIndexDb.getOrDefault(CHANGE_VOTE, 0) == 0,
                     TAG + ": Vote change can be done only once.");
-            votersIndexDb.set(CHANGE_VOTE, 1);
+            votersIndexDb.set(CHANGE_VOTE, VOTED);
             int index = votersIndexDb.getOrDefault(INDEX, 0);
             int voteIndex = votersIndexDb.getOrDefault(VOTE, 0);
             ProposalDataDb.votersReasons.at(proposalPrefix).set(index - 1, voteReason);
@@ -832,9 +832,9 @@ public class CPSCore implements CPSCoreInterface {
                 ArrayDBUtils.removeArrayItem(abstainVoters.at(proposalPrefix), caller);
                 ProposalDataDb.abstainedVotes.at(proposalPrefix).set(abstainedVotes.subtract(voterStake));
             }
-            approvedVotes = (BigInteger) proposalDetails.get(APPROVED_VOTES);
-            rejectedVotes = (BigInteger) proposalDetails.get(REJECTED_VOTES);
-            abstainedVotes = (BigInteger) proposalDetails.get(ABSTAINED_VOTES);
+            approvedVotes = ProposalDataDb.approvedVotes.at(proposalPrefix).getOrDefault(BigInteger.ZERO);
+            rejectedVotes = ProposalDataDb.rejectedVotes.at(proposalPrefix).getOrDefault(BigInteger.ZERO);
+            abstainedVotes = ProposalDataDb.abstainedVotes.at(proposalPrefix).getOrDefault(BigInteger.ZERO);
 
         }
         if (vote.equals(APPROVE)) {
@@ -979,7 +979,7 @@ public class CPSCore implements CPSCoreInterface {
         }
 
         if (status.equals(WAITING)) {
-            BigInteger voterStake = delegationSnapshot.get(String.valueOf(caller));
+            BigInteger voterStake = delegationSnapshot.get(caller);
             BigInteger totalVotes = (BigInteger) progressReportDetails.get(TOTAL_VOTES);
             BigInteger approvedVotes = (BigInteger) progressReportDetails.get(APPROVED_VOTES);
             BigInteger rejectedVotes = (BigInteger) progressReportDetails.get(REJECTED_VOTES);
@@ -997,7 +997,7 @@ public class CPSCore implements CPSCoreInterface {
             } else {
                 Context.require(votersIndexDb.getOrDefault(CHANGE_VOTE, 0) == 0,
                         TAG + ": Progress Report Vote change can be done only once.");
-                votersIndexDb.set(CHANGE_VOTE, 1);
+                votersIndexDb.set(CHANGE_VOTE, VOTED);
                 int index = votersIndexDb.getOrDefault(INDEX, 0);
                 int voteIndex = votersIndexDb.getOrDefault(VOTE, 0);
                 ProgressReportDataDb.votersReasons.at(progressReportPrefix).set(index - 1, voteReason);
@@ -1024,8 +1024,8 @@ public class CPSCore implements CPSCoreInterface {
                     }
 
                 }
-                approvedVotes = (BigInteger) progressReportDetails.get(APPROVED_VOTES);
-                rejectedVotes = (BigInteger) progressReportDetails.get(REJECTED_VOTES);
+                approvedVotes = ProgressReportDataDb.approvedVotes.at(progressReportPrefix).getOrDefault(BigInteger.ZERO);
+                rejectedVotes = ProgressReportDataDb.rejectedVotes.at(progressReportPrefix).getOrDefault(BigInteger.ZERO);
 
             }
             if (vote.equals(APPROVE)) {
@@ -1042,8 +1042,8 @@ public class CPSCore implements CPSCoreInterface {
             }
 
             if (ArrayDBUtils.containsInArrayDb(reportKey, budgetApprovalsList)) {
-                BigInteger budgetApprovedVotes = (BigInteger) progressReportDetails.get(BUDGET_APPROVED_VOTES);
-                BigInteger budgetRejectedVotes = (BigInteger) progressReportDetails.get(BUDGET_REJECTED_VOTES);
+                BigInteger budgetApprovedVotes = ProgressReportDataDb.budgetApprovedVotes.at(progressReportPrefix).getOrDefault(BigInteger.ZERO);
+                BigInteger budgetRejectedVotes = ProgressReportDataDb.budgetRejectedVotes.at(progressReportPrefix).getOrDefault(BigInteger.ZERO);
                 DictDB<String, Integer> budgetVoteIndex = budgetVotersListIndices.at(progressReportPrefix).at(caller);
                 if (budgetAdjustmentVote.equals(APPROVE)) {
                     ProgressReportDataDb.budgetApproveVoters.at(progressReportPrefix).add(caller);
@@ -2009,7 +2009,7 @@ public class CPSCore implements CPSCoreInterface {
         for (int i = 0; i < pReps.validPreps.size(); i++) {
             Address prep = pReps.validPreps.get(i);
             BigInteger stake = getStake(prep);
-            delegationSnapshot.set(prep.toString(), stake);
+            delegationSnapshot.set(prep, stake);
             if (stake.compareTo(maxDelegation) > 0) {
                 maxDelegation = stake;
             }
