@@ -3,10 +3,9 @@ package community.icon.cps.score.cpscore.db;
 import score.*;
 
 import java.math.BigInteger;
-import scorex.util.HashMap;
 import java.util.Map;
-import static community.icon.cps.score.cpscore.utils.ArrayDBUtils.*;
 
+import static community.icon.cps.score.cpscore.utils.ArrayDBUtils.recordTxHash;
 import static community.icon.cps.score.cpscore.utils.Constants.*;
 import static community.icon.cps.score.lib.interfaces.CPSCoreInterface.ProposalAttributes;
 
@@ -23,7 +22,7 @@ public class ProposalDataDb {
     public static final BranchDB<String, VarDB<String>> ipfsLink = Context.newBranchDB(IPFS_LINK, String.class);
     public static final BranchDB<String, VarDB<String>> status = Context.newBranchDB(STATUS, String.class);
     private static final BranchDB<String, VarDB<String>> txHash = Context.newBranchDB(TX_HASH, String.class);
-    private static final BranchDB<String, VarDB<Integer>> percentageCompleted = Context.newBranchDB(PERCENTAGE_COMPLETED, Integer.class);
+    public static final BranchDB<String, VarDB<Integer>> percentageCompleted = Context.newBranchDB(PERCENTAGE_COMPLETED, Integer.class);
     public static final BranchDB<String, ArrayDB<String>> votersReasons = Context.newBranchDB(VOTERS_REASON, String.class);
     public static final BranchDB<String, VarDB<BigInteger>> totalVotes = Context.newBranchDB(TOTAL_VOTES, BigInteger.class);
     public static final BranchDB<String, VarDB<Integer>> totalVoters = Context.newBranchDB(TOTAL_VOTERS, Integer.class);
@@ -94,7 +93,6 @@ public class ProposalDataDb {
         Map.entry(SPONSOR_DEPOSIT_AMOUNT, sponsorDepositAmount.at(prefix).getOrDefault(BigInteger.ZERO)),
         Map.entry(SPONSORED_TIMESTAMP, sponsoredTimestamp.at(prefix).getOrDefault(BigInteger.ZERO)),
         Map.entry(SPONSOR_DEPOSIT_STATUS, sponsorDepositStatus.at(prefix).getOrDefault("")),
-        Map.entry(SPONSOR_VOTE_REASON, reason),
         Map.entry(APPROVE_VOTERS, approveVoters.at(prefix).size()),
         Map.entry(REJECT_VOTERS, rejectVoters.at(prefix).size()),
         Map.entry(ABSTAIN_VOTERS, abstainVoters.at(prefix).size()),
