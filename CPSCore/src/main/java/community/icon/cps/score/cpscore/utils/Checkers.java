@@ -1,11 +1,8 @@
 package community.icon.cps.score.cpscore.utils;
 
+import community.icon.cps.score.cpscore.SetterGetter;
 import score.Address;
 import score.Context;
-
-import static community.icon.cps.score.cpscore.utils.Constants.TAG;
-import community.icon.cps.score.cpscore.SetterGetter;
-import community.icon.cps.score.cpscore.CPSCore;
 
 public class Checkers {
     public static void onlyOwner() {
@@ -14,18 +11,6 @@ public class Checkers {
         Context.require(caller.equals(owner), "SenderNotScoreOwner: Sender=" + caller + " Owner=" + owner);
     }
 
-    public static void validateAdmins() {
-        CPSCore cpsCore = new CPSCore();
-        Context.require(cpsCore.isAdmin(Context.getCaller()),
-                TAG + ": Only Admins can call this method");
-
-    }
-
-    public static void validateAdminScore(Address scoreAddress) {
-        validateAdmins();
-        Context.require(scoreAddress.isContract(), scoreAddress + " is not a SCORE Address");
-
-    }
 
     public static void checkMaintenance() {
         SetterGetter setterGetter = new SetterGetter();
