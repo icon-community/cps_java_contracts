@@ -3,8 +3,15 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'foundation.icon:gradle-javaee-plugin:0.8.0'
+        classpath "foundation.icon:gradle-javaee-plugin:0.8.1"
     }
+}
+
+def scoreIntegrationTest = new HashMap<String, String>()
+
+task buildContracts(type: Exec) {
+    workingDir "$projectDir/"
+    commandLine './gradlew', 'optimizedJar'
 }
 
 subprojects {
@@ -13,7 +20,23 @@ subprojects {
     }
 
     apply plugin: 'java'
+    apply plugin: 'jacoco'
     apply plugin: 'foundation.icon.javaee'
+
+    sourceSets {
+        intTest {
+            compileClasspath += sourceSets.main.output
+            runtimeClasspath += sourceSets.main.output
+            java {
+            }
+        }
+    }
+
+    configurations {
+        intTestImplementation.extendsFrom testImplementation
+        intTestAnnotationProcessor.extendsFrom testAnnotationProcessor
+        intTestRuntimeOnly.extendsFrom testRuntimeOnly
+    }
 
     java {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -23,5 +46,30 @@ subprojects {
     // need to add this option to retrieve formal parameter names
     compileJava {
         options.compilerArgs += ['-parameters']
+    }
+
+    tasks.named('test') {
+        // Use JUnit Platform for unit tests.
+        useJUnitPlatform()
+    }
+
+    scoreIntegrationTest.put('env.props', new File(project(':test-lib').projectDir, 'conf/env.props'))
+
+    afterEvaluate { project ->
+        scoreIntegrationTest.put(project.name, project.getTasks().getByName("optimizedJar").outputJarName)
+    }
+
+    tasks.named("assemble") {
+        if (project.tasks.findByName("compileIntTestJava")) {
+            finalizedBy(project.tasks.getByName("compileIntTestJava"))
+        }
+    }
+
+    gradle.taskGraph.whenReady { taskGraph ->
+        taskGraph.getAllTasks().eachWithIndex { task, n ->
+            if (task.name == 'integrationTest') {
+                scoreIntegrationTest.each { key, val -> task.systemProperty key, val }
+            }
+        }
     }
 }

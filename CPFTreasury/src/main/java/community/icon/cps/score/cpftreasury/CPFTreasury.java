@@ -16,38 +16,41 @@ import java.util.Map;
 import static community.icon.cps.score.cpftreasury.Constants.*;
 import static community.icon.cps.score.cpftreasury.Validations.validateAdmins;
 import static community.icon.cps.score.cpftreasury.Validations.validateCpsScore;
+import community.icon.cps.score.lib.interfaces.CPFTreasuryInterface;
 
-public class CPFTreasury extends SetterGetter {
-
-    private final ArrayDB<String> proposalsKeys = Context.newArrayDB(PROPOSALS_KEYS, String.class);
-    private final DictDB<String, BigInteger> proposalBudgets = Context.newDictDB(PROPOSAL_BUDGETS, BigInteger.class);
-    private final VarDB<BigInteger> treasuryFund = Context.newVarDB(TREASURY_FUND, BigInteger.class);
-    private final VarDB<BigInteger> treasuryFundbnUSD = Context.newVarDB(TREASURY_FUND_BNUSD, BigInteger.class);
-
+public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     public static final VarDB<Address> cpsTreasuryScore = Context.newVarDB(CPS_TREASURY_SCORE, Address.class);
     public static final VarDB<Address> cpsScore = Context.newVarDB(CPS_SCORE, Address.class);
     public static final VarDB<Address> balancedDollar = Context.newVarDB(BALANCED_DOLLAR, Address.class);
     public static final VarDB<Address> dexScore = Context.newVarDB(DEX_SCORE, Address.class);
     public static final VarDB<Address> sICXScore = Context.newVarDB(SICX_SCORE, Address.class);
     public static final VarDB<Address> routerScore = Context.newVarDB(ROUTER_SCORE, Address.class);
+    private final ArrayDB<String> proposalsKeys = Context.newArrayDB(PROPOSALS_KEYS, String.class);
+    private final DictDB<String, BigInteger> proposalBudgets = Context.newDictDB(PROPOSAL_BUDGETS, BigInteger.class);
+    private final VarDB<BigInteger> treasuryFund = Context.newVarDB(TREASURY_FUND, BigInteger.class);
+    private final VarDB<BigInteger> treasuryFundbnUSD = Context.newVarDB(TREASURY_FUND_BNUSD, BigInteger.class);
 
     private final VarDB<Integer> swapState = Context.newVarDB(SWAP_STATE, Integer.class);
     private final VarDB<Integer> swapCount = Context.newVarDB(SWAP_COUNT, Integer.class);
 
-    public CPFTreasury() {
+    private final VarDB<Boolean> swapFlag = Context.newVarDB(SWAP_FLAG, Boolean.class);
 
+    public CPFTreasury() {
+        swapFlag.set(true);
     }
 
     private boolean proposalExists(String ipfsKey) {
         return proposalBudgets.get(ipfsKey) != null;
     }
 
+    @Override
     @External(readonly = true)
     public String name() {
         return TAG;
     }
 
 
+    @Override
     @External
     public void setMaximumTreasuryFundIcx(BigInteger _value) {
         validateAdmins();
@@ -59,10 +62,22 @@ public class CPFTreasury extends SetterGetter {
      *
      * @param _value: value in loop
      */
+    @Override
     @External
     public void setMaximumTreasuryFundBnusd(BigInteger _value) {
         validateAdmins();
         treasuryFundbnUSD.set(_value);
+    }
+
+    @External
+    public void toggleSwapFlag() {
+        validateAdmins();
+        swapFlag.set(!swapFlag.getOrDefault(false));
+    }
+
+    @External(readonly = true)
+    public boolean getSwapFlag() {
+        return swapFlag.getOrDefault(false);
     }
 
 
@@ -75,6 +90,7 @@ public class CPFTreasury extends SetterGetter {
      *
      * @return map of ICX and bnUSD amount
      */
+    @Override
     @External(readonly = true)
     public Map<String, BigInteger> get_total_funds() {
         return Map.of(ICX, Context.getBalance(Context.getAddress()),
@@ -85,6 +101,7 @@ public class CPFTreasury extends SetterGetter {
         return (BigInteger) Context.call(balancedDollar.get(), "balanceOf", Context.getAddress());
     }
 
+    @Override
     @External(readonly = true)
     public Map<String, BigInteger> get_remaining_swap_amount() {
         BigInteger maxCap = treasuryFundbnUSD.get();
@@ -98,6 +115,7 @@ public class CPFTreasury extends SetterGetter {
         FundReturned(address, "Sponsor Bond amount " + value + " " + bnUSD + " Returned to CPF Treasury.");
     }
 
+    @Override
     @External
     public void transfer_proposal_fund_to_cps_treasury(String _ipfs_key, int _total_installment_count,
                                                        Address _sponsor_address, Address _contributor_address,
@@ -131,6 +149,7 @@ public class CPFTreasury extends SetterGetter {
         ProposalFundTransferred(_ipfs_key, "Successfully transferred " + totalTransfer + " " + token_flag + " to CPS Treasury " + cpsTreasuryScore.get());
     }
 
+    @Override
     @External
     public void update_proposal_fund(String _ipfs_key, @Optional String _flag, @Optional BigInteger _added_budget,
                                      @Optional int _total_installment_count) {
@@ -174,6 +193,7 @@ public class CPFTreasury extends SetterGetter {
         ProposalDisqualified(ipfsKey, "Proposal disqualified. " + value + " " + bnUSD + " is returned back to Treasury.");
     }
 
+    @Override
     @External
     @Payable
     public void add_fund() {
@@ -206,13 +226,17 @@ public class CPFTreasury extends SetterGetter {
         Context.call(_from, "transfer", dexScore.get(), _amount, swapData.toString().getBytes());
     }
 
+    @Override
     @External
     public void swapIcxBnusd(BigInteger amount) {
-        Address[] path = new Address[]{sICXScore.get(), balancedDollar.get()};
-        Object[] params = new Object[]{path};
-        Context.call(amount, routerScore.get(), "route", params);
+        if (getSwapFlag()) {
+            Address[] path = new Address[]{sICXScore.get(), balancedDollar.get()};
+            Object[] params = new Object[]{path};
+            Context.call(amount, routerScore.get(), "route", params);
+        }
     }
 
+    @Override
     @External
     public void swap_tokens(int _count) {
         validateCpsScore();
@@ -234,35 +258,38 @@ public class CPFTreasury extends SetterGetter {
                 } else {
                     BigInteger remainingICXToSwap = bnUSDRemainingToSwap.multiply(EXA).divide(icxbnUSDPrice.multiply(BigInteger.valueOf(count)));
                     BigInteger icxBalance = Context.getBalance(Context.getAddress());
+                    swapCount.set(swapCountValue + 1);
                     if (remainingICXToSwap.compareTo(icxBalance) > 0) {
                         remainingICXToSwap = icxBalance;
                     }
 
                     if (remainingICXToSwap.compareTo(BigInteger.valueOf(5).multiply(EXA)) > 0) {
                         swapIcxBnusd(remainingICXToSwap);
-                        swapCount.set(swapCountValue + 1);
                     }
                 }
             }
         }
     }
 
+    @Override
     @External(readonly = true)
     public Map<String, Integer> get_swap_state_status() {
         return Map.of("state", swapState.getOrDefault(0), "count", swapCount.getOrDefault(0));
     }
 
+    @Override
     @External
     public void reset_swap_state() {
         Address cpsScoreAddress = cpsScore.get();
         Address caller = Context.getCaller();
 
-        boolean checkCaller = caller.equals(cpsScoreAddress) || (Boolean) Context.call(cpsScoreAddress, "is_admin", caller);
+        boolean checkCaller = caller.equals(cpsScoreAddress) || (Boolean) Context.call(cpsScoreAddress, "isAdmin", caller);
         Context.require(checkCaller, TAG + ": Only admin can call this method.");
         swapState.set(SwapContinue);
         swapCount.set(SwapReset);
     }
 
+    @Override
     @External(readonly = true)
     public Map<String, Object> get_proposal_details(@Optional int _start_index, @Optional int _end_index) {
         if (_end_index == 0) {
@@ -294,6 +321,7 @@ public class CPFTreasury extends SetterGetter {
         return Map.of("data", proposalsList, "count", count);
     }
 
+    @Override
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
         Address bnUSDScore = balancedDollar.get();
@@ -340,6 +368,7 @@ public class CPFTreasury extends SetterGetter {
         }
     }
 
+    @Override
     @Payable
     public void fallback() {
         if (Context.getCaller().equals(dexScore.get())) {
@@ -351,18 +380,22 @@ public class CPFTreasury extends SetterGetter {
 
 
     //EventLogs
+    @Override
     @EventLog(indexed = 1)
     public void FundReturned(Address _sponsor_address, String note) {
     }
 
+    @Override
     @EventLog(indexed = 1)
     public void ProposalFundTransferred(String _ipfs_key, String note) {
     }
 
+    @Override
     @EventLog(indexed = 1)
     public void ProposalDisqualified(String _ipfs_key, String note) {
     }
 
+    @Override
     @EventLog(indexed = 1)
     public void FundReceived(Address _sponsor_address, String note) {
     }

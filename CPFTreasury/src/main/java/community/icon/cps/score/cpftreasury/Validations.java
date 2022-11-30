@@ -7,7 +7,7 @@ import static community.icon.cps.score.cpftreasury.Constants.TAG;
 
 public class Validations {
     public static void validateAdmins() {
-        Context.require((Boolean) Context.call(CPFTreasury.cpsScore.get(), "is_admin", Context.getCaller()),
+        Context.require((Boolean) Context.call(CPFTreasury.cpsScore.get(), "isAdmin", Context.getCaller()),
                 TAG + ": Only Admins can call this method");
 
     }

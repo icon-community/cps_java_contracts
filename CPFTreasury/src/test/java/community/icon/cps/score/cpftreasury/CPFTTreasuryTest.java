@@ -85,7 +85,7 @@ public class CPFTTreasuryTest extends TestBase {
     void setCPSScore() {
         VarDB<Address> cpsScore = mock(VarDB.class);
         try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
-            theMock.when(() -> Context.call(cpsScore.get(), "is_admin", Context.getCaller())).thenReturn(true);
+            theMock.when(() -> Context.call(cpsScore.get(), "isAdmin", Context.getCaller())).thenReturn(true);
             tokenScore.invoke(owner, "setCpsScore", score_address);
         }
         assertEquals(score_address, tokenScore.call("getCpsScore"));
@@ -95,7 +95,7 @@ public class CPFTTreasuryTest extends TestBase {
     void setCPSTreasuryScore() {
         VarDB<Address> cpsScore = mock(VarDB.class);
         try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
-            theMock.when(() -> Context.call(cpsScore.get(), "is_admin", Context.getCaller())).thenReturn(true);
+            theMock.when(() -> Context.call(cpsScore.get(), "isAdmin", Context.getCaller())).thenReturn(true);
             tokenScore.invoke(owner, "setCpsTreasuryScore", score_address);
         }
         assertEquals(score_address, tokenScore.call("getCpsTreasuryScore"));
@@ -105,7 +105,7 @@ public class CPFTTreasuryTest extends TestBase {
     void setBMUSDScore() {
         VarDB<Address> cpsScore = mock(VarDB.class);
         try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
-            theMock.when(() -> Context.call(cpsScore.get(), "is_admin", Context.getCaller())).thenReturn(true);
+            theMock.when(() -> Context.call(cpsScore.get(), "isAdmin", Context.getCaller())).thenReturn(true);
             tokenScore.invoke(owner, "setBnUSDScore", score_address);
         }
         assertEquals(score_address, tokenScore.call("getBnUSDScore"));
@@ -115,7 +115,7 @@ public class CPFTTreasuryTest extends TestBase {
     void setSICXScore() {
         VarDB<Address> cpsScore = mock(VarDB.class);
         try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
-            theMock.when(() -> Context.call(cpsScore.get(), "is_admin", Context.getCaller())).thenReturn(true);
+            theMock.when(() -> Context.call(cpsScore.get(), "isAdmin", Context.getCaller())).thenReturn(true);
             tokenScore.invoke(owner, "setSicxScore", score_address);
         }
         assertEquals(score_address, tokenScore.call("getSicxScore"));
@@ -125,7 +125,7 @@ public class CPFTTreasuryTest extends TestBase {
     void setDEXScore() {
         VarDB<Address> cpsScore = mock(VarDB.class);
         try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
-            theMock.when(() -> Context.call(cpsScore.get(), "is_admin", Context.getCaller())).thenReturn(true);
+            theMock.when(() -> Context.call(cpsScore.get(), "isAdmin", Context.getCaller())).thenReturn(true);
             tokenScore.invoke(owner, "setDexScore", score_address);
         }
         assertEquals(score_address, tokenScore.call("getDexScore"));
@@ -135,7 +135,7 @@ public class CPFTTreasuryTest extends TestBase {
     void setRouterScore() {
         VarDB<Address> cpsScore = mock(VarDB.class);
         try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
-            theMock.when(() -> Context.call(cpsScore.get(), "is_admin", Context.getCaller())).thenReturn(true);
+            theMock.when(() -> Context.call(cpsScore.get(), "isAdmin", Context.getCaller())).thenReturn(true);
             tokenScore.invoke(owner, "setRouterScore", score_address);
         }
         assertEquals(score_address, tokenScore.call("getRouterScore"));
@@ -184,7 +184,7 @@ public class CPFTTreasuryTest extends TestBase {
     void setRouterScoreExceptions(Account address, Address _score) {
         VarDB<Address> cpsScore = mock(VarDB.class);
         try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
-            theMock.when(() -> Context.call(cpsScore.get(), "is_admin", Context.getCaller())).thenReturn(false);
+            theMock.when(() -> Context.call(cpsScore.get(), "isAdmin", Context.getCaller())).thenReturn(false);
             tokenScore.invoke(address, "setRouterScore", _score);
         } catch (Exception e) {
             throw e;
@@ -294,7 +294,7 @@ public class CPFTTreasuryTest extends TestBase {
     void setMaxCapIcxAndBnusd(){
         VarDB<Address> cpsScore = mock(VarDB.class);
         try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
-            theMock.when(() -> Context.call(cpsScore.get(), "is_admin", Context.getCaller())).thenReturn(true);
+            theMock.when(() -> Context.call(cpsScore.get(), "isAdmin", Context.getCaller())).thenReturn(true);
             tokenScore.invoke(owner, "setMaximumTreasuryFundIcx", BigInteger.valueOf(2000).multiply(MULTIPLIER));
             tokenScore.invoke(owner, "setMaximumTreasuryFundBnusd", BigInteger.valueOf(2000).multiply(MULTIPLIER));
 
@@ -305,7 +305,7 @@ public class CPFTTreasuryTest extends TestBase {
     void setMaxCapIcxAndBnusdTest(){
         VarDB<Address> cpsScore = mock(VarDB.class);
         try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
-            theMock.when(() -> Context.call(cpsScore.get(), "is_admin", Context.getCaller())).thenReturn(true);
+            theMock.when(() -> Context.call(cpsScore.get(), "isAdmin", Context.getCaller())).thenReturn(true);
             tokenScore.invoke(owner, "setMaximumTreasuryFundIcx", BigInteger.valueOf(2000).multiply(MULTIPLIER));
             tokenScore.invoke(owner, "setMaximumTreasuryFundBnusd", BigInteger.valueOf(2000).multiply(MULTIPLIER));
         }
@@ -389,7 +389,7 @@ public class CPFTTreasuryTest extends TestBase {
         setCPSScoreMethod(score_address);
         try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
             theMock.when(() -> Context.getCaller()).thenReturn(testing_account.getAddress());
-            theMock.when(() -> Context.call(score_address, "is_admin", Context.getCaller())).thenReturn(true);
+            theMock.when(() -> Context.call(score_address, "isAdmin", Context.getCaller())).thenReturn(true);
             tokenScore.invoke(owner, "reset_swap_state");
             assertEquals(tokenScore.call("get_swap_state_status"), Map.of("state", 0, "count", 0));
         }
@@ -695,7 +695,7 @@ public class CPFTTreasuryTest extends TestBase {
     void setCPSScoreMethod(Address scoreAddress) {
         VarDB<Address> cpsScore = mock(VarDB.class);
         try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
-            theMock.when(() -> Context.call(cpsScore.get(), "is_admin", Context.getCaller())).thenReturn(true);
+            theMock.when(() -> Context.call(cpsScore.get(), "isAdmin", Context.getCaller())).thenReturn(true);
             tokenScore.invoke(owner, "setCpsScore", scoreAddress);
         }
     }
@@ -703,7 +703,7 @@ public class CPFTTreasuryTest extends TestBase {
     void setCPSTreasuryScoreMetod(Address scoreAddress) {
         VarDB<Address> cpsScore = mock(VarDB.class);
         try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
-            theMock.when(() -> Context.call(cpsScore.get(), "is_admin", Context.getCaller())).thenReturn(true);
+            theMock.when(() -> Context.call(cpsScore.get(), "isAdmin", Context.getCaller())).thenReturn(true);
             tokenScore.invoke(owner, "setCpsTreasuryScore", scoreAddress);
         }
     }
@@ -711,7 +711,7 @@ public class CPFTTreasuryTest extends TestBase {
     void setBMUSDScoreMethod(Address scoreAddress) {
         VarDB<Address> cpsScore = mock(VarDB.class);
         try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
-            theMock.when(() -> Context.call(cpsScore.get(), "is_admin", Context.getCaller())).thenReturn(true);
+            theMock.when(() -> Context.call(cpsScore.get(), "isAdmin", Context.getCaller())).thenReturn(true);
             tokenScore.invoke(owner, "setBnUSDScore", scoreAddress);
         }
     }
@@ -719,7 +719,7 @@ public class CPFTTreasuryTest extends TestBase {
     void setSICXScoreMethod(Address scoreAddress) {
         VarDB<Address> cpsScore = mock(VarDB.class);
         try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
-            theMock.when(() -> Context.call(cpsScore.get(), "is_admin", Context.getCaller())).thenReturn(true);
+            theMock.when(() -> Context.call(cpsScore.get(), "isAdmin", Context.getCaller())).thenReturn(true);
             tokenScore.invoke(owner, "setSicxScore", scoreAddress);
         }
     }
@@ -727,7 +727,7 @@ public class CPFTTreasuryTest extends TestBase {
     void setDEXScoreMethod(Address scoreAddress) {
         VarDB<Address> cpsScore = mock(VarDB.class);
         try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
-            theMock.when(() -> Context.call(cpsScore.get(), "is_admin", Context.getCaller())).thenReturn(true);
+            theMock.when(() -> Context.call(cpsScore.get(), "isAdmin", Context.getCaller())).thenReturn(true);
             tokenScore.invoke(owner, "setDexScore", scoreAddress);
         }
     }
@@ -735,7 +735,7 @@ public class CPFTTreasuryTest extends TestBase {
     void setRouterScoreMethod(Address scoreAddress) {
         VarDB<Address> cpsScore = mock(VarDB.class);
         try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
-            theMock.when(() -> Context.call(cpsScore.get(), "is_admin", Context.getCaller())).thenReturn(true);
+            theMock.when(() -> Context.call(cpsScore.get(), "isAdmin", Context.getCaller())).thenReturn(true);
             tokenScore.invoke(owner, "setRouterScore", score_address);
         }
     }

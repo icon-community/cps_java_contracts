@@ -2,6 +2,8 @@ version = '0.9.1'
 
 dependencies {
     compileOnly 'foundation.icon:javaee-api:0.9.1'
+    implementation project(':score-lib')
+
     implementation 'com.github.sink772:javaee-tokens:0.6.1'
     implementation 'com.github.sink772:minimal-json:0.9.6'
 
@@ -26,6 +28,7 @@ deployJar {
         lisbon {
             uri = 'https://lisbon.net.solidwallet.io/api/v3'
             nid = 0x2
+            to = 'cx3d4182c0e783b7ef97ba63409c4bdf808853bd9f'
         }
         local {
             uri = 'http://localhost:9082/api/v3'
@@ -45,6 +48,7 @@ deployJar {
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
     parameters {
+        arg('score', 'cx0355e153f269c05f64100d34d3c48a002b404dc5')
     }
 }
 
