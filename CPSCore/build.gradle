@@ -30,7 +30,7 @@ deployJar {
         lisbon {
             uri = 'https://lisbon.net.solidwallet.io/api/v3'
             nid = 0x2
-            to = 'cx0355e153f269c05f64100d34d3c48a002b404dc5'
+            to = 'cxd82e5f0c1090f55f9b2f727ad35fb3a9e1de95c4'
         }
         local {
             uri = 'http://localhost:9082/api/v3'
@@ -39,6 +39,11 @@ deployJar {
         berlin {
             uri = 'https://berlin.net.solidwallet.io/api/v3'
             nid = 0x7
+        }
+        sejong {
+            uri = 'https://sejong.net.solidwallet.io/api/v3'
+            nid = 0x53
+            to = 'cx2b214d56805531b9c878c4d4ff0e53d961c60834'
         }
         mainnet {
             uri = 'https://ctz.solidwallet.io/api/v3'

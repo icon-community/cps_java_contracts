@@ -5,25 +5,25 @@ import com.eclipsesource.json.JsonObject;
 import community.icon.cps.score.cpscore.db.ProgressReportDataDb;
 import community.icon.cps.score.cpscore.db.ProposalDataDb;
 import community.icon.cps.score.cpscore.utils.ArrayDBUtils;
+import community.icon.cps.score.lib.interfaces.CPSCoreInterface;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
 import score.annotation.Payable;
+import scorex.util.ArrayList;
 import scorex.util.HashMap;
 
 import java.math.BigInteger;
-import scorex.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import static community.icon.cps.score.cpscore.db.ProgressReportDataDb.*;
 import static community.icon.cps.score.cpscore.db.ProposalDataDb.*;
-import static community.icon.cps.score.cpscore.utils.Constants.*;
-import static community.icon.cps.score.cpscore.utils.Checkers.*;
 import static community.icon.cps.score.cpscore.utils.ArrayDBUtils.*;
-import community.icon.cps.score.lib.interfaces.CPSCoreInterface;
-import community.icon.cps.score.cpscore.utils.Migration;
+import static community.icon.cps.score.cpscore.utils.Checkers.checkMaintenance;
+import static community.icon.cps.score.cpscore.utils.Checkers.onlyOwner;
+import static community.icon.cps.score.cpscore.utils.Constants.*;
 
 public class CPSCore implements CPSCoreInterface {
 
@@ -63,17 +63,18 @@ public class CPSCore implements CPSCoreInterface {
     );
 
     private final BranchDB<String, DictDB<String, BigInteger>> sponsorBondReturn = Context.newBranchDB(SPONSOR_BOND_RETURN, BigInteger.class);
-    private final DictDB<String, BigInteger> delegationSnapshot = Context.newDictDB(DELEGATION_SNAPSHOT, BigInteger.class);
+    private final DictDB<Address, BigInteger> delegationSnapshot = Context.newDictDB(DELEGATION_SNAPSHOT, BigInteger.class);
     private final VarDB<BigInteger> maxDelegation = Context.newVarDB(MAX_DELEGATION, BigInteger.class);
     private final VarDB<BigInteger> proposalFees = Context.newVarDB(PROPOSAL_FEES, BigInteger.class);
     private final VarDB<BigInteger> swapBlockHeight = Context.newVarDB(SWAP_BLOCK_HEIGHT, BigInteger.class);
     private final VarDB<Integer> swapCount = Context.newVarDB(SWAP_COUNT, Integer.class);
     private final DictDB<String, Integer> proposalRank = Context.newDictDB(PROPOSAL_RANK, Integer.class);
     private final ArrayDB<Address> priorityVotedPreps = Context.newArrayDB(PRIORITY_VOTED_PREPS, Address.class);
+    private final BranchDB<Address, ArrayDB<String>> sponsorProjects = Context.newBranchDB(SPONSOR_PROJECTS, String.class);
+    private final BranchDB<Address, ArrayDB<String>> contributorProjects = Context.newBranchDB(CONTRIBUTOR_PROJECTS, String.class);
 
     public CPSCore() {
         PeriodController periodController = new PeriodController();
-        periodController.periodCount.set(19);
     }
 
     @Override
@@ -106,7 +107,7 @@ public class CPSCore implements CPSCoreInterface {
 
     @Override
     @External
-    public void setCpsTreasuryScore(Address score){
+    public void setCpsTreasuryScore(Address score) {
         validateAdminScore(score);
         SetterGetter setterGetter = new SetterGetter();
         setterGetter.cpsTreasuryScore.set(score);
@@ -121,7 +122,7 @@ public class CPSCore implements CPSCoreInterface {
 
     @Override
     @External(readonly = true)
-    public Address getCpsTreasuryScore(){
+    public Address getCpsTreasuryScore() {
         SetterGetter setterGetter = new SetterGetter();
         return setterGetter.cpsTreasuryScore.get();
     }
@@ -150,13 +151,13 @@ public class CPSCore implements CPSCoreInterface {
 
     @Override
     @External(readonly = true)
-    public Address getCpfTreasuryScore(){
+    public Address getCpfTreasuryScore() {
         SetterGetter setterGetter = new SetterGetter();
         return setterGetter.cpfScore.get();
     }
 
 
-
+    @Override
     @External
     public void setBnusdScore(Address score) {
         validateAdminScore(score);
@@ -164,19 +165,14 @@ public class CPSCore implements CPSCoreInterface {
         setterGetter.balancedDollar.set(score);
     }
 
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External
-    public void set_bnUSD_score(Address _score) {
-        setBnusdScore(_score);
-    }
 
+    @Override
     @External(readonly = true)
     public Address getBnusdScore() {
         SetterGetter setterGetter = new SetterGetter();
         return setterGetter.balancedDollar.get();
     }
 
-    @Override
     @Deprecated(since = "JAVA translation", forRemoval = true)
     @External(readonly = true)
     public Address get_bnUSD_score() {
@@ -187,7 +183,7 @@ public class CPSCore implements CPSCoreInterface {
         return proposalsKeyListIndex.get(key) != null;
     }
 
-    private boolean _progress_key_exists(String key) {
+    private boolean progressKeyExists(String key) {
         return progressKeyListIndex.get(key) != null;
     }
 
@@ -214,7 +210,7 @@ public class CPSCore implements CPSCoreInterface {
     @External(readonly = true)
     public boolean getBudgetAdjustmentFeature() {
         SetterGetter setterGetter = new SetterGetter();
-        return setterGetter.budgetAdjustment.get();
+        return setterGetter.budgetAdjustment.getOrDefault(true);
     }
 
     @External
@@ -230,6 +226,11 @@ public class CPSCore implements CPSCoreInterface {
     public boolean getMaintenanceMode() {
         SetterGetter setterGetter = new SetterGetter();
         return setterGetter.maintenance.getOrDefault(false);
+    }
+
+    @External(readonly = true)
+    public boolean get_maintenance_mode() {
+        return getMaintenanceMode();
     }
 
     @Override
@@ -259,9 +260,9 @@ public class CPSCore implements CPSCoreInterface {
 
     @Override
     @External(readonly = true)
-    public int getPeriodCount(){
+    public int getPeriodCount() {
         PeriodController periodController = new PeriodController();
-        return periodController.periodCount.get();
+        return periodController.periodCount.getOrDefault(0);
     }
 
     @External
@@ -288,7 +289,7 @@ public class CPSCore implements CPSCoreInterface {
     @External
     public void unregisterPrep() {
         checkMaintenance();
-        update_period();
+        updatePeriod();
         Address caller = Context.getCaller();
         PReps pReps = new PReps();
         PeriodController period = new PeriodController();
@@ -312,9 +313,8 @@ public class CPSCore implements CPSCoreInterface {
 
     @External
     public void registerPrep() {
-//        todo: check PRep list for candidate PRep after snapshot
         checkMaintenance();
-        update_period();
+        updatePeriod();
         Address caller = Context.getCaller();
         List<Address> prepList = getPrepsAddress();
         PReps pReps = new PReps();
@@ -351,7 +351,7 @@ public class CPSCore implements CPSCoreInterface {
         return (List<Map<String, Object>>) prepDict.get("preps");
     }
 
-    private Map<String, Object> getPRepInfo(Address address){
+    private Map<String, Object> getPRepInfo(Address address) {
         return callScore(Map.class, SYSTEM_ADDRESS, "getPRep", address);
     }
 
@@ -373,7 +373,7 @@ public class CPSCore implements CPSCoreInterface {
         return (BigInteger) getPRepInfo(address).get("power");
     }
 
-    private void  setPreps() {
+    private void setPreps() {
         PReps pReps = new PReps();
         ArrayDBUtils.clearArrayDb(pReps.validPreps);
         List<Address> prepsList = getPrepsAddress();
@@ -389,16 +389,18 @@ public class CPSCore implements CPSCoreInterface {
 
     }
 
-    private void removeSponsor(Address address) {
+    private void removeSponsor(Address address, String ipfsHash) {
         Context.require(ArrayDBUtils.containsInArrayDb(address, sponsors),
                 address + " not on sponsor list.");
         ArrayDBUtils.removeArrayItem(sponsors, address);
+        ArrayDBUtils.removeArrayItem(sponsorProjects.at(address), ipfsHash);
     }
 
-    private void removeContributor(Address address) {
+    private void removeContributor(Address address, String ipfsHash) {
         Context.require(ArrayDBUtils.containsInArrayDb(address, contributors),
                 address + " not on contributor list.");
         ArrayDBUtils.removeArrayItem(contributors, address);
+        ArrayDBUtils.removeArrayItem(contributorProjects.at(address), ipfsHash);
     }
 
     @External(readonly = true)
@@ -436,15 +438,15 @@ public class CPSCore implements CPSCoreInterface {
 
     @Override
     @External(readonly = true)
-    public boolean checkPriorityVoting(Address prep) {
-        return ArrayDBUtils.containsInArrayDb(prep, priorityVotedPreps);
+    public boolean checkPriorityVoting(Address _prep) {
+        return ArrayDBUtils.containsInArrayDb(_prep, priorityVotedPreps);
     }
 
     @Override
     @External(readonly = true)
     public List<String> sortPriorityProposals() {
         String[] pendingProposals = new String[pending.size()];
-        for (int i = 0; i < pending.size(); i++){
+        for (int i = 0; i < pending.size(); i++) {
             pendingProposals[i] = pending.get(i);
         }
         mergeSort(pendingProposals, 0, pending.size() - 1, getPriorityVoteResult());
@@ -458,7 +460,7 @@ public class CPSCore implements CPSCoreInterface {
 
         for (int i = 0; i < pending.size(); i++) {
             String prop = pending.get(i);
-            priorityVoteResult.put(prop, proposalRank.get(prop));
+            priorityVoteResult.put(prop, proposalRank.getOrDefault(prop, 0));
 
         }
         return priorityVoteResult;
@@ -486,6 +488,7 @@ public class CPSCore implements CPSCoreInterface {
         PriorityVote(caller, "Priority voting done successfully.");
     }
 
+    @Override
     @External
     public void setPrepPenaltyAmount(BigInteger[] penalty) {
         checkMaintenance();
@@ -500,14 +503,15 @@ public class CPSCore implements CPSCoreInterface {
 
     }
 
-    @Override
+
     @Deprecated(since = "JAVA translation", forRemoval = true)
     @External
-    public void set_prep_penalty_amount(BigInteger[] _penalty){
+    public void set_prep_penalty_amount(BigInteger[] _penalty) {
         setPrepPenaltyAmount(_penalty);
     }
 
 
+    @Override
     @External
     public void setInitialBlock() {
         validateAdmins();
@@ -517,13 +521,6 @@ public class CPSCore implements CPSCoreInterface {
         period.nextBlock.set(BigInteger.valueOf(Context.getBlockHeight()).add(BLOCKS_DAY_COUNT.multiply(DAY_COUNT)));
         period.periodName.set(APPLICATION_PERIOD);
         period.previousPeriodName.set("None");
-    }
-
-    @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External
-    public void set_initialBlock() {
-        setInitialBlock();
     }
 
     @External(readonly = true)
@@ -538,14 +535,12 @@ public class CPSCore implements CPSCoreInterface {
                 loginData.put("payPenalty", BigInteger.ZERO);
                 loginData.put("votingPRep", BigInteger.ZERO);
 
-            }
-            else if (ArrayDBUtils.containsInArrayDb(address, pReps.denylist)) {
+            } else if (ArrayDBUtils.containsInArrayDb(address, pReps.denylist)) {
                 loginData.put("isRegistered", BigInteger.ZERO);
                 loginData.put("payPenalty", BigInteger.ONE);
                 loginData.put("votingPRep", BigInteger.ZERO);
                 loginData.put("penaltyAmount", getPenaltyAmount(address));
-            }
-            else if (ArrayDBUtils.containsInArrayDb(address, pReps.registeredPreps)) {
+            } else if (ArrayDBUtils.containsInArrayDb(address, pReps.registeredPreps)) {
                 loginData.put("isRegistered", BigInteger.ONE);
                 loginData.put("payPenalty", BigInteger.ZERO);
                 loginData.put("votingPRep", BigInteger.ZERO);
@@ -578,12 +573,7 @@ public class CPSCore implements CPSCoreInterface {
 
     @External(readonly = true)
     public List<Address> getAdmins() {
-        List<Address> adminList = new ArrayList<>();
-        for (int i = 0; i < admins.size(); i++) {
-            adminList.add(admins.get(i));
-
-        }
-        return adminList;
+        return ArrayDBUtils.arrayDBtoList(admins);
 
     }
 
@@ -594,6 +584,7 @@ public class CPSCore implements CPSCoreInterface {
         return getAdmins();
     }
 
+    @Override
     @External(readonly = true)
     public Map<String, BigInteger> getRemainingFund() {
         SetterGetter setterGetter = new SetterGetter();
@@ -601,7 +592,7 @@ public class CPSCore implements CPSCoreInterface {
         return callScore(Map.class, setterGetter.cpfScore.get(), "get_total_funds");
     }
 
-    @Override
+
     @Deprecated(since = "JAVA translation", forRemoval = true)
     @External(readonly = true)
     public Map<String, BigInteger> get_remaining_fund() {
@@ -672,13 +663,7 @@ public class CPSCore implements CPSCoreInterface {
 
     @External(readonly = true)
     public List<Address> getContributors() {
-        List<Address> contributors = new ArrayList<>();
-        PReps pReps = new PReps();
-        for (int i = 0; i < this.contributors.size(); i++) {
-            contributors.add(this.contributors.get(i));
-
-        }
-        return contributors;
+        return ArrayDBUtils.arrayDBtoList(this.contributors);
     }
 
     @Override
@@ -715,11 +700,11 @@ public class CPSCore implements CPSCoreInterface {
     @External
     public void submitProposal(ProposalAttributes proposals) {
         checkMaintenance();
-        update_period();
+        updatePeriod();
         PeriodController period = new PeriodController();
         Context.require(period.periodName.get().equals(APPLICATION_PERIOD),
                 TAG + ": Proposals can only be submitted on Application Period ");
-        Context.require(proposalsKeyListIndex.getOrDefault(proposals.ipfs_hash, 0) == 0, TAG + ": Proposal key already exists.");
+        Context.require(!proposalKeyExists(proposals.ipfs_hash), TAG + ": Proposal key already exists.");
         Context.require(!Context.getCaller().isContract(), TAG + ": Contract Address not supported.");
         Context.require(proposals.project_duration <= MAX_PROJECT_PERIOD,
                 TAG + ": Maximum Project Duration exceeds " + MAX_PROJECT_PERIOD + " months.");
@@ -735,7 +720,6 @@ public class CPSCore implements CPSCoreInterface {
         String tokenFlag = proposals.token;
         Context.require(tokenFlag.equals(bnUSD), TAG + ": " + tokenFlag + " Not a supported token.");
 
-        ProposalAttributes proposalAttributes = new ProposalAttributes();
         String ipfsHash = proposals.ipfs_hash;
         String ipfsHashPrefix = proposalPrefix(ipfsHash);
 
@@ -744,6 +728,7 @@ public class CPSCore implements CPSCoreInterface {
         proposalsKeyListIndex.set(ipfsHash, proposalsKeyList.size() - 1);
         sponsorPending.add(ipfsHash);
         contributors.add(Context.getCaller());
+        contributorProjects.at(Context.getCaller()).add(ipfsHash);
         ProposalSubmitted(Context.getCaller(), "Successfully submitted a Proposal.");
 
         BigInteger totalFund = proposalFees.getOrDefault(BigInteger.ZERO);
@@ -764,7 +749,7 @@ public class CPSCore implements CPSCoreInterface {
     @External
     public void voteProposal(String ipfsKey, String vote, String voteReason, @Optional boolean voteChange) {
         checkMaintenance();
-        update_period();
+        updatePeriod();
         PeriodController period = new PeriodController();
         Context.require(period.periodName.get().equals(VOTING_PERIOD),
                 TAG + ": Proposals can be voted only on Voting Period.");
@@ -788,7 +773,7 @@ public class CPSCore implements CPSCoreInterface {
         }
         Context.require(status.equals(PENDING), TAG + ": Proposal must be done in Voting state.");
 
-        BigInteger voterStake = delegationSnapshot.get(String.valueOf(caller));
+        BigInteger voterStake = delegationSnapshot.get(caller);
         BigInteger totalVotes = (BigInteger) proposalDetails.get(TOTAL_VOTES);
         BigInteger approvedVotes = (BigInteger) proposalDetails.get(APPROVED_VOTES);
         BigInteger rejectedVotes = (BigInteger) proposalDetails.get(REJECTED_VOTES);
@@ -808,7 +793,7 @@ public class CPSCore implements CPSCoreInterface {
         } else {
             Context.require(votersIndexDb.getOrDefault(CHANGE_VOTE, 0) == 0,
                     TAG + ": Vote change can be done only once.");
-            votersIndexDb.set(CHANGE_VOTE, 1);
+            votersIndexDb.set(CHANGE_VOTE, VOTED);
             int index = votersIndexDb.getOrDefault(INDEX, 0);
             int voteIndex = votersIndexDb.getOrDefault(VOTE, 0);
             ProposalDataDb.votersReasons.at(proposalPrefix).set(index - 1, voteReason);
@@ -818,14 +803,13 @@ public class CPSCore implements CPSCoreInterface {
             } else if (voteIndex == REJECT_) {
                 ArrayDBUtils.removeArrayItem(ProposalDataDb.rejectVoters.at(proposalPrefix), caller);
                 ProposalDataDb.rejectedVotes.at(proposalPrefix).set(rejectedVotes.subtract(voterStake));
-            }
-            else{
+            } else {
                 ArrayDBUtils.removeArrayItem(abstainVoters.at(proposalPrefix), caller);
                 ProposalDataDb.abstainedVotes.at(proposalPrefix).set(abstainedVotes.subtract(voterStake));
             }
-            approvedVotes = (BigInteger) proposalDetails.get(APPROVED_VOTES);
-            rejectedVotes = (BigInteger) proposalDetails.get(REJECTED_VOTES);
-            abstainedVotes = (BigInteger) proposalDetails.get(ABSTAINED_VOTES);
+            approvedVotes = ProposalDataDb.approvedVotes.at(proposalPrefix).getOrDefault(BigInteger.ZERO);
+            rejectedVotes = ProposalDataDb.rejectedVotes.at(proposalPrefix).getOrDefault(BigInteger.ZERO);
+            abstainedVotes = ProposalDataDb.abstainedVotes.at(proposalPrefix).getOrDefault(BigInteger.ZERO);
 
         }
         if (vote.equals(APPROVE)) {
@@ -854,23 +838,9 @@ public class CPSCore implements CPSCoreInterface {
     }
 
     @External
-    public void migrateAbstainVotes(Migration[] migrations){
-        validateAdmins();
-        Context.require(migrations.length <= MIGRATION_BATCH, TAG + ": The length of data should be " +
-                "smaller than or equal to " + MIGRATION_BATCH);
-        for (Migration migration : migrations) {
-            String proposalPrefix = proposalPrefix(migration.ipfsHash);
-            for (int j = 0; j < migration.abstainVoters.length; j++) {
-                abstainVoters.at(proposalPrefix).add(migration.abstainVoters[j]);
-            }
-            abstainedVotes.at(proposalPrefix).set(migration.abstainVotes);
-        }
-    }
-
-    @External
     public void submitProgressReport(ProgressReportAttributes progressReport) {
         checkMaintenance();
-        update_period();
+        updatePeriod();
         PeriodController period = new PeriodController();
         Context.require(period.periodName.get().equals(APPLICATION_PERIOD),
                 TAG + ": Proposals can only be submitted on Application Period ");
@@ -895,15 +865,18 @@ public class CPSCore implements CPSCoreInterface {
 
         String reportHash = progressReport.report_hash;
         String ipfsHash = progressReport.ipfs_hash;
-        Context.require(!_progress_key_exists(reportHash), TAG + ": Report key already exists.");
-        Context.require(proposalKeyExists(ipfsHash));
+        Context.require(!progressKeyExists(reportHash), TAG + ": Report key already exists.");
+        Context.require(proposalKeyExists(ipfsHash), TAG + ": Invalid proposal key");
         addNewProgressReportKey(ipfsHash, reportHash);
         String reportHashPrefix = progressReportPrefix(reportHash);
         addDataToProgressReportDB(progressReport, reportHashPrefix);
         int percentageCompleted = progressReport.percentage_completed;
 
-        Context.require(percentageCompleted >= 0 && percentageCompleted <= 100,
-                TAG + ": Percentage Completed must be between 0 and 100");
+        if (percentageCompleted >= 0 && percentageCompleted <= 100) {
+            ProposalDataDb.percentageCompleted.at(ipfsHashPrefix).set(percentageCompleted);
+        } else {
+            Context.revert(TAG + ": Percentage completed should be between 0 and 100");
+        }
 
         if (progressReport.budget_adjustment) {
             Context.require(getBudgetAdjustmentFeature(),
@@ -946,7 +919,7 @@ public class CPSCore implements CPSCoreInterface {
         }
 
         checkMaintenance();
-        update_period();
+        updatePeriod();
         PeriodController period = new PeriodController();
         Context.require(period.periodName.get().equals(VOTING_PERIOD),
                 TAG + ": Progress Reports can be voted only on Voting Period.");
@@ -970,7 +943,7 @@ public class CPSCore implements CPSCoreInterface {
         }
 
         if (status.equals(WAITING)) {
-            BigInteger voterStake = delegationSnapshot.get(String.valueOf(caller));
+            BigInteger voterStake = delegationSnapshot.get(caller);
             BigInteger totalVotes = (BigInteger) progressReportDetails.get(TOTAL_VOTES);
             BigInteger approvedVotes = (BigInteger) progressReportDetails.get(APPROVED_VOTES);
             BigInteger rejectedVotes = (BigInteger) progressReportDetails.get(REJECTED_VOTES);
@@ -988,7 +961,7 @@ public class CPSCore implements CPSCoreInterface {
             } else {
                 Context.require(votersIndexDb.getOrDefault(CHANGE_VOTE, 0) == 0,
                         TAG + ": Progress Report Vote change can be done only once.");
-                votersIndexDb.set(CHANGE_VOTE, 1);
+                votersIndexDb.set(CHANGE_VOTE, VOTED);
                 int index = votersIndexDb.getOrDefault(INDEX, 0);
                 int voteIndex = votersIndexDb.getOrDefault(VOTE, 0);
                 ProgressReportDataDb.votersReasons.at(progressReportPrefix).set(index - 1, voteReason);
@@ -1015,8 +988,8 @@ public class CPSCore implements CPSCoreInterface {
                     }
 
                 }
-                approvedVotes = (BigInteger) progressReportDetails.get(APPROVED_VOTES);
-                rejectedVotes = (BigInteger) progressReportDetails.get(REJECTED_VOTES);
+                approvedVotes = ProgressReportDataDb.approvedVotes.at(progressReportPrefix).getOrDefault(BigInteger.ZERO);
+                rejectedVotes = ProgressReportDataDb.rejectedVotes.at(progressReportPrefix).getOrDefault(BigInteger.ZERO);
 
             }
             if (vote.equals(APPROVE)) {
@@ -1033,8 +1006,8 @@ public class CPSCore implements CPSCoreInterface {
             }
 
             if (ArrayDBUtils.containsInArrayDb(reportKey, budgetApprovalsList)) {
-                BigInteger budgetApprovedVotes = (BigInteger) progressReportDetails.get(BUDGET_APPROVED_VOTES);
-                BigInteger budgetRejectedVotes = (BigInteger) progressReportDetails.get(BUDGET_REJECTED_VOTES);
+                BigInteger budgetApprovedVotes = ProgressReportDataDb.budgetApprovedVotes.at(progressReportPrefix).getOrDefault(BigInteger.ZERO);
+                BigInteger budgetRejectedVotes = ProgressReportDataDb.budgetRejectedVotes.at(progressReportPrefix).getOrDefault(BigInteger.ZERO);
                 DictDB<String, Integer> budgetVoteIndex = budgetVotersListIndices.at(progressReportPrefix).at(caller);
                 if (budgetAdjustmentVote.equals(APPROVE)) {
                     ProgressReportDataDb.budgetApproveVoters.at(progressReportPrefix).add(caller);
@@ -1065,13 +1038,8 @@ public class CPSCore implements CPSCoreInterface {
     @External(readonly = true)
     public List<String> getProposalsKeysByStatus(String status) {
         Context.require(STATUS_TYPE.contains(status), TAG + ": Not a valid status");
-        List<String> proposalStatusList = new ArrayList<>();
-
         ArrayDB<String> proposalStatus = this.proposalStatus.get(status);
-        for (int i = 0; i < proposalStatus.size(); i++) {
-            proposalStatusList.add(proposalStatus.get(i));
-        }
-        return proposalStatusList;
+        return ArrayDBUtils.arrayDBtoList(proposalStatus);
     }
 
     @Override
@@ -1085,10 +1053,10 @@ public class CPSCore implements CPSCoreInterface {
     public int checkChangeVote(Address address, String ipfsHash, String proposalType) {
         if (proposalType.equals(PROPOSAL)) {
             String proposalPrefix = proposalPrefix(ipfsHash);
-            return ProposalDataDb.votersListIndex.at(proposalPrefix).at(address).get(CHANGE_VOTE);
+            return ProposalDataDb.votersListIndex.at(proposalPrefix).at(address).getOrDefault(CHANGE_VOTE, NOT_VOTED);
         } else if (proposalType.equals(PROGRESS_REPORTS)) {
             String progressReportPrefix = progressReportPrefix(ipfsHash);
-            return votersListIndices.at(progressReportPrefix).at(address).get(CHANGE_VOTE);
+            return votersListIndices.at(progressReportPrefix).at(address).getOrDefault(CHANGE_VOTE, NOT_VOTED);
         } else {
             return 0;
         }
@@ -1102,7 +1070,7 @@ public class CPSCore implements CPSCoreInterface {
     }
 
     @External(readonly = true)
-    public Map<String, Map<String, Map<String, BigInteger>>> getProjectAmounts() {
+    public Map<String, Object> getProjectAmounts() {
         List<String> statusList = List.of(PENDING, ACTIVE, PAUSED, COMPLETED, DISQUALIFIED);
         BigInteger pendingAmountIcx = BigInteger.ZERO;
         BigInteger activeAmountIcx = BigInteger.ZERO;
@@ -1120,17 +1088,17 @@ public class CPSCore implements CPSCoreInterface {
             BigInteger amountICX = BigInteger.ZERO;
             BigInteger amountBnusd = BigInteger.ZERO;
 
-            List<String> proposalsKeysByStatus = this.get_proposals_keys_by_status(statusList.get(statusId));
+            List<String> proposalsKeysByStatus = this.getProposalsKeysByStatus(statusList.get(statusId));
             for (String proposalKey : proposalsKeysByStatus) {
-                Map<String, Object> proposalDetails = getProposalDetails(proposalKey);
-                BigInteger projectBudget = (BigInteger) proposalDetails.get(TOTAL_BUDGET);
-                if (proposalDetails.get(TOKEN).equals(ICX)) {
+                String proposalPrefix = proposalPrefix(proposalKey);
+                BigInteger projectBudget = ProposalDataDb.totalBudget.at(proposalPrefix).getOrDefault(BigInteger.ZERO);
+                String token = ProposalDataDb.token.at(proposalPrefix).getOrDefault("");
+                if (token.equals(ICX)) {
                     amountICX = amountICX.add(projectBudget);
                 } else {
                     amountBnusd = amountBnusd.add(projectBudget);
                 }
             }
-
             if (statusId == 0) {
                 pendingAmountIcx = amountICX;
                 pendingAmountBnusd = amountBnusd;
@@ -1150,11 +1118,11 @@ public class CPSCore implements CPSCoreInterface {
 
 
         }
-        return Map.of(statusList.get(0), Map.of(AMOUNT, Map.of(ICX, pendingAmountIcx, bnUSD, pendingAmountBnusd)),
-                statusList.get(1), Map.of(AMOUNT, Map.of(ICX, activeAmountIcx, bnUSD, activeAmountBnusd)),
-                statusList.get(2), Map.of(AMOUNT, Map.of(ICX, pausedAmountIcx, bnUSD, pausedAmountBnusd)),
-                statusList.get(3), Map.of(AMOUNT, Map.of(ICX, completedAmountIcx, bnUSD, completedAmountBnusd)),
-                statusList.get(4), Map.of(AMOUNT, Map.of(ICX, disqualifiedAmountIcx, bnUSD, disqualifiedAmountBnusd)));
+        return Map.of(statusList.get(0), Map.of(AMOUNT, Map.of(ICX, pendingAmountIcx, bnUSD, pendingAmountBnusd), "_count", proposalStatus.get(statusList.get(0)).size()),
+                statusList.get(1), Map.of(AMOUNT, Map.of(ICX, activeAmountIcx, bnUSD, activeAmountBnusd), "_count", proposalStatus.get(statusList.get(1)).size()),
+                statusList.get(2), Map.of(AMOUNT, Map.of(ICX, pausedAmountIcx, bnUSD, pausedAmountBnusd), "_count", proposalStatus.get(statusList.get(2)).size()),
+                statusList.get(3), Map.of(AMOUNT, Map.of(ICX, completedAmountIcx, bnUSD, completedAmountBnusd), "_count", proposalStatus.get(statusList.get(3)).size()),
+                statusList.get(4), Map.of(AMOUNT, Map.of(ICX, disqualifiedAmountIcx, bnUSD, disqualifiedAmountBnusd), "_count", proposalStatus.get(statusList.get(4)).size()));
 
 
     }
@@ -1162,33 +1130,17 @@ public class CPSCore implements CPSCoreInterface {
     @Override
     @Deprecated(since = "JAVA translation", forRemoval = true)
     @External(readonly = true)
-    public Map<String, Map<String, Map<String, BigInteger>>> get_project_amounts() {
+    public Map<String, Object> get_project_amounts() {
         return getProjectAmounts();
     }
 
     @External(readonly = true)
     public Map<String, Integer> getSponsorsRecord() {
-        List<String> proposalKeys = new ArrayList<>();
         Map<String, Integer> sponsorsDict = new HashMap<>();
-
-        List<String> activeProposals = get_proposals_keys_by_status(ACTIVE);
-        proposalKeys.addAll(activeProposals);
-        List<String> pausedProposals = get_proposals_keys_by_status(PAUSED);
-        proposalKeys.addAll(pausedProposals);
-        List<String> completedProposals = get_proposals_keys_by_status(COMPLETED);
-        proposalKeys.addAll(completedProposals);
-
-        for (String proposal : proposalKeys) {
-            Map<String, Object> proposalDetails = getProposalDetails(proposal);
-            String sponsorAddress = proposalDetails.get(SPONSOR_ADDRESS).toString();
-            int sponsorValue = 0;
-            try{
-                sponsorValue = sponsorsDict.get(sponsorAddress);
-            } catch (Exception e){
-                sponsorsDict.put(sponsorAddress, 0);
-            }
-
-            sponsorsDict.put(sponsorAddress, sponsorValue + 1);
+        int size = sponsors.size();
+        for (int i = 0; i < size; i++) {
+            Address sponsorAddress = sponsors.get(i);
+            sponsorsDict.put(sponsorAddress.toString(), sponsorProjects.at(sponsorAddress).size());
         }
         return sponsorsDict;
     }
@@ -1298,8 +1250,7 @@ public class CPSCore implements CPSCoreInterface {
         PReps pReps = new PReps();
         List<Address> _main_preps_list = arrayDBtoList(pReps.validPreps);
 
-        for (int i = 0; i < waiting_progress_reports.size(); i++) {
-            String _reports = waiting_progress_reports.get(i);
+        for (String _reports : waiting_progress_reports) {
             Map<String, Object> _report_result = getProgressReportDetails(_reports);
 
             String _ipfs_hash = (String) _report_result.get(IPFS_HASH);
@@ -1313,15 +1264,12 @@ public class CPSCore implements CPSCoreInterface {
             int _approved_reports_count = (int) _proposal_details.get(APPROVED_REPORTS);
             Address _sponsor_address = (Address) _proposal_details.get(SPONSOR_ADDRESS);
             Address _contributor_address = (Address) _proposal_details.get(CONTRIBUTOR_ADDRESS);
-            int _completed = (int) _proposal_details.get(PERCENTAGE_COMPLETED);
             boolean _budget_adjustment = (boolean) _report_result.get(BUDGET_ADJUSTMENT);
             BigInteger _sponsor_deposit_amount = (BigInteger) _proposal_details.get(SPONSOR_DEPOSIT_AMOUNT);
             String flag = (String) _proposal_details.get("token");
 
             int _approve_voters = (int) _report_result.get(APPROVE_VOTERS);
-            int _reject_voters = (int) _report_result.get(REJECT_VOTERS);
             BigInteger _approved_votes = (BigInteger) _report_result.get(APPROVED_VOTES);
-            BigInteger _rejected_votes = (BigInteger) _report_result.get(REJECTED_VOTES);
             BigInteger _total_votes = (BigInteger) _report_result.get(TOTAL_VOTES);
             int _total_voters = (int) _report_result.get(TOTAL_VOTERS);
 
@@ -1356,7 +1304,7 @@ public class CPSCore implements CPSCoreInterface {
                     updateProposalStatus(_ipfs_hash, ACTIVE);
                 }
                 ProposalDataDb.approvedReports.at(proposal_prefix).set(_approved_reports_count);
-//                  Request CPS Treasury to add some installment amount to the contributor address
+//                  Request CPS Treasury to add some installments amount to the contributor address
                 callScore(getCpsTreasuryScore(), "send_installment_to_contributor", _ipfs_hash);
 //                  Request CPS Treasury to add some sponsor reward amount to the sponsor address
                 callScore(getCpsTreasuryScore(), "send_reward_to_sponsor", _ipfs_hash);
@@ -1373,8 +1321,8 @@ public class CPSCore implements CPSCoreInterface {
                     updateProposalStatus(_ipfs_hash, DISQUALIFIED);
                     callScore(getCpsTreasuryScore(), "disqualify_project", _ipfs_hash);
 
-                    removeContributor(_contributor_address);
-                    removeSponsor(_sponsor_address);
+                    removeContributor(_contributor_address, _ipfs_hash);
+                    removeSponsor(_sponsor_address, _ipfs_hash);
 
                     sponsorDepositStatus.at(proposal_prefix).set(BOND_CANCELLED);
 
@@ -1408,8 +1356,8 @@ public class CPSCore implements CPSCoreInterface {
                     callScore(getCpsTreasuryScore(), "disqualify_project", _ipfs_hash);
 
 
-                    removeContributor(_contributor_address);
-                    removeSponsor(_sponsor_address);
+                    removeContributor(_contributor_address, _ipfs_hash);
+                    removeSponsor(_sponsor_address, _ipfs_hash);
 
                     sponsorDepositStatus.at(proposalPrefix).set(BOND_CANCELLED);
                     BigInteger _sponsor_deposit_amount = (BigInteger) _proposal_details.get(SPONSOR_DEPOSIT_AMOUNT);
@@ -1437,10 +1385,10 @@ public class CPSCore implements CPSCoreInterface {
         BigInteger _approved_votes = (BigInteger) _vote_result.get(APPROVED_VOTES);
         BigInteger _total_votes = (BigInteger) _vote_result.get(TOTAL_VOTES);
         PReps pReps = new PReps();
-        double votersRatio = (double) _approve_voters/_total_voters;
+        double votersRatio = (double) _approve_voters / _total_voters;
         if (_total_voters == 0 || _total_votes.equals(BigInteger.ZERO) || pReps.validPreps.size() < MINIMUM_PREPS) {
             budgetAdjustmentStatus.at(_prefix).set(REJECTED);
-        } else if (votersRatio >= MAJORITY && (_approved_votes.doubleValue()/_total_votes.doubleValue()) >= MAJORITY) {
+        } else if (votersRatio >= MAJORITY && (_approved_votes.doubleValue() / _total_votes.doubleValue()) >= MAJORITY) {
             String _ipfs_hash = (String) _report_result.get(IPFS_HASH);
             String proposal_prefix = proposalPrefix(_ipfs_hash);
             String token_flag = token.at(proposal_prefix).getOrDefault("");
@@ -1456,14 +1404,14 @@ public class CPSCore implements CPSCoreInterface {
 
 
 //          After the budget adjustment is approved, Request new added fund to CPF
-            callScore(get_cpf_treasury_score(), "update_proposal_fund", _ipfs_hash, token_flag, _additional_budget, _additional_duration);
+            callScore(getCpfTreasuryScore(), "update_proposal_fund", _ipfs_hash, token_flag, _additional_budget, _additional_duration);
         } else {
             budgetAdjustmentStatus.at(_prefix).set(REJECTED);
         }
     }
 
     private void updateProposalsResult() {
-        BigInteger distributionAmount = get_remaining_fund().get(bnUSD);
+        BigInteger distributionAmount = getRemainingFund().get(bnUSD);
         List<String> proposals = sortPriorityProposals();
         PReps pReps = new PReps();
 
@@ -1485,8 +1433,8 @@ public class CPSCore implements CPSCoreInterface {
             checkInactivePreps(ProposalDataDb.votersList.at(proposalPrefix));
 
             double voters_ratio = 0;
-            if (totalVoters != 0){
-                voters_ratio = (double) approvedVoters/totalVoters;
+            if (totalVoters != 0) {
+                voters_ratio = (double) approvedVoters / totalVoters;
             }
             if (totalVoters == 0 || totalVotes.equals(BigInteger.ZERO) || pReps.validPreps.size() < MINIMUM_PREPS) {
                 updateProposalStatus(proposal, REJECTED);
@@ -1498,8 +1446,9 @@ public class CPSCore implements CPSCoreInterface {
                     updateProposalStatus(proposal, ACTIVE);
                     updatedStatus = ACTIVE;
                     sponsors.add(sponsorAddress);
+                    sponsorProjects.at(sponsorAddress).add(proposal);
                     ProposalDataDb.sponsorDepositStatus.at(proposalPrefix).set(BOND_APPROVED);
-                    callScore(get_cpf_treasury_score(), "transfer_proposal_fund_to_cps_treasury",
+                    callScore(getCpfTreasuryScore(), "transfer_proposal_fund_to_cps_treasury",
                             proposal, projectDuration, sponsorAddress, contributorAddress, flag, totalBudget);
                     distributionAmount = distributionAmount.subtract(totalBudget);
 
@@ -1531,9 +1480,9 @@ public class CPSCore implements CPSCoreInterface {
 
             proposalRank.set(proposal, null);
             if (updatedStatus.equals(REJECTED)) {
-                removeContributor(contributorAddress);
-                sponsorDepositStatus.at(proposal).set(BOND_RETURNED);
-                BigInteger halfSubmissionFee = BigInteger.valueOf(APPLICATION_FEE /2).multiply(EXA);
+                removeContributor(contributorAddress, proposal);
+                sponsorDepositStatus.at(proposalPrefix).set(BOND_RETURNED);
+                BigInteger halfSubmissionFee = BigInteger.valueOf(APPLICATION_FEE / 2).multiply(EXA);
                 Context.transfer(contributorAddress, halfSubmissionFee);
                 proposalFees.set(proposalFees.get().subtract(halfSubmissionFee));
 
@@ -1551,7 +1500,7 @@ public class CPSCore implements CPSCoreInterface {
     private void updateProposalStatus(String proposalHash, String propStatus) {
         String proposalPrefix = proposalPrefix(proposalHash);
         String currentStatus = ProposalDataDb.status.at(proposalPrefix).get();
-        ProposalDataDb.timestamp.at(proposalPrefix).set(BigInteger.valueOf(Context.getBlockHeight()));
+        ProposalDataDb.timestamp.at(proposalPrefix).set(BigInteger.valueOf(Context.getBlockTimestamp()));
         ProposalDataDb.status.at(proposalPrefix).set(propStatus);
 
         ArrayDB<String> proposalStatus = this.proposalStatus.get(currentStatus);
@@ -1562,8 +1511,8 @@ public class CPSCore implements CPSCoreInterface {
     private void updateProgressReportStatus(String progressHash, String progressStatus) {
         String progressPrefix = progressReportPrefix(progressHash);
         String currentStatus = ProgressReportDataDb.status.at(progressPrefix).get();
-        ProposalDataDb.timestamp.at(progressPrefix).set(BigInteger.valueOf(Context.getBlockHeight()));
-        ProposalDataDb.status.at(progressPrefix).set(progressStatus);
+        ProgressReportDataDb.timestamp.at(progressPrefix).set(BigInteger.valueOf(Context.getBlockTimestamp()));
+        ProgressReportDataDb.status.at(progressPrefix).set(progressStatus);
 
         ArrayDB<String> progressReportStatus = this.progressReportStatus.get(currentStatus);
         ArrayDBUtils.removeArrayItem(progressReportStatus, progressHash);
@@ -1572,49 +1521,47 @@ public class CPSCore implements CPSCoreInterface {
 
     private void checkInactivePreps(ArrayDB<Address> prepList) {
         PReps pReps = new PReps();
-        for(int i = 0; i < pReps.validPreps.size(); i++){
+        for (int i = 0; i < pReps.validPreps.size(); i++) {
             Address prep = pReps.validPreps.get(i);
-            if (!containsInArrayDb(prep, prepList) && !containsInArrayDb(prep, pReps.inactivePreps)){
+            if (!containsInArrayDb(prep, prepList) && !containsInArrayDb(prep, pReps.inactivePreps)) {
                 pReps.inactivePreps.add(prep);
             }
         }
     }
 
     private Map<String, Object> getProposalDetails(String proposal) {
-        proposalKeyExists(proposal);
-        return getDataFromProposalDB(proposalPrefix(proposal));
+        if (proposalKeyExists(proposal)) {
+            return getDataFromProposalDB(proposalPrefix(proposal));
+        }
+        return Map.of();
+
     }
 
-    private void addNewProgressReportKey(String ipfsHash, String reportHash){
+    private void addNewProgressReportKey(String ipfsHash, String reportHash) {
         String prefix = proposalPrefix(ipfsHash);
         if (!containsInArrayDb(reportHash, progressReports.at(prefix))) {
             progressReports.at(prefix).add(reportHash);
         }
     }
 
+    @Override
     @External(readonly = true)
-    public Map<String, ?> getProposalDetails(String status, @Optional Address walletAddress, @Optional int startIndex, @Optional int endIndex) {
-        if (endIndex == 0) {
-            endIndex = 20;
-        }
+    public Map<String, ?> getProposalDetails(String status, @Optional Address walletAddress, @Optional int startIndex) {
         if (!STATUS_TYPE.contains(status)) {
             return Map.of(MESSAGE, "Not a valid _status.");
         }
         List<Object> proposalsList = new ArrayList<>();
-        List<String> proposalKeys = get_proposals_keys_by_status(status);
+        List<String> proposalKeys = getProposalsKeysByStatus(status);
 
         if (startIndex < 0) {
             startIndex = 0;
         }
-        if ((endIndex - startIndex) > 50) {
-            return Map.of(MESSAGE, "Page length must not be greater than 50.");
-        }
+        int endIndex = startIndex + 10;
 
         int count = proposalKeys.size();
-        if (endIndex > count){
+        if (endIndex > count) {
             endIndex = count;
         }
-//        endIndex = ((endIndex > count) ? endIndex : count);
 
         for (int i = startIndex; i < endIndex; i++) {
             String proposalKey = proposalKeys.get(i);
@@ -1628,24 +1575,26 @@ public class CPSCore implements CPSCoreInterface {
                 }
             } else if (propStatus.equals(status)) {
                 proposalsList.add(proposalDetails);
-
             }
 
         }
-        return Map.of(DATA, proposalsList, COUNT, proposalsList.size());
+        return Map.of(DATA, proposalsList, COUNT, count);
 
     }
 
-    @Override
     @Deprecated(since = "JAVA translation", forRemoval = true)
     @External(readonly = true)
-    public Map<String, ?> get_proposal_details(String _status, @Optional Address _wallet_address, @Optional int _start_index, @Optional int _end_index) {
-        return getProposalDetails(_status, _wallet_address, _start_index, _end_index);
+    public Map<String, ?> get_proposal_details(String _status, @Optional Address _wallet_address, @Optional int _start_index) {
+        return getProposalDetails(_status, _wallet_address, _start_index);
     }
 
     @External(readonly = true)
     public Map<String, Object> getProposalDetailsByHash(String ipfsKey) {
-        return getProposalDetails(ipfsKey);
+        Map<String, Object> proposalDetails = new HashMap<>();
+        String prefix = proposalPrefix(ipfsKey);
+        proposalDetails.putAll(getProposalDetails(ipfsKey));
+        proposalDetails.put(SPONSOR_VOTE_REASON, ProposalDataDb.sponsorVoteReason.at(prefix).getOrDefault(""));
+        return proposalDetails;
     }
 
     @Override
@@ -1659,11 +1608,9 @@ public class CPSCore implements CPSCoreInterface {
         return getDataFromProgressReportDB(progressReportPrefix(progressKey));
     }
 
+    @Override
     @External(readonly = true)
-    public Map<String, ?> getProgressReports(String status, @Optional int startIndex, @Optional int endIndex) {
-        if (endIndex == 0) {
-            endIndex = 20;
-        }
+    public Map<String, ?> getProgressReports(String status, @Optional int startIndex) {
         if (!PROGRESS_REPORT_STATUS_TYPE.contains(status)) {
             return Map.of(MESSAGE, "Not a valid _status.");
         }
@@ -1674,12 +1621,10 @@ public class CPSCore implements CPSCoreInterface {
         if (startIndex < 0) {
             startIndex = 0;
         }
-        if ((endIndex - startIndex) > 50) {
-            return Map.of(MESSAGE, "Page length must not be greater than 50.");
-        }
-        int count = progressReportKeys.size();
+        int endIndex = startIndex + 10;
 
-        if (endIndex > count){
+        int count = progressReportKeys.size();
+        if (endIndex > count) {
             endIndex = count;
         }
 
@@ -1695,11 +1640,10 @@ public class CPSCore implements CPSCoreInterface {
         return Map.of(DATA, progressReportList, COUNT, progressReportList.size());
     }
 
-    @Override
     @Deprecated(since = "JAVA translation", forRemoval = true)
     @External(readonly = true)
-    public Map<String, ?> get_progress_reports(String _status, @Optional int _start_index, @Optional int _end_index) {
-        return getProgressReports(_status, _start_index, _end_index);
+    public Map<String, ?> get_progress_reports(String _status, @Optional int _start_index) {
+        return getProgressReports(_status, _start_index);
     }
 
     /***
@@ -1711,13 +1655,12 @@ public class CPSCore implements CPSCoreInterface {
      ***/
     @External(readonly = true)
     public Map<String, Object> getProgressReportsByHash(String reportKey) {
-        if (!_progress_key_exists(reportKey)) {
-            return Map.of("message", TAG + ": Not a valid IPFS Hash for Progress Report");
+        if (progressKeyExists(reportKey)) {
+            return getProgressReportDetails(reportKey);
         }
+        return Map.of();
 
-        Map<String, Object> progressDetails = getProgressReportDetails(reportKey);
-        String _ipfs_hash = (String) progressDetails.get(IPFS_HASH);
-        return progressDetails;
+
     }
 
     @Override
@@ -1730,9 +1673,6 @@ public class CPSCore implements CPSCoreInterface {
     @External(readonly = true)
     public Map<String, Object> getProgressReportsByProposal(String ipfsKey) {
         String proposalPrefix = proposalPrefix(ipfsKey);
-        Map<String, Object> proposalDetails = getProposalDetails(ipfsKey);
-        String projectTitle = (String) proposalDetails.get(PROJECT_TITLE);
-        String contributorAddress = proposalDetails.get(CONTRIBUTOR_ADDRESS).toString();
         ArrayDB<String> reportKeys = ProposalDataDb.progressReports.at(proposalPrefix);
 
         List<Map<String, Object>> progressReportList = new ArrayList<>();
@@ -1751,89 +1691,86 @@ public class CPSCore implements CPSCoreInterface {
         return getProgressReportsByProposal(_ipfs_key);
     }
 
+    @Override
     @External(readonly = true)
-    public Map<String, Object> getSponsorsRequests(String status, Address sponsorAddress, @Optional int startIndex, @Optional int endIndex) {
-        if (endIndex == 0) {
-            endIndex = 20;
+    public Map<String, Object> getSponsorsRequests(String status, Address sponsorAddress, @Optional int startIndex) {
+        if (startIndex < 0) {
+            startIndex = 0;
         }
-        if (!List.of(APPROVED, SPONSOR_PENDING, REJECTED, DISQUALIFIED).contains(status)) {
+        int endIndex = startIndex + 10;
+        if (!ArrayDBUtils.containsInList(status, List.of(APPROVED, SPONSOR_PENDING, REJECTED, DISQUALIFIED))) {
             return Map.of(MESSAGE, "Not a valid _status.");
         }
         List<String> proposalKeys = new ArrayList<>();
         List<Object> sponsorRequests = new ArrayList<>();
+        String prefix;
 
         if (status.equals(APPROVED)) {
-            List<String> pendingProposals = get_proposals_keys_by_status(PENDING);
-            proposalKeys.addAll(pendingProposals);
-            List<String> activeProposals = get_proposals_keys_by_status(ACTIVE);
-            proposalKeys.addAll(activeProposals);
-            List<String> pausedProposals = get_proposals_keys_by_status(PAUSED);
-            proposalKeys.addAll(pausedProposals);
-            List<String> completedProposals = get_proposals_keys_by_status(COMPLETED);
-            proposalKeys.addAll(completedProposals);
-
-
+            proposalKeys = arrayDBtoList(this.sponsorProjects.at(sponsorAddress));
+            List<String> pendingProposals = getProposalsKeysByStatus(PENDING);
+            for (String ipfsKey : pendingProposals) {
+                prefix = proposalPrefix(ipfsKey);
+                if (ProposalDataDb.sponsorAddress.at(prefix).get().equals(sponsorAddress)) {
+                    proposalKeys.add(ipfsKey);
+                }
+            }
         } else {
-            List<String> proposalKey = get_proposals_keys_by_status(status);
-            proposalKeys.addAll(proposalKey);
-        }
-        if (startIndex < 0) {
-            startIndex = 0;
-        }
-        if ((endIndex - startIndex) > 50) {
-            return Map.of(MESSAGE, "Page length must not be greater than 50.");
+            List<String> proposalKeysList = getProposalsKeysByStatus(status);
+            for (String ipfsKey : proposalKeysList) {
+                prefix = proposalPrefix(ipfsKey);
+                if (ProposalDataDb.sponsorAddress.at(prefix).get().equals(sponsorAddress)) {
+                    proposalKeys.add(ipfsKey);
+                }
+            }
         }
         int count = proposalKeys.size();
-        if (endIndex > count){
+        if (endIndex > count) {
             endIndex = count;
         }
 
         BigInteger sponsorAmountICX = BigInteger.ZERO, sponsorAmountBnusd = BigInteger.ZERO;
 
         for (int i = startIndex; i < endIndex; i++) {
-            String proposalKey = (String) proposalKeys.get(i);
+            String proposalKey = proposalKeys.get(i);
+            String proposalPrefix = proposalPrefix(proposalKey);
+            String sponsorDepositStatus = ProposalDataDb.sponsorDepositStatus.at(proposalPrefix).getOrDefault("");
             Map<String, Object> proposalDetails = getProposalDetails(proposalKey);
-            Address proposalSponsor = (Address) proposalDetails.get(SPONSOR_ADDRESS);
-            if (proposalSponsor.equals(sponsorAddress)) {
-                String sponsorDepositStatus = (String) proposalDetails.get(SPONSOR_DEPOSIT_STATUS);
-                if (sponsorDepositStatus.equals(BOND_APPROVED)) {
-                    String token = (String) proposalDetails.get(TOKEN);
-                    BigInteger sponsorDepositAmount = (BigInteger) proposalDetails.get(SPONSOR_DEPOSIT_AMOUNT);
-                    if (token.equals(ICX)) {
-                        sponsorAmountICX = sponsorAmountICX.add(sponsorDepositAmount);
-                    } else if (token.equals(bnUSD)) {
-                        sponsorAmountBnusd = sponsorAmountBnusd.add(sponsorDepositAmount);
-                    }
-                    sponsorRequests.add(proposalDetails);
+            sponsorRequests.add(proposalDetails);
+            if (sponsorDepositStatus.equals(BOND_APPROVED)) {
+                String token = (String) proposalDetails.get(TOKEN);
+                BigInteger sponsorDepositAmount = (BigInteger) proposalDetails.get(SPONSOR_DEPOSIT_AMOUNT);
+                if (token.equals(ICX)) {
+                    sponsorAmountICX = sponsorAmountICX.add(sponsorDepositAmount);
+                } else if (token.equals(bnUSD)) {
+                    sponsorAmountBnusd = sponsorAmountBnusd.add(sponsorDepositAmount);
                 }
             }
         }
-        return Map.of(DATA, sponsorRequests, COUNT, sponsorRequests.size(),
+
+        return Map.of(DATA, sponsorRequests, COUNT, proposalKeys.size(),
                 SPONSOR_DEPOSIT_AMOUNT, Map.of(ICX, sponsorAmountICX, bnUSD, sponsorAmountBnusd));
     }
 
-    @Override
     @Deprecated(since = "JAVA translation", forRemoval = true)
     @External(readonly = true)
-    public Map<String, Object> get_sponsors_requests(String _status, Address _sponsor_address, @Optional int _start_index, @Optional int _end_index) {
-        return getSponsorsRequests(_status, _sponsor_address, _start_index, _end_index);
+    public Map<String, Object> get_sponsors_requests(String _status, Address _sponsor_address, @Optional int _start_index) {
+        return getSponsorsRequests(_status, _sponsor_address, _start_index);
     }
 
     /***
-        Returns remaining projects and progress reports to vote on the current voting period
-        :param _project_type: "proposal" or "progress_report" which type, remaining votes need to be checked
-        :type _project_type: str
-        :param _wallet_address: Wallet Address of the P-Rep
-        :type _wallet_address: str
-        :return: list of details of proposal or progress report what they need to vote on the same voting period
-        ***/
+     Returns remaining projects and progress reports to vote on the current voting period
+     :param _project_type: "proposal" or "progress_report" which type, remaining votes need to be checked
+     :type _project_type: str
+     :param _wallet_address: Wallet Address of the P-Rep
+     :type _wallet_address: str
+     :return: list of details of proposal or progress report what they need to vote on the same voting period
+     ***/
     @External(readonly = true)
     public List<Map<String, Object>> get_remaining_project(String _project_type, Address _wallet_address) {
         List<Map<String, Object>> _remaining_proposals = new ArrayList<>();
         List<Map<String, Object>> _remaining_progress_report = new ArrayList<>();
         if (_project_type.equals(PROPOSAL)) {
-            List<String> _proposal_keys = get_proposals_keys_by_status(PENDING);
-
+            List<String> _proposal_keys = getProposalsKeysByStatus(PENDING);
             for (String _ipfs_key : _proposal_keys) {
                 String prefix = proposalPrefix(_ipfs_key);
 
@@ -1855,43 +1792,43 @@ public class CPSCore implements CPSCoreInterface {
                     _remaining_progress_report.add(progressReportDetails);
                 }
             }
-
             return _remaining_progress_report;
         }
         return List.of(Map.of("", ""));
     }
 
 
-     /***
-        Get vote results by proposal
-        :param _ipfs_key : proposal ipfs key
-        :type _ipfs_key : str
-        :return: Vote status of given _ipfs_key
-        :rtype : dict
-        ***/
+    /***
+     Get vote results by proposal
+     :param _ipfs_key : proposal ipfs key
+     :type _ipfs_key : str
+     :return: Vote status of given _ipfs_key
+     :rtype : dict
+     ***/
     @External(readonly = true)
-    public Map<String, Object> getVoteResult(String ipfsKey){
-        Map<String, Object> _proposal_details = getProposalDetails(ipfsKey);
+    public Map<String, Object> getVoteResult(String ipfsKey) {
         String prefix = proposalPrefix(ipfsKey);
 
         ArrayDB<Address> _voters_list = ProposalDataDb.votersList.at(prefix);
-        ArrayDB<Address> _approved_voters_list = ProposalDataDb.approveVoters.at(prefix);
-        ArrayDB<Address> _rejected_voters_list = ProposalDataDb.rejectVoters.at(prefix);
-
+        ArrayDB<Address> approve_voters = ProposalDataDb.approveVoters.at(prefix);
+        ArrayDB<Address> reject_voters = ProposalDataDb.rejectVoters.at(prefix);
         List<Map<String, Object>> _vote_status = new ArrayList<>();
         String vote;
         for (int i = 0; i < _voters_list.size(); i++) {
             Address voter = _voters_list.get(i);
-            if (containsInArrayDb(voter, _approved_voters_list)) {
+            if (containsInArrayDb(voter, approve_voters)) {
                 vote = APPROVE;
-            }
-            else if (containsInArrayDb(voter, _rejected_voters_list)) {
+            } else if (containsInArrayDb(voter, reject_voters)) {
                 vote = REJECT;
-            }
-            else {
+            } else {
                 vote = ABSTAIN;
             }
+
             String reason = ProposalDataDb.votersReasons.at(prefix).get(i);
+            if (reason == null) {
+                reason = "";
+            }
+
 
             Map<String, Object> _voters = Map.of(ADDRESS, voter,
                     PREP_NAME, getPrepName(voter),
@@ -1900,53 +1837,52 @@ public class CPSCore implements CPSCoreInterface {
             _vote_status.add(_voters);
         }
 
-        return Map.of(DATA, _vote_status, APPROVE_VOTERS, _proposal_details.get(APPROVE_VOTERS),
-                REJECT_VOTERS, _proposal_details.get(REJECT_VOTERS),
-                TOTAL_VOTERS, _proposal_details.get(TOTAL_VOTERS),
-                APPROVED_VOTES, _proposal_details.get(APPROVED_VOTES),
-                REJECTED_VOTES, _proposal_details.get(REJECTED_VOTES),
-                TOTAL_VOTES, _proposal_details.get(TOTAL_VOTES));
+        return Map.of(DATA, _vote_status, APPROVE_VOTERS, approve_voters.size(),
+                REJECT_VOTERS, reject_voters.size(),
+                TOTAL_VOTERS, ProposalDataDb.totalVoters.at(prefix).getOrDefault(0),
+                APPROVED_VOTES, ProposalDataDb.approvedVotes.at(prefix).getOrDefault(BigInteger.ZERO),
+                REJECTED_VOTES, ProposalDataDb.rejectedVotes.at(prefix).getOrDefault(BigInteger.ZERO),
+                TOTAL_VOTES, ProposalDataDb.totalVotes.at(prefix).getOrDefault(BigInteger.ZERO));
     }
 
     @Override
     @External(readonly = true)
     @Deprecated(since = "JAVA translation", forRemoval = true)
-    public Map<String, Object> get_vote_result(String _ipfs_key){
+    public Map<String, Object> get_vote_result(String _ipfs_key) {
         return getVoteResult(_ipfs_key);
     }
 
     /***
-        Get vote results by progress report
-        :param reportKey : progress report ipfs key
-        :type reportKey : str
-        :return: Vote status of given reportKey
-        :rtype : dict
-        ***/
+     Get vote results by progress report
+     :param reportKey : progress report ipfs key
+     :type reportKey : str
+     :return: Vote status of given reportKey
+     :rtype : dict
+     ***/
     @External(readonly = true)
-    public Map<String, Object> getProgressReportResult(String reportKey){
-        Map<String, Object> _proposal_details = getProgressReportDetails(reportKey);
+    public Map<String, Object> getProgressReportResult(String reportKey) {
         String prefix = progressReportPrefix(reportKey);
 
 
-        List<Address> _voters_list = arrayDBtoList(ProgressReportDataDb.votersList.at(prefix));
-        List<Address> _approved_voters_list = arrayDBtoList(ProgressReportDataDb.approveVoters.at(prefix));
-        List<Address> _rejected_voters_list = arrayDBtoList(ProgressReportDataDb.rejectVoters.at(prefix));
+        ArrayDB<Address> _voters_list = ProgressReportDataDb.votersList.at(prefix);
+        ArrayDB<Address> _approved_voters_list = ProgressReportDataDb.approveVoters.at(prefix);
+        ArrayDB<Address> _rejected_voters_list = ProgressReportDataDb.rejectVoters.at(prefix);
         List<Map<String, Object>> _vote_status = new ArrayList<>();
         String vote;
 //      Differentiating the P-Rep(s) votes according to their votes
         for (int i = 0; i < _voters_list.size(); i++) {
             Address voter = _voters_list.get(i);
-            if (containsInList(voter, _approved_voters_list)){
+            if (containsInArrayDb(voter, _approved_voters_list)) {
                 vote = APPROVE;
-            }
-            else if(containsInList(voter, _rejected_voters_list)){
+            } else if (containsInArrayDb(voter, _rejected_voters_list)) {
                 vote = REJECT;
-            }
-            else{
+            } else {
                 vote = "not voted";
             }
             String reason = ProgressReportDataDb.votersReasons.at(prefix).get(i);
-
+            if (reason == null) {
+                reason = "";
+            }
             Map<String, Object> _voters = Map.of(ADDRESS, voter,
                     PREP_NAME, getPrepName(voter),
                     VOTE_REASON, reason,
@@ -1955,70 +1891,65 @@ public class CPSCore implements CPSCoreInterface {
         }
 
         return Map.of(DATA, _vote_status, APPROVE_VOTERS, _approved_voters_list.size(),
-                REJECT_VOTERS,_rejected_voters_list.size(),
-                TOTAL_VOTERS, _proposal_details.get(TOTAL_VOTERS),
-                APPROVED_VOTES, _proposal_details.get(APPROVED_VOTES),
-                REJECTED_VOTES, _proposal_details.get(REJECTED_VOTES),
-                TOTAL_VOTES, _proposal_details.get(TOTAL_VOTES));
+                REJECT_VOTERS, _rejected_voters_list.size(),
+                TOTAL_VOTERS, ProgressReportDataDb.totalVoters.at(prefix).getOrDefault(0),
+                APPROVED_VOTES, ProgressReportDataDb.approvedVotes.at(prefix).getOrDefault(BigInteger.ZERO),
+                REJECTED_VOTES, ProgressReportDataDb.rejectedVotes.at(prefix).getOrDefault(BigInteger.ZERO),
+                TOTAL_VOTES, ProgressReportDataDb.totalVotes.at(prefix).getOrDefault(BigInteger.ZERO));
     }
 
     @Override
     @External(readonly = true)
     @Deprecated(since = "JAVA translation", forRemoval = true)
-    public Map<String, Object> get_progress_report_result(String _report_key){
+    public Map<String, Object> get_progress_report_result(String _report_key) {
         return getProgressReportResult(_report_key);
     }
 
-     /***
-        Get budget adjustment vote results
-        :param _report_key : progress report ipfs key
-        :type _report_key : str
-        :return: Vote status of given _report_key
-        :rtype : dict
-        ***/
+    /***
+     Get budget adjustment vote results
+     :param _report_key : progress report ipfs key
+     :type _report_key : str
+     :return: Vote status of given _report_key
+     :rtype : dict
+     ***/
 
     @External(readonly = true)
-     public Map<String, Object> getBudgetAdjustmentVoteResult(String reportKey){
-        Map<String, Object> _proposal_details = getProgressReportDetails(reportKey);
+    public Map<String, Object> getBudgetAdjustmentVoteResult(String reportKey) {
         String prefix = progressReportPrefix(reportKey);
 
-        List<Address> _voters_list = arrayDBtoList(ProgressReportDataDb.votersList.at(prefix));
-        List<Address> _approved_voters_list = arrayDBtoList(budgetApproveVoters.at(prefix));
-        List<Address> _rejected_voters_list = arrayDBtoList(budgetRejectVoters.at(prefix));
+        ArrayDB<Address> _voters_list = ProgressReportDataDb.votersList.at(prefix);
+        ArrayDB<Address> _approved_voters_list = budgetApproveVoters.at(prefix);
+        ArrayDB<Address> _rejected_voters_list = budgetRejectVoters.at(prefix);
         List<Map<String, Object>> _vote_status = new ArrayList<>();
         String vote;
         for (int i = 0; i < _voters_list.size(); i++) {
             Address voter = _voters_list.get(i);
-            if (containsInList(voter, _approved_voters_list)) {
+            if (containsInArrayDb(voter, _approved_voters_list)) {
                 vote = APPROVE;
-            }
-            else if (containsInList(voter, _rejected_voters_list)) {
+            } else if (containsInArrayDb(voter, _rejected_voters_list)) {
                 vote = REJECT;
-            }
-            else {
+            } else {
                 vote = "not voted";
             }
-            String reason = ProgressReportDataDb.votersReasons.at(prefix).get(i);
             Map<String, Object> _voters = Map.of(
                     ADDRESS, voter,
                     PREP_NAME, getPrepName(voter),
-                    VOTE_REASON, reason,
                     VOTE, vote);
             _vote_status.add(_voters);
         }
 
-        return Map.of(DATA, _vote_status, APPROVE_VOTERS, _proposal_details.get(BUDGET_APPROVE_VOTERS),
-                REJECT_VOTERS, _proposal_details.get(BUDGET_REJECT_VOTERS),
-                TOTAL_VOTERS, _proposal_details.get(TOTAL_VOTERS),
-                APPROVED_VOTES, _proposal_details.get(BUDGET_APPROVED_VOTES),
-                REJECTED_VOTES, _proposal_details.get(BUDGET_REJECTED_VOTES),
-                TOTAL_VOTES, _proposal_details.get(TOTAL_VOTES));
+        return Map.of(DATA, _vote_status, APPROVE_VOTERS, _approved_voters_list.size(),
+                REJECT_VOTERS, _rejected_voters_list.size(),
+                TOTAL_VOTERS, ProgressReportDataDb.totalVoters.at(prefix).getOrDefault(0),
+                APPROVED_VOTES, budgetApprovedVotes.at(prefix).getOrDefault(BigInteger.ZERO),
+                REJECTED_VOTES, budgetRejectedVotes.at(prefix).getOrDefault(BigInteger.ZERO),
+                TOTAL_VOTES, ProgressReportDataDb.totalVotes.at(prefix).getOrDefault(BigInteger.ZERO));
     }
 
     @Override
     @External(readonly = true)
     @Deprecated(since = "JAVA translation", forRemoval = true)
-    public Map<String, Object> get_budget_adjustment_vote_result(String _report_key){
+    public Map<String, Object> get_budget_adjustment_vote_result(String _report_key) {
         return getBudgetAdjustmentVoteResult(_report_key);
     }
 
@@ -2029,7 +1960,7 @@ public class CPSCore implements CPSCoreInterface {
         for (int i = 0; i < pReps.validPreps.size(); i++) {
             Address prep = pReps.validPreps.get(i);
             BigInteger stake = getStake(prep);
-            delegationSnapshot.set(prep.toString(), stake);
+            delegationSnapshot.set(prep, stake);
             if (stake.compareTo(maxDelegation) > 0) {
                 maxDelegation = stake;
             }
@@ -2044,7 +1975,7 @@ public class CPSCore implements CPSCoreInterface {
             period.periodName.set(APPLICATION_PERIOD);
             PeriodUpdate("Period Updated back to Application Period due to less Registered P-Reps Count");
 
-        } else if (get_proposals_keys_by_status(PENDING).size() == 0 && this.progressReportStatus.get(WAITING).size() == 0 && activeProposals.size() + paused.size() == 0) {
+        } else if (getProposalsKeysByStatus(PENDING).size() == 0 && this.progressReportStatus.get(WAITING).size() == 0 && activeProposals.size() + paused.size() == 0) {
             createActiveProposalDb();
             checkProgressReportSubmission();
             period.periodName.set(APPLICATION_PERIOD);
@@ -2080,7 +2011,7 @@ public class CPSCore implements CPSCoreInterface {
 
     private void payPrepPenalty(Address from, BigInteger _value) {
         checkMaintenance();
-        update_period();
+        updatePeriod();
         PReps pReps = new PReps();
         PeriodController period = new PeriodController();
         Context.require(period.periodName.get().equals(APPLICATION_PERIOD),
@@ -2103,7 +2034,7 @@ public class CPSCore implements CPSCoreInterface {
     @Override
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
-        Context.require(Context.getCaller().equals(get_bnUSD_score()), TAG + " Only bnUSD token accepted.");
+        Context.require(Context.getCaller().equals(getBnusdScore()), TAG + " Only bnUSD token accepted.");
 
         String unpacked_data = new String(_data);
         JsonObject transferData = Json.parse(unpacked_data).asObject();
@@ -2127,7 +2058,7 @@ public class CPSCore implements CPSCoreInterface {
 
     private void sponsorVote(String ipfsKey, String vote, String voteReason, Address from, BigInteger value) {
         checkMaintenance();
-        update_period();
+        updatePeriod();
         PeriodController period = new PeriodController();
         Context.require(period.periodName.get().equals(APPLICATION_PERIOD),
                 TAG + " Sponsor Vote can only be done on Application Period");
@@ -2163,7 +2094,7 @@ public class CPSCore implements CPSCoreInterface {
 
             SponsorBondReceived(from, "Sponsor Bond " + value + " " + token + " Received.");
         } else {
-            removeContributor(contributorAddress);
+            removeContributor(contributorAddress, ipfsKey);
             updateProposalStatus(ipfsKey, REJECTED);
             BigInteger halfSubmissionFee = BigInteger.valueOf(APPLICATION_FEE / 2).multiply(EXA);
             Context.transfer(contributorAddress, halfSubmissionFee);
@@ -2205,7 +2136,7 @@ public class CPSCore implements CPSCoreInterface {
 
         } else if (amountBNUsd.compareTo(BigInteger.ZERO) > 0) {
             userAmounts.set(bnUSD, BigInteger.ZERO);
-            callScore(get_bnUSD_score(), "transfer", caller, amountBNUsd);
+            callScore(getBnusdScore(), "transfer", caller, amountBNUsd);
             SponsorBondClaimed(caller, amountIcx, amountBNUsd + " " + bnUSD + " withdrawn to " + caller);
         } else {
             Context.revert(TAG + " Claim Reward Fails. Available Amounts are " + amountIcx + " " + ICX + " and" + amountBNUsd + " " + bnUSD);
@@ -2224,7 +2155,7 @@ public class CPSCore implements CPSCoreInterface {
         BigInteger currentBlock = BigInteger.valueOf(Context.getBlockHeight());
         if (sbh.compareTo(currentBlock) < 0) {
             swapBlockHeight.set(currentBlock.add(SWAP_BLOCK_DIFF));
-            callScore(get_cpf_treasury_score(), "swap_tokens", swapCount.getOrDefault(0));
+            callScore(getCpfTreasuryScore(), "swap_tokens", swapCount.getOrDefault(0));
         }
     }
 
@@ -2246,22 +2177,16 @@ public class CPSCore implements CPSCoreInterface {
     }
 
     @External(readonly = true)
-    public int getSwapCount(){
-        return swapCount.get();
+    public int getSwapCount() {
+        return swapCount.getOrDefault(0);
     }
 
+    @Override
     @External
     public void updateNextBlock(int blockCount) {
         validateAdmins();
         PeriodController period = new PeriodController();
         period.nextBlock.set(BigInteger.valueOf(Context.getBlockHeight() + blockCount));
-    }
-
-    @Override
-    @External
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    public void update_next_block(int blockCount) {
-        updateNextBlock(blockCount);
     }
 
     private void disqualifyProject(Address sponsorAddress, BigInteger sponsorDepositAmount, String flag) {
@@ -2271,83 +2196,125 @@ public class CPSCore implements CPSCoreInterface {
         JsonObject params = new JsonObject();
         params.add(SPONSOR_ADDRESS, sponsorAddress.toString());
         disqualifyProject.add("params", params);
-        Address cpfScore = get_cpf_treasury_score();
-        callScore(get_bnUSD_score(), "transfer", cpfScore,
+        Address cpfScore = getCpfTreasuryScore();
+        callScore(getBnusdScore(), "transfer", cpfScore,
                 sponsorDepositAmount, disqualifyProject.toString().getBytes());
         SponsorBondReturned(cpfScore, "Project Disqualified. " + sponsorDepositAmount + " " + flag +
                 " returned to CPF Treasury Address.");
-
-
     }
 
     @External(readonly = true)
-    public List<Map<String, Object>> getActiveProposals() {
+    public Map<String, Object> getActiveProposalsList(@Optional int startIndex) {
         List<String> proposalKeys = new ArrayList<>();
-        List<Map<String, Object>> activeProposalsMap = new ArrayList<>();
+        List<Map<String, Object>> activeProposalsList = new ArrayList<>();
 
-        List<String> activeProposals = get_proposals_keys_by_status(ACTIVE);
+        List<String> activeProposals = getProposalsKeysByStatus(ACTIVE);
         proposalKeys.addAll(activeProposals);
-        List<String> pausedProposals = get_proposals_keys_by_status(PAUSED);
+        List<String> pausedProposals = getProposalsKeysByStatus(PAUSED);
         proposalKeys.addAll(pausedProposals);
 
-        for (String proposal : proposalKeys) {
-            Map<String, Object> proposalDetails = getProposalDetails(proposal);
-            activeProposalsMap.add(proposalDetails);
-
+        int endIndex = startIndex + 10;
+        int size = proposalKeys.size();
+        if (endIndex > size) {
+            endIndex = size;
         }
-        return activeProposalsMap;
-    }
 
-    @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External(readonly = true)
-    public List<Map<String, Object>> get_active_proposals() {
-        return getActiveProposals();
+        for (int i = startIndex; i < endIndex; i++) {
+            Map<String, Object> proposalDetails = getProposalDetails(proposalKeys.get(i));
+            activeProposalsList.add(proposalDetails);
+        }
+        return Map.of(DATA, activeProposalsList, COUNT, size);
     }
 
     /***
-                Returns a dict of proposals of provided status
-                :param walletAddress : user Signing in
-                :type walletAddress : "iconservice.base.address"
-                :return: List of all proposals_details
-                ***/
-    @External(readonly =true)
-    public Map<String, Object> getProposalDetailByWallet(Address walletAddress) {
-        List<Map<String, Object>> _proposals_list = new ArrayList<>();
+     Returns the list of all all active or paused proposal from that address
+     :param walletAddress : wallet address of the contributor
+     :type walletAddress: Address
+     :return: list of active proposals of a contributor
+     ***/
+    @External(readonly = true)
+    public List<Map<String, Object>> getActiveProposals(Address walletAddress) {
+        List<Map<String, Object>> _proposal_titles = new ArrayList<>();
 
-        for (int i = 0; i < proposalsKeyList.size(); i++) {
-            Map<String, Object> _proposal_details = getProposalDetails(proposalsKeyList.get(i));
-            if (_proposal_details.get(CONTRIBUTOR_ADDRESS).equals(walletAddress)) {
-                _proposals_list.add(_proposal_details);
+        ArrayDB<String> contributorsAddress = contributorProjects.at(walletAddress);
+        for (int i = 0; i < contributorsAddress.size(); i++) {
+            String proposals = contributorsAddress.get(i);
+            String prefix = proposalPrefix(proposals);
+            String status = ProposalDataDb.status.at(prefix).getOrDefault("");
+            if (ArrayDBUtils.containsInList(status, List.of(ACTIVE, PAUSED))) {
+                int _project_duration = projectDuration.at(prefix).getOrDefault(0);
+                int _approved_reports_count = approvedReports.at(prefix).getOrDefault(0);
+                boolean _last_progress_report = _project_duration - _approved_reports_count == 1;
+                Map<String, Object> _proposals_details = Map.of(PROJECT_TITLE, projectTitle.at(prefix).getOrDefault(""),
+                        IPFS_HASH, proposals,
+                        NEW_PROGRESS_REPORT, submitProgressReport.at(prefix).getOrDefault(false),
+                        "last_progress_report", _last_progress_report);
+                _proposal_titles.add(_proposals_details);
             }
         }
-        return Map.of(DATA, _proposals_list, COUNT, _proposals_list.size());
+
+        return _proposal_titles;
+    }
+
+    @Deprecated(since = "JAVA translation", forRemoval = true)
+    @External(readonly = true)
+    public List<Map<String, Object>> get_active_proposals(Address _wallet_address) {
+        return getActiveProposals(_wallet_address);
+    }
+
+
+    /***
+     Returns a dict of proposals of provided status
+     :param walletAddress : user Signing in
+     :type walletAddress : "iconservice.base.address"
+     :return: List of all proposals_details
+     ***/
+    @Override
+    @External(readonly = true)
+    public Map<String, Object> getProposalDetailByWallet(Address walletAddress, @Optional int startIndex) {
+        List<Map<String, Object>> _proposals_list = new ArrayList<>();
+        ArrayDB<String> projects = contributorProjects.at(walletAddress);
+        int endIndex = startIndex + 5;
+        int size = projects.size();
+        if (endIndex > size) {
+            endIndex = size;
+        }
+        for (int i = startIndex; i < endIndex; i++) {
+            Map<String, Object> _proposal_details = getProposalDetails(projects.get(i));
+            _proposals_list.add(_proposal_details);
+        }
+        return Map.of(DATA, _proposals_list, COUNT, size);
+    }
+
+    @External(readonly = true)
+    public Map<String, Object> get_proposal_detail_by_wallet(Address _wallet_address, @Optional int startIndex) {
+        return getProposalDetailByWallet(_wallet_address, startIndex);
     }
 
     @Override
-    @External(readonly =true)
-    public Map<String, Object> get_proposal_detail_by_wallet(Address _wallet_address) {
-        return getProposalDetailByWallet(_wallet_address);
-    }
-
-    @Override
-    @External
-    public List<Map<String, Object>> getProposalsHistory() {
+    @External(readonly = true)
+    public Map<String, Object> getProposalsHistory(@Optional int startIndex) {
         List<String> proposalKeys = new ArrayList<>();
-        List<Map<String, Object>> activeProposalsMap = new ArrayList<>();
+        List<Map<String, Object>> proposalHistory = new ArrayList<>();
 
-        List<String> completedProjects = get_proposals_keys_by_status(COMPLETED);
+        List<String> completedProjects = getProposalsKeysByStatus(COMPLETED);
         proposalKeys.addAll(completedProjects);
-        List<String> rejectedProposals = get_proposals_keys_by_status(REJECTED);
+        List<String> rejectedProposals = getProposalsKeysByStatus(REJECTED);
         proposalKeys.addAll(rejectedProposals);
-        List<String> disqualifiedProjects = get_proposals_keys_by_status(DISQUALIFIED);
+        List<String> disqualifiedProjects = getProposalsKeysByStatus(DISQUALIFIED);
         proposalKeys.addAll(disqualifiedProjects);
 
-        for (String proposal : proposalKeys) {
-            Map<String, Object> proposalDetails = getProposalDetails(proposal);
-            activeProposalsMap.add(proposalDetails);
+        int endIndex = startIndex + 10;
+        int size = proposalKeys.size();
+        if (endIndex > size) {
+            endIndex = size;
         }
-        return activeProposalsMap;
+
+        for (int i = startIndex; i < endIndex; i++) {
+            Map<String, Object> proposalDetails = getProposalDetails(proposalKeys.get(i));
+            proposalHistory.add(proposalDetails);
+        }
+        return Map.of(DATA, proposalHistory, COUNT, size);
     }
 
 
@@ -2424,7 +2391,16 @@ public class CPSCore implements CPSCoreInterface {
         Context.call(amount, address, method, params);
     }
 
-    private void logger(String msg){
-        Context.println(msg);
+
+    public void validateAdmins() {
+        Context.require(isAdmin(Context.getCaller()),
+                TAG + ": Only Admins can call this method");
+
+    }
+
+    public void validateAdminScore(Address scoreAddress) {
+        validateAdmins();
+        Context.require(scoreAddress.isContract(), scoreAddress + " is not a SCORE Address");
+
     }
 }

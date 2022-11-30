@@ -95,7 +95,7 @@ public class CPSTreasuryTest extends TestBase {
     }
 
     private void setCpsScoreMethod() {
-        doReturn(Boolean.TRUE).when(scoreSpy).callScore(eq(Boolean.class), any(), eq("isAdmin"), eq(owner.getAddress()));
+        doReturn(Boolean.TRUE).when(scoreSpy).callScore(eq(Boolean.class), any(), eq("is_admin"), eq(owner.getAddress()));
         tokenScore.invoke(owner, "setCpsScore", score_address);
         assertEquals(score_address, tokenScore.call("getCpsScore"));
     }
@@ -106,7 +106,7 @@ public class CPSTreasuryTest extends TestBase {
     }
 
     private void setCPFTreasuryScoreMethod() {
-        doReturn(Boolean.TRUE).when(scoreSpy).callScore(eq(Boolean.class), any(), eq("isAdmin"), eq(owner.getAddress()));
+        doReturn(Boolean.TRUE).when(scoreSpy).callScore(eq(Boolean.class), any(), eq("is_admin"), eq(owner.getAddress()));
         tokenScore.invoke(owner, "setCpfTreasuryScore", cpfTreasury);
         assertEquals(cpfTreasury, tokenScore.call("getCpfTreasuryScore"));
     }
@@ -117,23 +117,23 @@ public class CPSTreasuryTest extends TestBase {
     }
 
     private void setBnUSDScoreMethod() {
-        doReturn(Boolean.TRUE).when(scoreSpy).callScore(eq(Boolean.class), any(), eq("isAdmin"), eq(owner.getAddress()));
+        doReturn(Boolean.TRUE).when(scoreSpy).callScore(eq(Boolean.class), any(), eq("is_admin"), eq(owner.getAddress()));
         tokenScore.invoke(owner, "setBnUSDScore", bnUSDScore);
         assertEquals(bnUSDScore, tokenScore.call("getBnUSDScore"));
     }
 
-    void setCpsScoreExceptions(Boolean isAdmin, Address score_address) {
-        doReturn(isAdmin).when(scoreSpy).callScore(eq(Boolean.class), any(), eq("isAdmin"), eq(owner.getAddress()));
+    void setCpsScoreExceptions(Boolean is_admin, Address score_address) {
+        doReturn(is_admin).when(scoreSpy).callScore(eq(Boolean.class), any(), eq("is_admin"), eq(owner.getAddress()));
         tokenScore.invoke(owner, "setCpsScore", score_address);
     }
 
-    void setCpfTreasuryScoreExceptions(Boolean isAdmin, Address score_address) {
-        doReturn(isAdmin).when(scoreSpy).callScore(eq(Boolean.class), any(), eq("isAdmin"), eq(owner.getAddress()));
+    void setCpfTreasuryScoreExceptions(Boolean is_admin, Address score_address) {
+        doReturn(is_admin).when(scoreSpy).callScore(eq(Boolean.class), any(), eq("is_admin"), eq(owner.getAddress()));
         tokenScore.invoke(owner, "setCpfTreasuryScore", score_address);
     }
 
-    void setBnUSDScoreExceptions(Boolean isAdmin, Address score_address) {
-        doReturn(isAdmin).when(scoreSpy).callScore(eq(Boolean.class), any(), eq("isAdmin"), eq(owner.getAddress()));
+    void setBnUSDScoreExceptions(Boolean is_admin, Address score_address) {
+        doReturn(is_admin).when(scoreSpy).callScore(eq(Boolean.class), any(), eq("is_admin"), eq(owner.getAddress()));
         tokenScore.invoke(owner, "setBnUSDScore", score_address);
     }
 
