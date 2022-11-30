@@ -2417,36 +2417,16 @@ public class CPSCore implements CPSCoreInterface {
         Context.call(amount, address, method, params);
     }
 
-    @External
-    public void migrateProposals() {
+
+    public void validateAdmins() {
+        Context.require(isAdmin(Context.getCaller()),
+                TAG + ": Only Admins can call this method");
+
+    }
+
+    public void validateAdminScore(Address scoreAddress) {
         validateAdmins();
-        int startIndex = batchSize.get();
-        int size = proposalsKeyList.size();
-        int endIndex = startIndex + 10;
-        if (endIndex > size) {
-            endIndex = size;
-        }
-        List<String> statusType = List.of(SPONSOR_PENDING, REJECTED, DISQUALIFIED, PENDING);
-        String status;
-        Address sponsor;
-        String prefix;
-        String ipfsKey;
-        Address contributor;
-        for (int i = startIndex; i < endIndex; i++) {
-            ipfsKey = proposalsKeyList.get(i);
-            prefix = proposalPrefix(ipfsKey);
-            sponsor = sponsorAddress.at(prefix).get();
-            contributor = contributorAddress.at(prefix).get();
-            status = ProposalDataDb.status.at(prefix).get();
-            if (!ArrayDBUtils.containsInList(status, statusType)) {
-                if (!ArrayDBUtils.containsInArrayDb(ipfsKey, sponsorProjects.at(sponsor))) {
-                    sponsorProjects.at(sponsor).add(ipfsKey);
-                }
-            }
-            if (!ArrayDBUtils.containsInArrayDb(ipfsKey, contributorProjects.at(contributor))) {
-                contributorProjects.at(contributor).add(ipfsKey);
-            }
-            batchSize.set(endIndex);
-        }
+        Context.require(scoreAddress.isContract(), scoreAddress + " is not a SCORE Address");
+
     }
 }
