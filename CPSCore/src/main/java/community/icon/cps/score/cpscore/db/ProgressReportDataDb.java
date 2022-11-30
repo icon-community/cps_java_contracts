@@ -3,24 +3,22 @@ package community.icon.cps.score.cpscore.db;
 import score.*;
 
 import java.math.BigInteger;
-import scorex.util.HashMap;
 import java.util.Map;
 
+import static community.icon.cps.score.cpscore.utils.ArrayDBUtils.recordTxHash;
 import static community.icon.cps.score.cpscore.utils.Constants.*;
-import static community.icon.cps.score.cpscore.utils.ArrayDBUtils.*;
 import static community.icon.cps.score.lib.interfaces.CPSCoreInterface.ProgressReportAttributes;
 
 public class ProgressReportDataDb {
     private static final BranchDB<String, VarDB<String>> ipfsHash = Context.newBranchDB(IPFS_HASH, String.class);
     private static final BranchDB<String, VarDB<String>> reportHash = Context.newBranchDB(REPORT_HASH, String.class);
     private static final BranchDB<String, VarDB<String>> progressReportTitle = Context.newBranchDB(PROGRESS_REPORT_TITLE, String.class);
-    private static final BranchDB<String, VarDB<BigInteger>> timestamp = Context.newBranchDB(TIMESTAMP, BigInteger.class);
+    public static final BranchDB<String, VarDB<BigInteger>> timestamp = Context.newBranchDB(TIMESTAMP, BigInteger.class);
     public static final BranchDB<String, VarDB<String>> status = Context.newBranchDB(STATUS, String.class);
     private static final BranchDB<String, VarDB<String>> txHash = Context.newBranchDB(TX_HASH, String.class);
     private static final BranchDB<String, VarDB<Boolean>> budgetAdjustment = Context.newBranchDB(BUDGET_ADJUSTMENT, Boolean.class);
     private static final BranchDB<String, VarDB<BigInteger>> additionalBudget = Context.newBranchDB(ADDITIONAL_BUDGET, BigInteger.class);
     private static final BranchDB<String, VarDB<Integer>> additionalMonth = Context.newBranchDB(ADDITIONAL_DURATION, Integer.class);
-    private static final BranchDB<String, VarDB<Integer>> percentageCompleted = Context.newBranchDB(PERCENTAGE_COMPLETED, Integer.class);
 
     public static final BranchDB<String, ArrayDB<String>> votersReasons = Context.newBranchDB(VOTERS_REASON, String.class);
     public static final BranchDB<String, VarDB<BigInteger>> totalVotes = Context.newBranchDB(TOTAL_VOTES, BigInteger.class);
@@ -47,7 +45,6 @@ public class ProgressReportDataDb {
         timestamp.at(prefix).set(BigInteger.valueOf(Context.getBlockTimestamp()));
         additionalBudget.at(prefix).set(progressData.additional_budget.multiply(EXA));
         additionalMonth.at(prefix).set(progressData.additional_month);
-        percentageCompleted.at(prefix).set(progressData.percentage_completed);
         status.at(prefix).set(WAITING);
         txHash.at(prefix).set(recordTxHash(Context.getTransactionHash()));
         budgetAdjustment.at(prefix).set(progressData.budget_adjustment);
@@ -84,7 +81,6 @@ public class ProgressReportDataDb {
                         Map.entry(BUDGET_REJECT_VOTERS, budgetRejectVoters.at(prefix).size()),
                         Map.entry(BUDGET_ADJUSTMENT_STATUS, budgetAdjustmentStatus.at(prefix).getOrDefault("")),
                         Map.entry(IPFS_LINK, ipfsLink.at(prefix).getOrDefault("")),
-                        Map.entry(PERCENTAGE_COMPLETED, percentageCompleted.at(prefix).getOrDefault(0)),
                         Map.entry(BUDGET_ADJUSTMENT, budgetAdjustment.at(prefix).getOrDefault(false)),
                         Map.entry(PROJECT_TITLE, ProposalDataDb.projectTitle.at(proposalPrefix(proposalHash)).getOrDefault("")),
                         Map.entry(CONTRIBUTOR_ADDRESS, ProposalDataDb.contributorAddress.at(proposalPrefix(proposalHash)).get()));
