@@ -75,6 +75,7 @@ public class CPSCore implements CPSCoreInterface {
 
     public CPSCore() {
         PeriodController periodController = new PeriodController();
+        periodController.periodCount.set(20);
     }
 
     @Override
