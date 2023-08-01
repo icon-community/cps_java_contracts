@@ -79,7 +79,7 @@ public interface CPFTreasuryInterface {
     void add_fund();
 
     @External
-    void swapIcxBnusd(BigInteger amount);
+    void swapICXToBnUSD(BigInteger amount, @Optional BigInteger _minReceive);
 
     @External
     void swap_tokens(int _count);

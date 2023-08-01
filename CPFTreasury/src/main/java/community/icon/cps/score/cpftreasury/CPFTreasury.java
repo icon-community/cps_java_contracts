@@ -226,14 +226,42 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         Context.call(_from, "transfer", dexScore.get(), _amount, swapData.toString().getBytes());
     }
 
-    @Override
-    @External
-    public void swapIcxBnusd(BigInteger amount) {
+    private void swapIcxBnusd(BigInteger amount, BigInteger _minReceive) {
         if (getSwapFlag()) {
             Address[] path = new Address[]{sICXScore.get(), balancedDollar.get()};
-            Object[] params = new Object[]{path};
-            Context.call(amount, routerScore.get(), "route", params);
+            BigInteger icxPrice = getOraclePrice();
+            int diffValue = 100 - oraclePerDiff.getOrDefault(2);
+            BigInteger minReceive = icxPrice.multiply(BigInteger.valueOf(diffValue)).divide(BigInteger.valueOf(100));
+            if (_minReceive.equals(BigInteger.ZERO)) {
+                _minReceive = minReceive;
+            } else if (_minReceive.compareTo(minReceive) < 0) {
+                _minReceive = minReceive;
+            }
+
+            Context.call(amount, routerScore.get(), "route", path, _minReceive);
         }
+    }
+
+    @Override
+    @External
+    public void swapICXToBnUSD(BigInteger amount, @Optional BigInteger _minReceive) {
+        validateAdmins();
+        if (!getSwapFlag()) {
+            Context.revert(TAG + "SwapTurnedOff.");
+        }
+        if (_minReceive == null) {
+            _minReceive = BigInteger.ZERO;
+        }
+        swapIcxBnusd(amount, _minReceive);
+    }
+
+    @External(readonly = true)
+    public BigInteger getOraclePrice() {
+        String quote = "USD";
+
+        Map<String, BigInteger> priceData = (Map<String, BigInteger>) Context.call(oracleAddress.get(), "get_reference_data", ICX, quote);
+        return priceData.get("rate");
+
     }
 
     @Override
@@ -264,7 +292,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
                     }
 
                     if (remainingICXToSwap.compareTo(BigInteger.valueOf(5).multiply(EXA)) > 0) {
-                        swapIcxBnusd(remainingICXToSwap);
+                        swapIcxBnusd(remainingICXToSwap, BigInteger.ZERO);
                     }
                 }
             }
