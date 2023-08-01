@@ -2,6 +2,7 @@ package community.icon.cps.score.cpftreasury;
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
+import community.icon.cps.score.lib.interfaces.CPFTreasuryInterface;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -16,7 +17,6 @@ import java.util.Map;
 import static community.icon.cps.score.cpftreasury.Constants.*;
 import static community.icon.cps.score.cpftreasury.Validations.validateAdmins;
 import static community.icon.cps.score.cpftreasury.Validations.validateCpsScore;
-import community.icon.cps.score.lib.interfaces.CPFTreasuryInterface;
 
 public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     public static final VarDB<Address> cpsTreasuryScore = Context.newVarDB(CPS_TREASURY_SCORE, Address.class);
@@ -25,6 +25,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     public static final VarDB<Address> dexScore = Context.newVarDB(DEX_SCORE, Address.class);
     public static final VarDB<Address> sICXScore = Context.newVarDB(SICX_SCORE, Address.class);
     public static final VarDB<Address> routerScore = Context.newVarDB(ROUTER_SCORE, Address.class);
+    public static final VarDB<Address> oracleAddress = Context.newVarDB(ORACLE_ADDRESS, Address.class);
     private final ArrayDB<String> proposalsKeys = Context.newArrayDB(PROPOSALS_KEYS, String.class);
     private final DictDB<String, BigInteger> proposalBudgets = Context.newDictDB(PROPOSAL_BUDGETS, BigInteger.class);
     private final VarDB<BigInteger> treasuryFund = Context.newVarDB(TREASURY_FUND, BigInteger.class);
@@ -32,11 +33,20 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
 
     private final VarDB<Integer> swapState = Context.newVarDB(SWAP_STATE, Integer.class);
     private final VarDB<Integer> swapCount = Context.newVarDB(SWAP_COUNT, Integer.class);
+    private final VarDB<Integer> oraclePerDiff = Context.newVarDB(ORACLE_PERCENTAGE_DIFF, Integer.class);
 
     private final VarDB<Boolean> swapFlag = Context.newVarDB(SWAP_FLAG, Boolean.class);
 
     public CPFTreasury() {
-        swapFlag.set(true);
+        if (treasuryFund.get() == null) {
+            treasuryFund.set(BigInteger.valueOf(1000000).multiply(EXA));
+            swapCount.set(SwapReset);
+            swapState.set(SwapReset);
+            swapFlag.set(false);
+        }
+        oraclePerDiff.set(5);
+        oracleAddress.set(Address.fromString("cxe647e0af68a4661566f5e9861ad4ac854de808a2"));
+
     }
 
     private boolean proposalExists(String ipfsKey) {
@@ -217,6 +227,11 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         }
     }
 
+    @External(readonly = true)
+    public int getPerDiff() {
+        return oraclePerDiff.getOrDefault(0);
+    }
+
     private void swapTokens(Address _from, Address _to, BigInteger _amount) {
         JsonObject swapData = new JsonObject();
         swapData.add("method", "_swap");
@@ -315,6 +330,12 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         Context.require(checkCaller, TAG + ": Only admin can call this method.");
         swapState.set(SwapContinue);
         swapCount.set(SwapReset);
+    }
+
+    @External
+    public void setOraclePercentageDifference(int _value) {
+        validateAdmins();
+        oraclePerDiff.set(_value);
     }
 
     @Override
