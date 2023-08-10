@@ -129,4 +129,21 @@ public class SetterGetter {
     public Address getRouterScore() {
         return CPFTreasury.routerScore.get();
     }
+
+    @External
+    public void setOracleAddress(Address _score) {
+        Validations.validateAdminScore(_score);
+        CPFTreasury.oracleAddress.set(_score);
+    }
+
+    /**
+     * Returns the router score address
+     *
+     * @return router score address
+     */
+    @External(readonly = true)
+    public Address getOracleAddress() {
+        return CPFTreasury.oracleAddress.get();
+    }
+
 }

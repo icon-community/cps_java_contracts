@@ -2,17 +2,13 @@ package community.icon.cps.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
-
 import score.Address;
-import score.Context;
-import score.VarDB;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
 import score.annotation.Payable;
 
 import java.math.BigInteger;
-import java.util.List;
 import java.util.Map;
 
 @ScoreClient
@@ -83,7 +79,7 @@ public interface CPFTreasuryInterface {
     void add_fund();
 
     @External
-    void swapIcxBnusd(BigInteger amount);
+    void swapICXToBnUSD(BigInteger amount, @Optional BigInteger _minReceive);
 
     @External
     void swap_tokens(int _count);

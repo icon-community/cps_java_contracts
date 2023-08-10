@@ -23,9 +23,11 @@ public class Constants {
     public static final String DEX_SCORE = "dex_score";
     public static final String SICX_SCORE = "sicx_score";
     public static final String ROUTER_SCORE = "router_score";
+    public static final String ORACLE_ADDRESS = "oracle_address";
 
     public static final String SWAP_STATE = "swap_state";
     public static final String SWAP_COUNT = "swap_count";
+    public static final String ORACLE_PERCENTAGE_DIFF = "oracle_percentage_diff";
     public static final String SWAP_FLAG = "swap_flag";
     public static final Address SYSTEM_ADDRESS = Address.fromString("cx0000000000000000000000000000000000000000");
 

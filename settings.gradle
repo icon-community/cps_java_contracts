@@ -26,3 +26,6 @@ project(':sICX').projectDir = file("dummy/sICX")
 
 include (':bnUSD')
 project(':bnUSD').projectDir = file("dummy/bnUSD")
+
+include(':oracle')
+project(':oracle').projectDir = file("dummy/oracle")

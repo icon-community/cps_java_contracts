@@ -2,6 +2,7 @@ package community.icon.cps.score.cpftreasury;
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
+import community.icon.cps.score.lib.interfaces.CPFTreasuryInterface;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -16,7 +17,6 @@ import java.util.Map;
 import static community.icon.cps.score.cpftreasury.Constants.*;
 import static community.icon.cps.score.cpftreasury.Validations.validateAdmins;
 import static community.icon.cps.score.cpftreasury.Validations.validateCpsScore;
-import community.icon.cps.score.lib.interfaces.CPFTreasuryInterface;
 
 public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     public static final VarDB<Address> cpsTreasuryScore = Context.newVarDB(CPS_TREASURY_SCORE, Address.class);
@@ -25,6 +25,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     public static final VarDB<Address> dexScore = Context.newVarDB(DEX_SCORE, Address.class);
     public static final VarDB<Address> sICXScore = Context.newVarDB(SICX_SCORE, Address.class);
     public static final VarDB<Address> routerScore = Context.newVarDB(ROUTER_SCORE, Address.class);
+    public static final VarDB<Address> oracleAddress = Context.newVarDB(ORACLE_ADDRESS, Address.class);
     private final ArrayDB<String> proposalsKeys = Context.newArrayDB(PROPOSALS_KEYS, String.class);
     private final DictDB<String, BigInteger> proposalBudgets = Context.newDictDB(PROPOSAL_BUDGETS, BigInteger.class);
     private final VarDB<BigInteger> treasuryFund = Context.newVarDB(TREASURY_FUND, BigInteger.class);
@@ -32,11 +33,20 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
 
     private final VarDB<Integer> swapState = Context.newVarDB(SWAP_STATE, Integer.class);
     private final VarDB<Integer> swapCount = Context.newVarDB(SWAP_COUNT, Integer.class);
+    private final VarDB<Integer> oraclePerDiff = Context.newVarDB(ORACLE_PERCENTAGE_DIFF, Integer.class);
 
     private final VarDB<Boolean> swapFlag = Context.newVarDB(SWAP_FLAG, Boolean.class);
 
     public CPFTreasury() {
-        swapFlag.set(true);
+        if (treasuryFund.get() == null) {
+            treasuryFund.set(BigInteger.valueOf(1000000).multiply(EXA));
+            swapCount.set(SwapReset);
+            swapState.set(SwapReset);
+            swapFlag.set(false);
+        }
+        oraclePerDiff.set(5);
+        oracleAddress.set(Address.fromString("cxe647e0af68a4661566f5e9861ad4ac854de808a2"));
+
     }
 
     private boolean proposalExists(String ipfsKey) {
@@ -217,6 +227,11 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         }
     }
 
+    @External(readonly = true)
+    public int getPerDiff() {
+        return oraclePerDiff.getOrDefault(0);
+    }
+
     private void swapTokens(Address _from, Address _to, BigInteger _amount) {
         JsonObject swapData = new JsonObject();
         swapData.add("method", "_swap");
@@ -226,14 +241,42 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         Context.call(_from, "transfer", dexScore.get(), _amount, swapData.toString().getBytes());
     }
 
-    @Override
-    @External
-    public void swapIcxBnusd(BigInteger amount) {
+    private void swapIcxBnusd(BigInteger amount, BigInteger _minReceive) {
         if (getSwapFlag()) {
             Address[] path = new Address[]{sICXScore.get(), balancedDollar.get()};
-            Object[] params = new Object[]{path};
-            Context.call(amount, routerScore.get(), "route", params);
+            BigInteger icxPrice = getOraclePrice();
+            int diffValue = 100 - oraclePerDiff.getOrDefault(2);
+            BigInteger minReceive = icxPrice.multiply(BigInteger.valueOf(diffValue)).divide(BigInteger.valueOf(100));
+            if (_minReceive.equals(BigInteger.ZERO)) {
+                _minReceive = minReceive;
+            } else if (_minReceive.compareTo(minReceive) < 0) {
+                _minReceive = minReceive;
+            }
+
+            Context.call(amount, routerScore.get(), "route", path, _minReceive);
         }
+    }
+
+    @Override
+    @External
+    public void swapICXToBnUSD(BigInteger amount, @Optional BigInteger _minReceive) {
+        validateAdmins();
+        if (!getSwapFlag()) {
+            Context.revert(TAG + "SwapTurnedOff.");
+        }
+        if (_minReceive == null) {
+            _minReceive = BigInteger.ZERO;
+        }
+        swapIcxBnusd(amount, _minReceive);
+    }
+
+    @External(readonly = true)
+    public BigInteger getOraclePrice() {
+        String quote = "USD";
+
+        Map<String, BigInteger> priceData = (Map<String, BigInteger>) Context.call(oracleAddress.get(), "get_reference_data", ICX, quote);
+        return priceData.get("rate");
+
     }
 
     @Override
@@ -264,7 +307,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
                     }
 
                     if (remainingICXToSwap.compareTo(BigInteger.valueOf(5).multiply(EXA)) > 0) {
-                        swapIcxBnusd(remainingICXToSwap);
+                        swapIcxBnusd(remainingICXToSwap, BigInteger.ZERO);
                     }
                 }
             }
@@ -287,6 +330,12 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         Context.require(checkCaller, TAG + ": Only admin can call this method.");
         swapState.set(SwapContinue);
         swapCount.set(SwapReset);
+    }
+
+    @External
+    public void setOraclePercentageDifference(int _value) {
+        validateAdmins();
+        oraclePerDiff.set(_value);
     }
 
     @Override

@@ -17,7 +17,7 @@ dependencies {
 }
 
 optimizedJar {
-    mainClassName = 'community.icon.cps.score.cpftreasury.CPFTreasury'
+    mainClassName = 'dummy.contract.oracle.Oracle'
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
@@ -28,25 +28,25 @@ deployJar {
         lisbon {
             uri = 'https://lisbon.net.solidwallet.io/api/v3'
             nid = 0x2
-            to = 'cx3d4182c0e783b7ef97ba63409c4bdf808853bd9f'
         }
         local {
             uri = 'http://localhost:9082/api/v3'
             nid = 0x3
         }
+        sejong {
+            uri = 'https://sejong.net.solidwallet.io/api/v3'
+            nid = 0x53
+
+        }
         berlin {
             uri = 'https://berlin.net.solidwallet.io/api/v3'
             nid = 0x7
         }
-        mainnet {
-            uri = 'https://ctz.solidwallet.io/api/v3'
-            nid = 0x1
-            to = 'cxdca1178010b5368aea929ad5c06abee64b91acc2'
-        }
-
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
+    parameters {
+    }
 }
 
 test {
