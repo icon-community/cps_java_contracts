@@ -58,6 +58,11 @@ public interface CPFTreasuryInterface {
 
     @External
     void setMaximumTreasuryFundBnusd(BigInteger _value);
+    @External
+    void setOnsetPayment(BigInteger paymentPercentage);
+
+    @External(readonly = true)
+    BigInteger getOnsetPayment();
 
     @External(readonly = true)
     Map<String, BigInteger> get_total_funds();

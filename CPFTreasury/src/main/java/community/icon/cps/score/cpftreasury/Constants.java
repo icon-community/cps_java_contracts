@@ -29,6 +29,7 @@ public class Constants {
     public static final String SWAP_COUNT = "swap_count";
     public static final String ORACLE_PERCENTAGE_DIFF = "oracle_percentage_diff";
     public static final String SWAP_FLAG = "swap_flag";
+    public static final String ONSET_PAYMENT = "onset_payment";
     public static final Address SYSTEM_ADDRESS = Address.fromString("cx0000000000000000000000000000000000000000");
 
     public static final int sICXICXPoolID = 1;
@@ -37,5 +38,6 @@ public class Constants {
     public static final int SwapContinue = 0;
     public static final int SwapCompleted = 1;
     public static final int SwapReset = 0;
+    public static final BigInteger MAX_ONSET_PAYMENT = BigInteger.valueOf(20);
 
 }
