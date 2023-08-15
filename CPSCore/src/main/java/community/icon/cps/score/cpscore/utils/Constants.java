@@ -144,6 +144,9 @@ public class Constants {
     public static final String PRIORITY_VOTED_PREPS = "priority_voted_preps";
     public static final String SPONSOR_PROJECTS = "sponsor_projects";
     public static final String CONTRIBUTOR_PROJECTS = "contributor_projects";
+    public static final String SPONSOR_BOND_PERCENTAGE = "sponsor_bond_percentage";
+    public static final String APPLICATION_TIME = "application_period";
+    public static final String VOTING_TIME = "voting_period";
 
 
     //    VOTE KEYS
