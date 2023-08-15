@@ -184,10 +184,10 @@ public class CPSTreasuryTest extends TestBase {
                 consts.IPFS_HASH, "Proposal 1",
                 consts.TOKEN, "bnUSD",
                 consts.TOTAL_BUDGET, BigInteger.valueOf(100).multiply(MULTIPLIER),
-                consts.TOTAL_INSTALLMENT_PAID, BigInteger.ZERO,
+                consts.TOTAL_INSTALLMENT_PAID, BigInteger.valueOf(10).multiply(MULTIPLIER),
                 consts.TOTAL_INSTALLMENT_COUNT, 2,
                 consts.TOTAL_TIMES_INSTALLMENT_PAID, 0,
-                consts.INSTALLMENT_AMOUNT, BigInteger.valueOf(50).multiply(MULTIPLIER));
+                consts.INSTALLMENT_AMOUNT, BigInteger.valueOf(45).multiply(MULTIPLIER));
         assertEquals(proposalDetails.get(0), expectedData);
     }
 
@@ -204,6 +204,7 @@ public class CPSTreasuryTest extends TestBase {
         params.add("token", "bnUSD");
         depositProposal.add("params", params);
         setCPFTreasuryScoreMethod();
+        doReturn(BigInteger.TEN).when(scoreSpy).callScore(eq(BigInteger.class),any(Address.class),eq("getOnsetPayment"));
         tokenScore.invoke(owner, "tokenFallback", cpfTreasury, BigInteger.valueOf(102).multiply(MULTIPLIER), depositProposal.toString().getBytes());
     }
 
@@ -244,10 +245,10 @@ public class CPSTreasuryTest extends TestBase {
                 consts.IPFS_HASH, "Proposal 1",
                 consts.TOKEN, "bnUSD",
                 consts.TOTAL_BUDGET, BigInteger.valueOf(200).multiply(MULTIPLIER),
-                consts.TOTAL_INSTALLMENT_PAID, BigInteger.ZERO,
+                consts.TOTAL_INSTALLMENT_PAID, BigInteger.valueOf(10).multiply(MULTIPLIER),
                 consts.TOTAL_INSTALLMENT_COUNT, 3,
                 consts.TOTAL_TIMES_INSTALLMENT_PAID, 0,
-                consts.INSTALLMENT_AMOUNT, new BigInteger("66666666666666666666"));
+                consts.INSTALLMENT_AMOUNT, new BigInteger("63333333333333333333"));
         assertEquals(proposalDetails.get(0), expectedData);
     }
 
@@ -286,7 +287,7 @@ public class CPSTreasuryTest extends TestBase {
         }
         @SuppressWarnings("unchecked")
         Map<String, ?> proposalDataDetails = (Map<String, ?>) tokenScore.call("get_contributor_projected_fund", testing_account2.getAddress());
-        assertEquals(proposalDataDetails.get("withdraw_amount_bnUSD"), BigInteger.valueOf(50).multiply(MULTIPLIER));
+        assertEquals(proposalDataDetails.get("withdraw_amount_bnUSD"), BigInteger.valueOf(55).multiply(MULTIPLIER));
 
         try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
             theMock.when(() -> Context.getCaller()).thenReturn(score_address);
@@ -300,11 +301,15 @@ public class CPSTreasuryTest extends TestBase {
     @Test
     void sendRewardToSponsor() {
         depositProposalFundMethod();
+        @SuppressWarnings("unchecked")
+        Map<String, ?> proposalDataDetailsAfterProposal = (Map<String, ?>) tokenScore.call("get_sponsor_projected_fund", testing_account.getAddress());
+        assertEquals(proposalDataDetailsAfterProposal.get("withdraw_amount_bnUSD"), BigInteger.valueOf(2).multiply(MULTIPLIER).divide(BigInteger.TEN));
+
         setCpsScoreMethod();
         sendRewardToSponsorMethod();
         @SuppressWarnings("unchecked")
         Map<String, ?> proposalDataDetails = (Map<String, ?>) tokenScore.call("get_sponsor_projected_fund", testing_account.getAddress());
-        assertEquals(proposalDataDetails.get("withdraw_amount_bnUSD"), BigInteger.valueOf(1).multiply(MULTIPLIER));
+        assertEquals(proposalDataDetails.get("withdraw_amount_bnUSD"), BigInteger.valueOf(11).multiply(MULTIPLIER).divide(BigInteger.TEN));
 
         try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
             theMock.when(() -> Context.getCaller()).thenReturn(score_address);
@@ -328,6 +333,10 @@ public class CPSTreasuryTest extends TestBase {
         setCPFTreasuryScoreMethod();
         setCpsScoreMethod();
         setBnUSDScoreMethod();
+        /* project budget -> 100, sponsor reward -> 2 --> total budget -> 102
+         * upfront payment -> 10(contributor) and 0.2 to sponsor --> total upfront payment -> 10.2
+         * after disqualify -> 102-10.2= 91.8
+         * */
         try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
             theMock.when(() -> Context.getCaller()).thenReturn(score_address);
             tokenScore.invoke(owner, "disqualify_project", "Proposal 1");
@@ -336,7 +345,7 @@ public class CPSTreasuryTest extends TestBase {
             JsonObject params = new JsonObject();
             params.add("ipfs_key", "Proposal 1");
             disqualifyProjectParams.add("params", params);
-            theMock.verify(() -> Context.call(bnUSDScore, "transfer", cpfTreasury, BigInteger.valueOf(102).multiply(MULTIPLIER), disqualifyProjectParams.toString().getBytes()), times(1));
+            theMock.verify(() -> Context.call(bnUSDScore, "transfer", cpfTreasury, BigInteger.valueOf(918).multiply(MULTIPLIER).divide(BigInteger.TEN), disqualifyProjectParams.toString().getBytes()), times(1));
         }
     }
 
@@ -348,7 +357,8 @@ public class CPSTreasuryTest extends TestBase {
         try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
             theMock.when(() -> Context.getCaller()).thenReturn(testing_account.getAddress());
             tokenScore.invoke(testing_account, "claim_reward");
-            theMock.verify(() -> Context.call(bnUSDScore, "transfer", testing_account.getAddress(), BigInteger.valueOf(1).multiply(MULTIPLIER)), times(1));
+            theMock.verify(
+                    () -> Context.call(bnUSDScore, "transfer", testing_account.getAddress(), BigInteger.valueOf(11).multiply(MULTIPLIER).divide(BigInteger.TEN)), times(1));
         }
     }
 }
