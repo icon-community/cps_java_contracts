@@ -83,6 +83,7 @@ public class ProgressReportDataDb {
                         Map.entry(IPFS_LINK, ipfsLink.at(prefix).getOrDefault("")),
                         Map.entry(BUDGET_ADJUSTMENT, budgetAdjustment.at(prefix).getOrDefault(false)),
                         Map.entry(PROJECT_TITLE, ProposalDataDb.projectTitle.at(proposalPrefix(proposalHash)).getOrDefault("")),
+                        Map.entry(PERCENTAGE_COMPLETED, ProposalDataDb.percentageCompleted.at(proposalPrefix(proposalHash)).getOrDefault(0)),
                         Map.entry(CONTRIBUTOR_ADDRESS, ProposalDataDb.contributorAddress.at(proposalPrefix(proposalHash)).get()));
 
         return entryMap;

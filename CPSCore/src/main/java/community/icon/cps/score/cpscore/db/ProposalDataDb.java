@@ -97,7 +97,8 @@ public class ProposalDataDb {
         Map.entry(REJECT_VOTERS, rejectVoters.at(prefix).size()),
         Map.entry(ABSTAIN_VOTERS, abstainVoters.at(prefix).size()),
         Map.entry(BUDGET_ADJUSTMENT, budgetAdjustment.at(prefix).getOrDefault(false)),
-        Map.entry(SUBMIT_PROGRESS_REPORT, submitProgressReport.at(prefix).getOrDefault(false)));
+        Map.entry(SUBMIT_PROGRESS_REPORT, submitProgressReport.at(prefix).getOrDefault(false)),
+                Map.entry(SPONSOR_VOTE_REASON,reason));
         return entryMap;
     }
 

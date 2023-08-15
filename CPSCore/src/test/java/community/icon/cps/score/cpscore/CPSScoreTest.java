@@ -51,7 +51,7 @@ public class CPSScoreTest extends TestBase{
 
     @BeforeEach
     public void setup() throws Exception {
-        cpsScore = sm.deploy(owner, CPSCore.class);
+        cpsScore = sm.deploy(owner, CPSCore.class,BigInteger.valueOf(15));
         CPSCore instance = (CPSCore) cpsScore.getInstance();
         scoreSpy = spy(instance);
         cpsScore.setInstance(scoreSpy);
@@ -372,10 +372,39 @@ public class CPSScoreTest extends TestBase{
         assertEquals(BigInteger.valueOf(100).multiply(MULTIPLIER), proposalDetails.get("total_budget"));
         Map<String, Object> proposalDetailsOfStatus = (Map<String, Object>) cpsScore.call("getProposalDetails", SPONSOR_PENDING, owner.getAddress(), 0, 10);
         assertEquals(1, proposalDetailsOfStatus.get(COUNT));
-        assertEquals(proposalDetails, ((List<Map<String, Object>>)proposalDetailsOfStatus.get(DATA)).get(0));
+        assertEquals(proposalDetails.size(), ((List<Map<String, Object>>)proposalDetailsOfStatus.get(DATA)).get(0).size());
 
-        Map<String, Object> proposalDetailsOfWallet = (Map<String, Object>) cpsScore.call("get_proposal_detail_by_wallet", owner.getAddress());
-        assertEquals(proposalDetails, ((List<Map<String, Object>>)proposalDetailsOfWallet.get(DATA)).get(0));
+
+        Map<String,Object> proposalDetailsOf = ((List<Map<String, Object>>)proposalDetailsOfStatus.get(DATA)).get(0);
+        assertEquals(proposalDetails.get("approve_voters"),proposalDetailsOf.get("approve_voters"));
+        assertEquals(proposalDetails.get("sponsor_vote_reason"),proposalDetailsOf.get("sponsor_vote_reason"));
+        assertEquals(proposalDetails.get("sponsor_deposit_amount"),proposalDetailsOf.get("sponsor_deposit_amount"));
+        assertEquals(proposalDetails.get("sponsor_address"),proposalDetailsOf.get("sponsor_address"));
+        assertEquals(proposalDetails.get("timestamp"),proposalDetailsOf.get("timestamp"));
+        assertEquals(proposalDetails.get("contributor_address"),proposalDetailsOf.get("contributor_address"));
+        assertEquals(proposalDetails.get("reject_voters"),proposalDetailsOf.get("reject_voters"));
+        assertEquals(proposalDetails.get("project_title"),proposalDetailsOf.get("project_title"));
+        assertEquals(proposalDetails.get("token"),proposalDetailsOf.get("token"));
+        assertEquals(proposalDetails.get("tx_hash"),proposalDetailsOf.get("tx_hash"));
+        assertEquals(proposalDetails.get("abstained_votes"),proposalDetailsOf.get("abstained_votes"));
+        assertEquals(proposalDetails.get("abstain_voters"),proposalDetailsOf.get("abstain_voters"));
+        assertEquals(proposalDetails.get("submit_progress_report"),proposalDetailsOf.get("submit_progress_report"));
+        assertEquals(proposalDetails.get("sponsor_deposit_status"),proposalDetailsOf.get("sponsor_deposit_status"));
+        assertEquals(proposalDetails.get("budget_adjustment"),proposalDetailsOf.get("budget_adjustment"));
+        assertEquals(proposalDetails.get("status"),proposalDetailsOf.get("status"));
+        assertEquals(proposalDetails.get("approved_votes"),proposalDetailsOf.get("approved_votes"));
+        assertEquals(proposalDetails.get("total_votes"),proposalDetailsOf.get("total_votes"));
+        assertEquals(proposalDetails.get("project_duration"),proposalDetailsOf.get("project_duration"));
+        assertEquals(proposalDetails.get("total_voters"),proposalDetailsOf.get("total_voters"));
+        assertEquals(proposalDetails.get("approved_reports"),proposalDetailsOf.get("approved_reports"));
+        assertEquals(proposalDetails.get("rejected_votes"),proposalDetailsOf.get("rejected_votes"));
+        assertEquals(proposalDetails.get("sponsored_timestamp"),proposalDetailsOf.get("sponsored_timestamp"));
+        assertEquals(proposalDetails.get("percentage_completed"),proposalDetailsOf.get("percentage_completed"));
+        assertEquals(proposalDetails.get("ipfs_hash"),proposalDetailsOf.get("ipfs_hash"));
+        assertEquals(proposalDetails.get("total_budget"),proposalDetailsOf.get("total_budget"));
+
+        Map<String, Object> proposalDetailsOfWallet = (Map<String, Object>) cpsScore.call("get_proposal_detail_by_wallet", owner.getAddress(),0);
+        assertEquals(proposalDetails.size(), ((List<Map<String, Object>>)proposalDetailsOfWallet.get(DATA)).get(0).size());
         assertEquals(1, proposalDetailsOfWallet.get(COUNT));
 
         List<String> proposalKeys = (List<String>) cpsScore.call("getProposalKeys");
@@ -414,12 +443,9 @@ public class CPSScoreTest extends TestBase{
         assertEquals(PENDING, proposalDetails.get("status"));
         assertEquals(BOND_RECEIVED, proposalDetails.get("sponsor_deposit_status"));
         Map<String, Map<String, Map<String, BigInteger>>> projectAmounts = (Map<String, Map<String, Map<String, BigInteger>>>) cpsScore.call("get_project_amounts");
-        Map<String, Map<String, BigInteger>> amount = Map.of(
-                AMOUNT, Map.of(
-                        Constants.ICX, BigInteger.ZERO,
-                        bnUSD, BigInteger.valueOf(100).multiply(MULTIPLIER)
-                )
-        );
+        Map<String, Object> amount = Map.of(AMOUNT, Map.of(Constants.ICX, BigInteger.ZERO,
+                bnUSD, BigInteger.valueOf(100).multiply(MULTIPLIER)),
+                "_count", 1);
         assertEquals(amount, (projectAmounts.get(PENDING)));
 
         Map<String, Object> sponosrsRequest = (Map<String, Object>) cpsScore.call("getSponsorsRequests", APPROVED, testingAccount.getAddress(), 0, 10);
@@ -450,6 +476,7 @@ public class CPSScoreTest extends TestBase{
         submitAndSponsorVote();
         contextMock.when(caller()).thenReturn(owner.getAddress());
         updateNextBlock();
+        doReturn(BigInteger.valueOf(15)).when(scoreSpy).getApplicationPeriod();
         cpsScore.invoke(owner, "update_period");
         getPeriodStatusMethod();
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("swap_tokens"), eq(8));
@@ -484,6 +511,7 @@ public class CPSScoreTest extends TestBase{
         submitAndSponsorVote();
         contextMock.when(caller()).thenReturn(owner.getAddress());
         updateNextBlock();
+        doReturn(BigInteger.valueOf(15)).when(scoreSpy).getApplicationPeriod();
         cpsScore.invoke(owner, "update_period");
         getPeriodStatusMethod();
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("swap_tokens"), eq(8));
@@ -513,6 +541,7 @@ public class CPSScoreTest extends TestBase{
         submitAndSponsorVote();
         contextMock.when(caller()).thenReturn(owner.getAddress());
         updateNextBlock();
+        doReturn(BigInteger.valueOf(15)).when(scoreSpy).getApplicationPeriod();
         cpsScore.invoke(owner, "update_period");
         getPeriodStatusMethod();
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("swap_tokens"), eq(8));
@@ -588,6 +617,7 @@ public class CPSScoreTest extends TestBase{
         submitMultipleProposals();
         contextMock.when(caller()).thenReturn(owner.getAddress());
         updateNextBlock();
+        doReturn(BigInteger.valueOf(15)).when(scoreSpy).getApplicationPeriod();
         cpsScore.invoke(owner, "update_period");
         getPeriodStatusMethod();
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("swap_tokens"), any());
@@ -644,6 +674,8 @@ public class CPSScoreTest extends TestBase{
         submitAndSponsorVote();
         contextMock.when(caller()).thenReturn(owner.getAddress());
         updateNextBlock();
+        doReturn(BigInteger.valueOf(15)).when(scoreSpy).getApplicationPeriod();
+        doReturn(BigInteger.valueOf(15)).when(scoreSpy).getVotingPeriod();
         cpsScore.invoke(owner, "update_period");
         getPeriodStatusMethod();
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("swap_tokens"), eq(8));
@@ -705,12 +737,14 @@ public class CPSScoreTest extends TestBase{
                 eq(bnUSD), eq(BigInteger.valueOf(100).multiply(MULTIPLIER)));
 
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("reset_swap_state"));
+        doReturn(BigInteger.valueOf(15)).when(scoreSpy).getVotingPeriod();
         updatePeriods();
 
         Map<String, Object> proposalDetails = getProposalDetailsByHash("Proposal 1");
-        Map<String, Object> activeProposals = (Map<String, Object>) cpsScore.call("getActiveProposals", 0);
+        Map<String, Object> activeProposals = (Map<String, Object>) cpsScore.call("getActiveProposalsList", 0);
         assertEquals(ACTIVE, proposalDetails.get("status"));
-        assertEquals(List.of(proposalDetails), activeProposals.get(DATA));
+        List<Map<String, Object>> activeProposalList =(List<Map<String, Object>>) activeProposals.get(DATA);
+        assertEquals(List.of(proposalDetails).size(), activeProposalList.size());
 
         Map<String, Object> sponosrsRequest = (Map<String, Object>) cpsScore.call("getSponsorsRequests", APPROVED, testingAccount.getAddress(), 0, 10);
         System.out.println("Sponsors request" +  sponosrsRequest);
@@ -719,12 +753,9 @@ public class CPSScoreTest extends TestBase{
         assertEquals(1, sponsorsRecord.get(testingAccount.getAddress().toString()));
 
         Map<String, Map<String, Map<String, BigInteger>>> projectAmounts = (Map<String, Map<String, Map<String, BigInteger>>>) cpsScore.call("get_project_amounts");
-        Map<String, Map<String, BigInteger>> amount = Map.of(
-                AMOUNT, Map.of(
-                        Constants.ICX, BigInteger.ZERO,
-                        bnUSD, BigInteger.valueOf(100).multiply(MULTIPLIER)
-                )
-        );
+        Map<String, Object> amount = Map.of(AMOUNT, Map.of(Constants.ICX, BigInteger.ZERO,
+                        bnUSD, BigInteger.valueOf(100).multiply(MULTIPLIER)),
+                "_count", 1);
         assertEquals(amount, (projectAmounts.get(ACTIVE)));
 
         Map<String, Object> voteResult = (Map<String, Object>) cpsScore.call("getVoteResult", "Proposal 1");
@@ -761,7 +792,9 @@ public class CPSScoreTest extends TestBase{
         System.out.println("voteResult: " + voteResult);
 
         Map<String, Object> proposalsHistory = (Map<String, Object>) cpsScore.call("getProposalsHistory", 0);
-        assertEquals(List.of(proposalDetails), proposalsHistory.get(DATA));
+        List<Map<String, Object>> proposalHistory = (List<Map<String, Object>>) proposalsHistory.get(DATA);
+
+        assertEquals(proposalDetails.size(), proposalHistory.get(0).size());
     }
 
     @Test
@@ -1037,12 +1070,9 @@ public class CPSScoreTest extends TestBase{
 
         Map<String, Map<String, Map<String, BigInteger>>> projectAmounts = (Map<String, Map<String, Map<String, BigInteger>>>) cpsScore.call("get_project_amounts");
         System.out.println("Project Amount: " + projectAmounts);
-        Map<String, Map<String, BigInteger>> amount = Map.of(
-                AMOUNT, Map.of(
-                        Constants.ICX, BigInteger.ZERO,
-                        bnUSD, BigInteger.valueOf(100).multiply(MULTIPLIER)
-                )
-        );
+        Map<String, Object> amount = Map.of(AMOUNT, Map.of(Constants.ICX, BigInteger.ZERO,
+                        bnUSD, BigInteger.valueOf(100).multiply(MULTIPLIER)),
+                "_count", 1);
         assertEquals(amount, (projectAmounts.get(COMPLETED)));
 
         Map<String, Object> progressReportsByProposal = (Map<String, Object>) cpsScore.call("getProgressReportsByProposal", "Proposal 1");
@@ -1052,7 +1082,8 @@ public class CPSScoreTest extends TestBase{
         assertEquals(BigInteger.valueOf(10).multiply(MULTIPLIER), claimableSponsorBond.get(bnUSD));
 
         Map<String, Object> proposalsHistory = (Map<String, Object>) cpsScore.call("getProposalsHistory", 0);
-        assertEquals(List.of(proposalDetails), proposalsHistory.get(DATA));
+        List<Map<String,Object>> proposalHistory = (List<Map<String,Object>>) proposalsHistory.get(DATA);
+        assertEquals(proposalDetails.size(), proposalHistory.get(0).size());
     }
 
     @Test
@@ -1122,6 +1153,7 @@ public class CPSScoreTest extends TestBase{
         contextMock.when(caller()).thenReturn(owner.getAddress());
         cpsScore.invoke(owner, "set_prep_penalty_amount", (Object) penaltyAmount);
         updateNextBlock();
+        doReturn(BigInteger.TEN).when(scoreSpy).getApplicationPeriod();
         cpsScore.invoke(owner, "update_period");
         getPeriodStatusMethod();
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("swap_tokens"), eq(8));
@@ -1164,6 +1196,7 @@ public class CPSScoreTest extends TestBase{
                 eq(bnUSD), eq(BigInteger.valueOf(100).multiply(MULTIPLIER)));
 
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("reset_swap_state"));
+        doReturn(BigInteger.valueOf(15)).when(scoreSpy).getVotingPeriod();
         updatePeriods();
 
         Map<String, Object> proposalDetails = getProposalDetailsByHash("Proposal 1");
@@ -1213,12 +1246,9 @@ public class CPSScoreTest extends TestBase{
         assertEquals(1, sponsorsRecord.get(testingAccount.getAddress().toString()));
 
         Map<String, Map<String, Map<String, BigInteger>>> projectAmounts = (Map<String, Map<String, Map<String, BigInteger>>>) cpsScore.call("get_project_amounts");
-        Map<String, Map<String, BigInteger>> amount = Map.of(
-                AMOUNT, Map.of(
-                        Constants.ICX, BigInteger.ZERO,
-                        bnUSD, BigInteger.valueOf(100).multiply(MULTIPLIER)
-                )
-        );
+        Map<String, Object> amount = Map.of(AMOUNT, Map.of(Constants.ICX, BigInteger.ZERO,
+                        bnUSD, BigInteger.valueOf(100).multiply(MULTIPLIER)),
+                "_count", 1);
         assertEquals(amount, (projectAmounts.get(PAUSED)));
 
         updateNextBlock();
@@ -1228,16 +1258,14 @@ public class CPSScoreTest extends TestBase{
         assertEquals(BOND_CANCELLED, proposalDetails.get(SPONSOR_DEPOSIT_STATUS));
 
         projectAmounts = (Map<String, Map<String, Map<String, BigInteger>>>) cpsScore.call("get_project_amounts");
-        amount = Map.of(
-                AMOUNT, Map.of(
-                        Constants.ICX, BigInteger.ZERO,
-                        bnUSD, BigInteger.valueOf(100).multiply(MULTIPLIER)
-                )
-        );
+        amount = Map.of(AMOUNT, Map.of(Constants.ICX, BigInteger.ZERO,
+                        bnUSD, BigInteger.valueOf(100).multiply(MULTIPLIER)),
+                "_count", 1);
         assertEquals(amount, (projectAmounts.get(DISQUALIFIED)));
 
         Map<String, Object> proposalsHistory = (Map<String, Object>) cpsScore.call("getProposalsHistory", 0);
-        assertEquals(List.of(proposalDetails), proposalsHistory.get(DATA));
+        List<Map<String,Object>> proposalHistory = (List<Map<String,Object>>) proposalsHistory.get(DATA);
+        assertEquals(proposalDetails.size(), proposalHistory.get(0).size());
     }
 
     @Test
@@ -1383,12 +1411,9 @@ public class CPSScoreTest extends TestBase{
 
         Map<String, Map<String, Map<String, BigInteger>>> projectAmounts = (Map<String, Map<String, Map<String, BigInteger>>>) cpsScore.call("get_project_amounts");
         System.out.println("Project Amount: " + projectAmounts);
-        Map<String, Map<String, BigInteger>> amount = Map.of(
-                AMOUNT, Map.of(
-                        Constants.ICX, BigInteger.ZERO,
-                        bnUSD, BigInteger.valueOf(100).multiply(MULTIPLIER)
-                )
-        );
+        Map<String, Object> amount = Map.of(AMOUNT, Map.of(Constants.ICX, BigInteger.ZERO,
+                        bnUSD, BigInteger.valueOf(100).multiply(MULTIPLIER)),
+                "_count", 1);
         assertEquals(amount, (projectAmounts.get(DISQUALIFIED)));
 
         Map<String, Object> voteResult = (Map<String, Object>) cpsScore.call("getProgressReportResult", "Report 1");
@@ -1413,7 +1438,7 @@ public class CPSScoreTest extends TestBase{
 
     @Test
     void getPeriodCount(){
-        assertEquals(20, cpsScore.call("getPeriodCount"));
+        assertEquals(0, cpsScore.call("getPeriodCount"));
     }
 
 

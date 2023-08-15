@@ -81,7 +81,7 @@ public class CPSCore implements CPSCoreInterface {
 
     public CPSCore(@Optional BigInteger bondValue) {
         PeriodController periodController = new PeriodController();
-        setSponsorBondPercentage(bondValue);
+        sponsorBondPercentage.set(bondValue);
     }
 
     @Override
@@ -1210,7 +1210,7 @@ public class CPSCore implements CPSCoreInterface {
         if (currentBlock.compareTo(nextBlock) >= 0) {
             if (period.periodName.get().equals(APPLICATION_PERIOD)) {
                 period.periodName.set(VOTING_PERIOD);
-                period.periodCount.set(period.periodCount.get() + 1);
+                period.periodCount.set(period.periodCount.getOrDefault(0) + 1);
                 period.previousPeriodName.set(APPLICATION_PERIOD);
                 period.nextBlock.set(nextBlock.add(BLOCKS_DAY_COUNT.multiply(getApplicationPeriod()))); // APPLICATION PERIOD KO TIMESTAMP
                 updateApplicationResult();
