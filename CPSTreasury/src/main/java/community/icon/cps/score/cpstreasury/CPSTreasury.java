@@ -38,6 +38,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
     private static final String COMPLETED = "completed";
     private static final String CONTRIBUTOR_PROJECTS = "contributor_projects";
     private static final String SPONSOR_PROJECTS = "sponsor_projects";
+    public static final String ONSET_PAYMENT = "onset_payment";
 
     private final ArrayDB<String> proposalsKeys = Context.newArrayDB(PROPOSALS_KEYS, String.class);
     private final DictDB<String, Integer> proposalsKeyListIndex = Context.newDictDB(PROPOSALS_KEY_LIST_INDEX, Integer.class);
@@ -49,8 +50,10 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
     private final BranchDB<String, ArrayDB<String>> contributorProjects = Context.newBranchDB(CONTRIBUTOR_PROJECTS, String.class);
     private final BranchDB<String, ArrayDB<String>> sponsorProjects = Context.newBranchDB(SPONSOR_PROJECTS, String.class);
     private final VarDB<Integer> batchSize = Context.newVarDB("batch_size", Integer.class);
+    private final VarDB<BigInteger> onsetPaymentPercentage = Context.newVarDB(ONSET_PAYMENT,BigInteger.class);
 
     private static final BigInteger HUNDRED = BigInteger.valueOf(100);
+    public static final BigInteger MAX_ONSET_PAYMENT = BigInteger.valueOf(20);
 
     public CPSTreasury() {
     }
@@ -139,6 +142,26 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
     public Address getBnUSDScore() {
         return balancedDollar.get();
     }
+
+    @External
+    public void setOnsetPayment(BigInteger paymentPercentage){
+        Context.require(Context.getCaller().equals(cpfTreasuryScore.get()), TAG + ": Only receiving from  " +
+                cpfTreasuryScore.get());
+        Context.require(paymentPercentage.compareTo(MAX_ONSET_PAYMENT) <= 0,
+                TAG + ": Initial payment cannot be greater than " + MAX_ONSET_PAYMENT + " percentage");
+
+        BigInteger bondPercentage = callScore(BigInteger.class,getCpsScore(),"getSponsorBondPercentage");
+        Context.require(paymentPercentage.compareTo(bondPercentage) <=0,
+                TAG+": Payment cannot be greater than sponsor bond percentage");
+
+        onsetPaymentPercentage.set(paymentPercentage);
+    }
+
+    @External(readonly = true)
+    public BigInteger getOnsetPayment(){
+        return onsetPaymentPercentage.get();
+    }
+
 
     @Override
     @External(readonly = true)
@@ -351,8 +374,8 @@ private void onsetPaymentContributor(String _ipfs_key){
         BigInteger totalBudget = (BigInteger) proposalData.get(consts.TOTAL_BUDGET);
         BigInteger withdrawAmount = (BigInteger) proposalData.get(consts.WITHDRAW_AMOUNT);
 
-        BigInteger onSetPaymentPercentage = callScore(BigInteger.class,getCpfTreasuryScore(),"getOnsetPayment");
-        BigInteger onsetAmount = (totalBudget.multiply(onSetPaymentPercentage).divide(HUNDRED));
+        BigInteger onSetPaymentPercentage = getOnsetPayment();
+        BigInteger onsetAmount = (totalBudget.multiply(getOnsetPayment()).divide(HUNDRED));
 
         setRemainingAmount(prefix,totalBudget.subtract(onsetAmount));
 
@@ -405,7 +428,7 @@ private void onsetPaymentContributor(String _ipfs_key){
         Address sponsorAddress = getSponsorAddress(prefix);
         String flag = getToken(prefix);
 
-        BigInteger onSetPaymentPercentage = callScore(BigInteger.class,getCpfTreasuryScore(),"getOnsetPayment");
+        BigInteger onSetPaymentPercentage = getOnsetPayment();
         BigInteger onsetAmount = (sponsorRemainingAmount.multiply(onSetPaymentPercentage).divide(HUNDRED));
 
         setSponsorRemainingAmount(prefix,sponsorRemainingAmount.subtract(onsetAmount));

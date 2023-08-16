@@ -77,6 +77,12 @@ public interface CPSTreasuryInterface {
     @External
     void updateSponsorAndContributorProjects();
 
+    @External
+    void setOnsetPayment(BigInteger paymentPercentage);
+
+    @External(readonly = true)
+    BigInteger getOnsetPayment();
+
     @EventLog(indexed = 1)
     void ProposalDisqualified(String _ipfs_key, String note);
 
