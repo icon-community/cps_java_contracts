@@ -31,7 +31,7 @@ public class CPSTreasuryTest extends TestBase {
     private static final Address ZERO_ADDRESS = new Address(new byte[Address.LENGTH]);
     private static final Address treasury_score = new Address(new byte[Address.LENGTH]);
     private static final Address score_address = Address.fromString("cx0000000000000000000000000000000000000000");
-    private static final Address cpfTreasury = Address.fromString("cx0000000000000000000000000000000000000001");
+    private static final Account cpfTreasuryScore = Account.newScoreAccount(5);;
     private static final Address bnUSDScore = Address.fromString("cx0000000000000000000000000000000000000002");
     private static final Address dexScore = Address.fromString("cx0000000000000000000000000000000000000003");
     private static final Address cpsTreasuryScore = Address.fromString("cx0000000000000000000000000000000000000004");
@@ -107,8 +107,8 @@ public class CPSTreasuryTest extends TestBase {
 
     private void setCPFTreasuryScoreMethod() {
         doReturn(Boolean.TRUE).when(scoreSpy).callScore(eq(Boolean.class), any(), eq("is_admin"), eq(owner.getAddress()));
-        tokenScore.invoke(owner, "setCpfTreasuryScore", cpfTreasury);
-        assertEquals(cpfTreasury, tokenScore.call("getCpfTreasuryScore"));
+        tokenScore.invoke(owner, "setCpfTreasuryScore", cpfTreasuryScore.getAddress());
+        assertEquals(cpfTreasuryScore.getAddress(), tokenScore.call("getCpfTreasuryScore"));
     }
 
     @Test
@@ -204,8 +204,8 @@ public class CPSTreasuryTest extends TestBase {
         params.add("token", "bnUSD");
         depositProposal.add("params", params);
         setCPFTreasuryScoreMethod();
-        doReturn(BigInteger.TEN).when(scoreSpy).callScore(eq(BigInteger.class),any(Address.class),eq("getOnsetPayment"));
-        tokenScore.invoke(owner, "tokenFallback", cpfTreasury, BigInteger.valueOf(102).multiply(MULTIPLIER), depositProposal.toString().getBytes());
+        doReturn(BigInteger.TEN).when(scoreSpy).getOnsetPayment();
+        tokenScore.invoke(owner, "tokenFallback", cpfTreasuryScore.getAddress(), BigInteger.valueOf(102).multiply(MULTIPLIER), depositProposal.toString().getBytes());
     }
 
     void depositProposalFundExceptions(){
@@ -235,7 +235,7 @@ public class CPSTreasuryTest extends TestBase {
         params.add("_added_installment_count", 1);
         budgetAdjustmentData.add("params", params);
 
-        tokenScore.invoke(owner, "tokenFallback", cpfTreasury, BigInteger.valueOf(102).multiply(MULTIPLIER), budgetAdjustmentData.toString().getBytes());
+        tokenScore.invoke(owner, "tokenFallback", cpfTreasuryScore.getAddress(), BigInteger.valueOf(102).multiply(MULTIPLIER), budgetAdjustmentData.toString().getBytes());
 
         @SuppressWarnings("unchecked")
         Map<String, ?> proposalDataDetails = (Map<String, ?>) tokenScore.call("get_contributor_projected_fund", testing_account2.getAddress());
@@ -264,7 +264,7 @@ public class CPSTreasuryTest extends TestBase {
             params.add("_added_installment_count", 1);
             budgetAdjustmentData.add("params", params);
 
-            tokenScore.invoke(owner, "tokenFallback", cpfTreasury, BigInteger.valueOf(102).multiply(MULTIPLIER), budgetAdjustmentData.toString().getBytes());
+            tokenScore.invoke(owner, "tokenFallback", cpfTreasuryScore.getAddress(), BigInteger.valueOf(102).multiply(MULTIPLIER), budgetAdjustmentData.toString().getBytes());
         }
         catch (Exception e){
             throw e;
@@ -345,7 +345,7 @@ public class CPSTreasuryTest extends TestBase {
             JsonObject params = new JsonObject();
             params.add("ipfs_key", "Proposal 1");
             disqualifyProjectParams.add("params", params);
-            theMock.verify(() -> Context.call(bnUSDScore, "transfer", cpfTreasury, BigInteger.valueOf(918).multiply(MULTIPLIER).divide(BigInteger.TEN), disqualifyProjectParams.toString().getBytes()), times(1));
+            theMock.verify(() -> Context.call(bnUSDScore, "transfer", cpfTreasuryScore.getAddress(), BigInteger.valueOf(918).multiply(MULTIPLIER).divide(BigInteger.TEN), disqualifyProjectParams.toString().getBytes()), times(1));
         }
     }
 
@@ -360,5 +360,40 @@ public class CPSTreasuryTest extends TestBase {
             theMock.verify(
                     () -> Context.call(bnUSDScore, "transfer", testing_account.getAddress(), BigInteger.valueOf(11).multiply(MULTIPLIER).divide(BigInteger.TEN)), times(1));
         }
+    }
+
+    @Test
+    void setOnsetPayment(){
+
+        setCPFTreasuryScoreMethod();
+        setCpsScoreMethod();
+        doReturn(BigInteger.TEN).when(scoreSpy).callScore(eq(BigInteger.class),any(),eq("getSponsorBondPercentage"));
+        tokenScore.invoke(cpfTreasuryScore, "setOnsetPayment", BigInteger.valueOf(10));
+
+        BigInteger onSetPayment = (BigInteger) tokenScore.call("getOnsetPayment");
+        assertEquals(onSetPayment,BigInteger.TEN);
+
+    }
+
+
+
+    @Test
+    void onsetPaymentExceptions(){
+        setCPFTreasuryScoreMethod();
+        Executable setOnsetPaymentNotAdmin = () -> tokenScore.invoke(owner, "setOnsetPayment", BigInteger.valueOf(10));
+        expectErrorMessage(setOnsetPaymentNotAdmin,
+                "Reverted(0): CPS_TREASURY: Only receiving from  cx0000000000000000000000000000000000000005");
+
+
+        setCpsScoreMethod();
+        Executable setOnsetPaymentMoreThanMax = () -> tokenScore.invoke(cpfTreasuryScore, "setOnsetPayment", BigInteger.valueOf(30));
+        expectErrorMessage(setOnsetPaymentMoreThanMax, "Reverted(0): CPS_TREASURY: Initial payment " +
+                "cannot be greater than 20 percentage");
+
+        doReturn(BigInteger.TEN).when(scoreSpy).callScore(eq(BigInteger.class),any(),eq("getSponsorBondPercentage"));
+
+        Executable setOnsetPaymentMoreThanBond = () -> tokenScore.invoke(cpfTreasuryScore, "setOnsetPayment", BigInteger.valueOf(18));
+        expectErrorMessage(setOnsetPaymentMoreThanBond, "Reverted(0): CPS_TREASURY: Payment cannot be " +
+                "greater than sponsor bond percentage");
     }
 }

@@ -44,6 +44,7 @@ public class CPSScoreTest extends TestBase{
     private static final Account testingAccount4 = sm.createAccount();
     private static final Account testingAccount5 = sm.createAccount();
     private static final Account testingAccount6 = sm.createAccount();
+    private static final Account cpfTreasuryScore = Account.newScoreAccount(1);
     private Score cpsScore;
     private static MockedStatic<Context> contextMock;
 
@@ -1462,59 +1463,39 @@ public class CPSScoreTest extends TestBase{
     @Test
     void bondPercentageExceptions(){
         Executable percentageNotAdmin = () -> cpsScore.invoke(testingAccount, "setSponsorBondPercentage", BigInteger.valueOf(15));
-        expectErrorMessage(percentageNotAdmin, "Reverted(0): CPS Score: Only Admins can call this method");
+        expectErrorMessage(percentageNotAdmin, "Reverted(0): CPS Score: Only CPF treasury can call this method");
 
-
-        doReturn(true).when(scoreSpy).isAdmin(owner.getAddress());
-        Executable percentageLessTwelve = () -> cpsScore.invoke(owner, "setSponsorBondPercentage", BigInteger.valueOf(11));
+        doReturn(cpfTreasuryScore.getAddress()).when(scoreSpy).getCpfTreasuryScore();
+        Executable percentageLessTwelve = () -> cpsScore.invoke(cpfTreasuryScore, "setSponsorBondPercentage", BigInteger.valueOf(11));
         expectErrorMessage(percentageLessTwelve, "Reverted(0): CPS Score: Cannot set bond percentage less than 12%");
     }
 
     @Test
     void setApplicationPeriodExceptions(){
-        Executable setPeriodNotAdmin = () -> cpsScore.invoke(testingAccount, "setApplicationPeriod", BigInteger.valueOf(10));
-        expectErrorMessage(setPeriodNotAdmin, "Reverted(0): CPS Score: Only Admins can call this method");
+        Executable setPeriodNotAdmin = () -> cpsScore.invoke(testingAccount, "setPeriod", BigInteger.valueOf(10));
+        expectErrorMessage(setPeriodNotAdmin, "Reverted(0): CPS Score: Only CPF treasury can call this method");
 
 
-        doReturn(true).when(scoreSpy).isAdmin(owner.getAddress());
-        Executable setPeriodLessThan14 = () -> cpsScore.invoke(owner, "setApplicationPeriod", BigInteger.valueOf(14));
-        expectErrorMessage(setPeriodLessThan14, "Reverted(0): CPS Score: Application period should be between 2-3 weeks");
+        doReturn(cpfTreasuryScore.getAddress()).when(scoreSpy).getCpfTreasuryScore();
+        Executable periodis15 = () -> cpsScore.invoke(cpfTreasuryScore, "setPeriod", BigInteger.valueOf(15));
+        expectErrorMessage(periodis15, "Reverted(0): CPS Score: Voting period cannot be more than 10 days");
 
 
-        Executable setPeriodMoreThan21 = () -> cpsScore.invoke(owner, "setApplicationPeriod", BigInteger.valueOf(22));
+        Executable setPeriodMoreThan21 = () -> cpsScore.invoke(cpfTreasuryScore, "setPeriod", BigInteger.valueOf(22));
         expectErrorMessage(setPeriodMoreThan21, "Reverted(0): CPS Score: Application period should be between 2-3 weeks");
     }
 
     @Test
-    void setApplicationPeriod(){
+    void setPeriod(){
 
-        doReturn(true).when(scoreSpy).isAdmin(owner.getAddress());
-        cpsScore.invoke(owner, "setApplicationPeriod", BigInteger.valueOf(15));
+        doReturn(cpfTreasuryScore.getAddress()).when(scoreSpy).getCpfTreasuryScore();
+        cpsScore.invoke(cpfTreasuryScore, "setPeriod", BigInteger.valueOf(20));
 
         BigInteger applicationPeriod = (BigInteger) cpsScore.call("getApplicationPeriod");
-        assertEquals(applicationPeriod,BigInteger.valueOf(15));
-    }
-
-    @Test
-    void setVotingPeriodExceptions(){
-        Executable setPeriodNotAdmin = () -> cpsScore.invoke(testingAccount, "setVotingPeriod", BigInteger.valueOf(10));
-        expectErrorMessage(setPeriodNotAdmin, "Reverted(0): CPS Score: Only Admins can call this method");
-
-
-        doReturn(true).when(scoreSpy).isAdmin(owner.getAddress());
-        Executable setPeriodLessThan10 = () -> cpsScore.invoke(owner, "setVotingPeriod", BigInteger.valueOf(9));
-        expectErrorMessage(setPeriodLessThan10, "Reverted(0): CPS Score: Voting period should be at least 10 days");
-
-    }
-
-    @Test
-    void setVotingPeriod(){
-
-        doReturn(true).when(scoreSpy).isAdmin(owner.getAddress());
-        cpsScore.invoke(owner, "setVotingPeriod", BigInteger.valueOf(15));
+        assertEquals(applicationPeriod,BigInteger.valueOf(20));
 
         BigInteger votingPeriod = (BigInteger) cpsScore.call("getVotingPeriod");
-        assertEquals(votingPeriod,BigInteger.valueOf(15));
+        assertEquals(votingPeriod,BigInteger.valueOf(10));
     }
 
 
