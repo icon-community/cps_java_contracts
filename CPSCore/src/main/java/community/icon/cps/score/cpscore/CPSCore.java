@@ -189,7 +189,8 @@ public class CPSCore implements CPSCoreInterface {
     public void setSponsorBondPercentage(BigInteger bondValue){
         validateAdmins();
 
-        Context.require(bondValue.compareTo(BigInteger.valueOf(12)) >= 0,"Cannot set bond percentage less than 12%");
+        Context.require(bondValue.compareTo(BigInteger.valueOf(12)) >= 0,TAG +
+                ": Cannot set bond percentage less than 12%");
         sponsorBondPercentage.set(bondValue);
     }
 
@@ -201,7 +202,8 @@ public class CPSCore implements CPSCoreInterface {
     @External
     public void setVotingPeriod(BigInteger days){
         validateAdmins();
-        Context.require(days.compareTo(BigInteger.TEN)>=0, "Voting period should be at least 10 days");
+        Context.require(days.compareTo(BigInteger.TEN)>=0,
+                TAG + ": Voting period should be at least 10 days");
         votingPeriod.set(days);
     }
 
@@ -214,7 +216,7 @@ public class CPSCore implements CPSCoreInterface {
     public void setApplicationPeriod(BigInteger days){
         validateAdmins();
         Context.require(days.compareTo(BigInteger.valueOf(14) ) >0 && days.compareTo(BigInteger.valueOf(21)) <=0
-                ,TAG+" Application period should be between 2-3 weeks");
+                ,TAG+": Application period should be between 2-3 weeks");
         applicationPeriod.set(days);
     }
 
