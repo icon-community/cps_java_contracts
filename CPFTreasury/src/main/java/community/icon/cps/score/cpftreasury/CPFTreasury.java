@@ -41,9 +41,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
 
     private final VarDB<Boolean> swapFlag = Context.newVarDB(SWAP_FLAG, Boolean.class);
 
-    private final VarDB<BigInteger> onsetPaymentPercentage = Context.newVarDB(ONSET_PAYMENT,BigInteger.class);
-
-    public CPFTreasury(@Optional BigInteger initialPayment) {
+    public CPFTreasury() {
         if (treasuryFund.get() == null) {
             treasuryFund.set(BigInteger.valueOf(1000000).multiply(EXA));
             swapCount.set(SwapReset);
@@ -52,7 +50,6 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         }
         oraclePerDiff.set(5);
         oracleAddress.set(Address.fromString("cxe647e0af68a4661566f5e9861ad4ac854de808a2"));
-        onsetPaymentPercentage.set(initialPayment);
 
     }
 
@@ -87,19 +84,6 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     }
 
     @External
-    public void setOnsetPayment(BigInteger paymentPercentage){
-        validateAdmins();
-        Context.require(paymentPercentage.compareTo(MAX_ONSET_PAYMENT) <= 0,
-                TAG + ": Initial payment cannot be greater than " + MAX_ONSET_PAYMENT + " percentage");
-
-        BigInteger bondPercentage = Context.call(BigInteger.class,getCpsScore(),"getSponsorBondPercentage");
-        Context.require(paymentPercentage.compareTo(bondPercentage) <=0,
-                TAG+": Payment cannot be greater than sponsor bond percentage");
-
-        onsetPaymentPercentage.set(paymentPercentage);
-    }
-
-    @External
     public void toggleSwapFlag() {
         validateAdmins();
         swapFlag.set(!swapFlag.getOrDefault(false));
@@ -108,11 +92,6 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     @External(readonly = true)
     public boolean getSwapFlag() {
         return swapFlag.getOrDefault(false);
-    }
-
-    @External(readonly = true)
-    public BigInteger getOnsetPayment(){
-        return onsetPaymentPercentage.get();
     }
 
 
