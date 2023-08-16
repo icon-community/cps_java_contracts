@@ -6,7 +6,12 @@ import community.icon.cps.score.cpscore.db.ProgressReportDataDb;
 import community.icon.cps.score.cpscore.db.ProposalDataDb;
 import community.icon.cps.score.cpscore.utils.ArrayDBUtils;
 import community.icon.cps.score.lib.interfaces.CPSCoreInterface;
-import score.*;
+import score.Address;
+import score.ArrayDB;
+import score.BranchDB;
+import score.Context;
+import score.DictDB;
+import score.VarDB;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
@@ -73,13 +78,10 @@ public class CPSCore implements CPSCoreInterface {
     private final BranchDB<Address, ArrayDB<String>> sponsorProjects = Context.newBranchDB(SPONSOR_PROJECTS, String.class);
     private final BranchDB<Address, ArrayDB<String>> contributorProjects = Context.newBranchDB(CONTRIBUTOR_PROJECTS, String.class);
     private final VarDB<BigInteger> sponsorBondPercentage = Context.newVarDB(SPONSOR_BOND_PERCENTAGE, BigInteger.class);
-    private final VarDB<BigInteger> applicationPeriod = Context.newVarDB(APPLICATION_TIME, BigInteger.class);
-    private final VarDB<BigInteger> votingPeriod = Context.newVarDB(VOTING_TIME, BigInteger.class);
-
-    private static final BigInteger ICX_VALUE = BigInteger.TEN.pow(18);
+    private final DictDB<String,BigInteger> period = Context.newDictDB(PERIOD,BigInteger.class);
     private static final BigInteger HUNDRED = BigInteger.valueOf(100);
 
-    public CPSCore(@Optional BigInteger bondValue) {
+    public CPSCore(@Optional BigInteger bondValue) { // TODO
         PeriodController periodController = new PeriodController();
         sponsorBondPercentage.set(bondValue);
     }
@@ -187,8 +189,7 @@ public class CPSCore implements CPSCoreInterface {
 
     @External
     public void setSponsorBondPercentage(BigInteger bondValue){
-        validateAdmins();
-
+        onlyCPFTreasury();
         Context.require(bondValue.compareTo(BigInteger.valueOf(12)) >= 0,TAG +
                 ": Cannot set bond percentage less than 12%");
         sponsorBondPercentage.set(bondValue);
@@ -196,28 +197,27 @@ public class CPSCore implements CPSCoreInterface {
 
     @External(readonly = true)
     public BigInteger getVotingPeriod(){
-        return votingPeriod.get();
-    }
-
-    @External
-    public void setVotingPeriod(BigInteger days){
-        validateAdmins();
-        Context.require(days.compareTo(BigInteger.TEN)>=0,
-                TAG + ": Voting period should be at least 10 days");
-        votingPeriod.set(days);
+        return period.get(VOTING_PERIOD);
     }
 
     @External(readonly = true)
     public BigInteger getApplicationPeriod(){
-        return applicationPeriod.get();
+        return period.get(APPLICATION_PERIOD);
     }
 
     @External
-    public void setApplicationPeriod(BigInteger days){
-        validateAdmins();
-        Context.require(days.compareTo(BigInteger.valueOf(14) ) >0 && days.compareTo(BigInteger.valueOf(21)) <=0
+    public void setPeriod(BigInteger applicationPeriod){
+        onlyCPFTreasury();
+        BigInteger votingPeriod = TOTAL_PERIOD.subtract(applicationPeriod);
+
+        Context.require(votingPeriod.compareTo(BigInteger.TEN) <= 0,
+                TAG + ": Voting period cannot be more than 10 days");
+        Context.require(applicationPeriod.compareTo(BigInteger.valueOf(14)) >0 &&
+                        applicationPeriod.compareTo(BigInteger.valueOf(21)) <=0
                 ,TAG+": Application period should be between 2-3 weeks");
-        applicationPeriod.set(days);
+
+        this.period.set(APPLICATION_PERIOD,applicationPeriod);
+        this.period.set(VOTING_PERIOD,votingPeriod);
     }
 
     @Deprecated(since = "JAVA translation", forRemoval = true)
@@ -2452,5 +2452,9 @@ public class CPSCore implements CPSCoreInterface {
         validateAdmins();
         Context.require(scoreAddress.isContract(), scoreAddress + " is not a SCORE Address");
 
+    }
+
+    public void onlyCPFTreasury() {
+        Context.require(Context.getCaller().equals(getCpfTreasuryScore()), TAG + ": Only CPF treasury can call this method");
     }
 }
