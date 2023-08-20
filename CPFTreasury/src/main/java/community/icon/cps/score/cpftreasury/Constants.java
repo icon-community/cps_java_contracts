@@ -9,6 +9,9 @@ public class Constants {
     public static final String TAG = "CPF_TREASURY";
     public static final String ICX = "ICX";
     public static final String bnUSD = "bnUSD";
+    public static final String METHOD = "method";
+    public static final String PARAMS = "params";
+    public static final String TRANSFER = "transfer";
 
     public static final String PROPOSAL_BUDGETS = "_proposals_budgets";
     public static final String PROPOSALS_KEYS = "_proposals_keys";

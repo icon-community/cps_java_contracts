@@ -144,7 +144,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         proposalBudgets.set(_ipfs_key, totalTransfer);
 
         JsonObject depositProposal = new JsonObject();
-        depositProposal.add("method", "deposit_proposal_fund");
+        depositProposal.add(METHOD, "deposit_proposal_fund");
         JsonObject params = new JsonObject();
         params.add("ipfs_hash", _ipfs_key);
         params.add("project_duration", _total_installment_count);
@@ -153,9 +153,9 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         params.add("total_budget", _total_budget.toString(16));
         params.add("sponsor_reward", sponsorReward.toString(16));
         params.add("token", token_flag);
-        depositProposal.add("params", params);
+        depositProposal.add(PARAMS, params);
 
-        Context.call(balancedDollar, "transfer", cpsTreasuryScore.get(), totalTransfer, depositProposal.toString().getBytes());
+        Context.call(balancedDollar, TRANSFER, cpsTreasuryScore.get(), totalTransfer, depositProposal.toString().getBytes());
         ProposalFundTransferred(_ipfs_key, "Successfully transferred " + totalTransfer + " " + token_flag + " to CPS Treasury " + cpsTreasuryScore.get());
     }
 
@@ -181,15 +181,15 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         Context.require(totalTransfer.compareTo(bnUSDFund) <= 0, TAG + ": Not enough " + totalTransfer + " BNUSD on treasury");
 
         JsonObject budgetAdjustmentData = new JsonObject();
-        budgetAdjustmentData.add("method", "budget_adjustment");
+        budgetAdjustmentData.add(METHOD, "budget_adjustment");
         JsonObject params = new JsonObject();
         params.add("_ipfs_key", _ipfs_key);
         params.add("_added_budget", _added_budget.toString(16));
         params.add("_added_sponsor_reward", sponsorReward.toString(16));
         params.add("_added_installment_count", _total_installment_count);
-        budgetAdjustmentData.add("params", params);
+        budgetAdjustmentData.add(PARAMS, params);
 
-        Context.call(balancedDollar.get(), "transfer", cpsTreasuryScore.get(), totalTransfer, budgetAdjustmentData.toString().getBytes());
+        Context.call(balancedDollar.get(), TRANSFER, cpsTreasuryScore.get(), totalTransfer, budgetAdjustmentData.toString().getBytes());
         ProposalFundTransferred(_ipfs_key, "Successfully transferred " + totalTransfer + " " + bnUSD + " to CPS Treasury");
     }
 
@@ -234,11 +234,11 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
 
     private void swapTokens(Address _from, Address _to, BigInteger _amount) {
         JsonObject swapData = new JsonObject();
-        swapData.add("method", "_swap");
+        swapData.add(METHOD, "_swap");
         JsonObject params = new JsonObject();
         params.add("toToken", _to.toString());
-        swapData.add("params", params);
-        Context.call(_from, "transfer", dexScore.get(), _amount, swapData.toString().getBytes());
+        swapData.add(PARAMS, params);
+        Context.call(_from, TRANSFER, dexScore.get(), _amount, swapData.toString().getBytes());
     }
 
     private void swapIcxBnusd(BigInteger amount, BigInteger _minReceive) {
