@@ -36,6 +36,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     private final VarDB<Integer> oraclePerDiff = Context.newVarDB(ORACLE_PERCENTAGE_DIFF, Integer.class);
 
     private final VarDB<Boolean> swapFlag = Context.newVarDB(SWAP_FLAG, Boolean.class);
+    private final VarDB<BigInteger> swapLimitAmount = Context.newVarDB(SWAP_LIMIT_AMOUNT, BigInteger.class);
 
     public CPFTreasury() {
         if (treasuryFund.get() == null) {
@@ -283,6 +284,21 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         return priceData.get("rate");
 
     }
+
+    @External
+    public void setSwapLimitAmount(BigInteger _value) {
+        validateAdmins();
+        Context.require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Swap limit amount should be greater than 0");
+        swapLimitAmount.set(_value);
+
+    }
+
+    @External(readonly = true)
+    public BigInteger getSwapLimitAmount() {
+        return swapLimitAmount.getOrDefault(BigInteger.ZERO);
+
+    }
+
 
     @Override
     @External
