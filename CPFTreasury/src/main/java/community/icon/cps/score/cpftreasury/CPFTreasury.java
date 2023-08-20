@@ -227,7 +227,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     }
 
     @External(readonly = true)
-    public int getPerDiff() {
+    public int getSlippagePercentage() {
         return oraclePerDiff.getOrDefault(0);
     }
 
