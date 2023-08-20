@@ -401,8 +401,8 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         if (caller.equals(sICX)) {
             if (_from.equals(dexScore.get())) {
                 JsonObject swapICX = new JsonObject();
-                swapICX.add("method", "_swap_icx");
-                Context.call(caller, "transfer", dexScore.get(), _value, swapICX.toString().getBytes());
+                swapICX.add(METHOD, "_swap_icx");
+                Context.call(caller, TRANSFER, dexScore.get(), _value, swapICX.toString().getBytes());
             } else {
                 Context.revert(TAG + ": sICX can be approved only from Balanced DEX.");
             }
@@ -415,20 +415,20 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
             JsonObject transferData = Json.parse(unpacked_data).asObject();
 
             if (_from.equals(cpsScore.get())) {
-                if (transferData.get("method").asString().equals("return_fund_amount")) {
-                    Address _sponsor_address = Address.fromString(transferData.get("params").asObject().get("sponsor_address").asString());
+                if (transferData.get(METHOD).asString().equals("return_fund_amount")) {
+                    Address _sponsor_address = Address.fromString(transferData.get(PARAMS).asObject().get("sponsor_address").asString());
                     returnFundAmount(_sponsor_address, _value);
-                } else if (transferData.get("method").asString().equals("burn_amount")) {
+                } else if (transferData.get(METHOD).asString().equals("burn_amount")) {
                     swapTokens(caller, sICX, _value);
                 } else {
-                    Context.revert(TAG + ": Not supported method " + transferData.get("method").asString());
+                    Context.revert(TAG + ": Not supported method " + transferData.get(METHOD).asString());
                 }
             } else if (_from.equals(cpsTreasuryScore.get())) {
-                if (transferData.get("method").asString().equals("disqualify_project")) {
-                    String ipfs_key = transferData.get("params").asObject().get("ipfs_key").asString();
+                if (transferData.get(METHOD).asString().equals("disqualify_project")) {
+                    String ipfs_key = transferData.get(PARAMS).asObject().get("ipfs_key").asString();
                     disqualifyProposalFund(ipfs_key, _value);
                 } else {
-                    Context.revert(TAG + ": Not supported method " + transferData.get("method").asString());
+                    Context.revert(TAG + ": Not supported method " + transferData.get(METHOD).asString());
                 }
             } else {
                 burnExtraFund();
