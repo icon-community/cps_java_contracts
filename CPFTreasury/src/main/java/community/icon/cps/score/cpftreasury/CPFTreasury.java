@@ -45,9 +45,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
             swapState.set(SwapReset);
             swapFlag.set(false);
         }
-        oraclePerDiff.set(5);
-        oracleAddress.set(Address.fromString("cxe647e0af68a4661566f5e9861ad4ac854de808a2"));
-
+        oraclePerDiff.set(3);
     }
 
     private boolean proposalExists(String ipfsKey) {
