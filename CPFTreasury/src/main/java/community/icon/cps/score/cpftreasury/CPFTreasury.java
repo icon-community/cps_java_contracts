@@ -247,13 +247,19 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
             BigInteger icxPrice = getOraclePrice();
             int diffValue = 100 - oraclePerDiff.getOrDefault(2);
             BigInteger minReceive = icxPrice.multiply(BigInteger.valueOf(diffValue)).divide(BigInteger.valueOf(100));
-            if (_minReceive.equals(BigInteger.ZERO)) {
-                _minReceive = minReceive;
-            } else if (_minReceive.compareTo(minReceive) < 0) {
+            if (_minReceive.equals(BigInteger.ZERO) || _minReceive.compareTo(minReceive) < 0) {
                 _minReceive = minReceive;
             }
 
-            Context.call(amount, routerScore.get(), "route", path, _minReceive);
+            try {
+                BigInteger swapLimitAmount = getSwapLimitAmount();
+                if (swapLimitAmount.compareTo(BigInteger.ZERO) > 0 && amount.compareTo(swapLimitAmount) > 0) {
+                    amount = swapLimitAmount;
+                }
+                Context.call(amount, routerScore.get(), "route", path, _minReceive);
+            } catch (Exception e) {
+                Context.println("Ignoring Errors from Router. Error Message: " +  e.getMessage());
+            }
         }
     }
 
