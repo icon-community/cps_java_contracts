@@ -266,7 +266,6 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     @Override
     @External
     public void swapICXToBnUSD(BigInteger amount, @Optional BigInteger _minReceive) {
-        validateAdmins();
         if (!getSwapFlag()) {
             Context.revert(TAG + "SwapTurnedOff.");
         }
