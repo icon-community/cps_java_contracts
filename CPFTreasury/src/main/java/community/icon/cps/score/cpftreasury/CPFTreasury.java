@@ -46,7 +46,6 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
             swapState.set(SwapReset);
             swapFlag.set(false);
         }
-        oraclePerDiff.set(3);
     }
 
     private boolean proposalExists(String ipfsKey) {
