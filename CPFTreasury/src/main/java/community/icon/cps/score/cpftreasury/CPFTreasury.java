@@ -29,6 +29,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     private final ArrayDB<String> proposalsKeys = Context.newArrayDB(PROPOSALS_KEYS, String.class);
     private final DictDB<String, BigInteger> proposalBudgets = Context.newDictDB(PROPOSAL_BUDGETS, BigInteger.class);
     private final VarDB<BigInteger> treasuryFund = Context.newVarDB(TREASURY_FUND, BigInteger.class);
+    private final VarDB<BigInteger> emergencyFund = Context.newVarDB(EMERGENCY_FUND, BigInteger.class);
     private final VarDB<BigInteger> treasuryFundbnUSD = Context.newVarDB(TREASURY_FUND_BNUSD, BigInteger.class);
 
     private final VarDB<Integer> swapState = Context.newVarDB(SWAP_STATE, Integer.class);
@@ -103,11 +104,22 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     @External(readonly = true)
     public Map<String, BigInteger> get_total_funds() {
         return Map.of(ICX, Context.getBalance(Context.getAddress()),
-                bnUSD, getTotalFundBNUSD());
+                bnUSD, getBNUSDAvailableBalance());
     }
 
-    private BigInteger getTotalFundBNUSD() {
-        return (BigInteger) Context.call(balancedDollar.get(), "balanceOf", Context.getAddress());
+    @External(readonly = true)
+    public BigInteger getBNUSDAvailableBalance() {
+        return getTotalFundBNUSD().get(AVAILABLE_BALANCE);
+    }
+
+
+    private Map<String, BigInteger> getTotalFundBNUSD() {
+        BigInteger bnusdBalance = (BigInteger) Context.call(balancedDollar.get(), "balanceOf", Context.getAddress());
+        BigInteger emergencyFund = this.emergencyFund.getOrDefault(BigInteger.ZERO);
+        BigInteger availableBalance = bnusdBalance.subtract(emergencyFund);
+        return Map.of("bnusdBalance", bnusdBalance,
+                "emergencyFund", emergencyFund,
+                AVAILABLE_BALANCE, availableBalance);
     }
 
     @Override
@@ -115,7 +127,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     public Map<String, BigInteger> get_remaining_swap_amount() {
         BigInteger maxCap = treasuryFundbnUSD.get();
         return Map.of("maxCap", maxCap,
-                "remainingToSwap", maxCap.subtract(getTotalFundBNUSD()));
+                "remainingToSwap", maxCap.subtract(getBNUSDAvailableBalance()));
     }
 
     private void returnFundAmount(Address address, BigInteger value) {
@@ -297,6 +309,27 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
 
     }
 
+    @External
+    public void transferToEmergencyFund(BigInteger _value) {
+        validateAdmins();
+        Context.require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Emergency Fund amount should be greater than 0");
+        emergencyFund.set(_value);
+
+    }
+
+    @External
+    public void withdrawFromEmergencyFund(BigInteger _value, Address _address) {
+        validateAdmins();
+        Context.require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Emergency Fund amount should be greater than 0");
+        BigInteger emergencyFund = this.emergencyFund.getOrDefault(BigInteger.ZERO);
+        Context.require(emergencyFund.compareTo(_value) >= 0, TAG + ": Request amount is greater than Available Emergency Fund");
+        this.emergencyFund.set(emergencyFund.subtract(_value));
+        Address balancedDollar = CPFTreasury.balancedDollar.get();
+
+        Context.call(balancedDollar, TRANSFER, _address, _value, "".getBytes());
+        EmergencyFundTranserred(_address, _value);
+    }
+
 
     @Override
     @External
@@ -466,5 +499,9 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     @Override
     @EventLog(indexed = 1)
     public void FundReceived(Address _sponsor_address, String note) {
+    }
+
+    @EventLog(indexed = 1)
+    public void EmergencyFundTranserred(Address _address, BigInteger _value) {
     }
 }

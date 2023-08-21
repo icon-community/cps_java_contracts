@@ -16,6 +16,8 @@ public class Constants {
     public static final String PROPOSAL_BUDGETS = "_proposals_budgets";
     public static final String PROPOSALS_KEYS = "_proposals_keys";
     public static final String TREASURY_FUND = "treasury_fund";
+    public static final String EMERGENCY_FUND = "emergencyFund";
+    public static final String AVAILABLE_BALANCE = "availableBalance";
     public static final String TREASURY_FUND_BNUSD = "treasury_fund_bnusd";
 
     public static final String CPS_TREASURY_SCORE = "_cps_treasury_score";
