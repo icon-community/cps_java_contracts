@@ -1637,7 +1637,7 @@ public class CPSCore implements CPSCoreInterface {
                 progressReportList.add(progressReportDetails);
             }
         }
-        return Map.of(DATA, progressReportList, COUNT, progressReportList.size());
+        return Map.of(DATA, progressReportList, COUNT, count);
     }
 
     @Deprecated(since = "JAVA translation", forRemoval = true)
@@ -1677,11 +1677,12 @@ public class CPSCore implements CPSCoreInterface {
 
         List<Map<String, Object>> progressReportList = new ArrayList<>();
 
-        for (int i = 0; i < reportKeys.size(); i++) {
+        int reportCount = reportKeys.size();
+        for (int i = 0; i < reportCount; i++) {
             Map<String, Object> progressReportDetails = this.getProgressReportDetails(reportKeys.get(i));
             progressReportList.add(progressReportDetails);
         }
-        return Map.of(DATA, progressReportList, COUNT, progressReportList.size());
+        return Map.of(DATA, progressReportList, COUNT, reportCount);
     }
 
     @Override
