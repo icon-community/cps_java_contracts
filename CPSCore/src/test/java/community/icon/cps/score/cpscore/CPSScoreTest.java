@@ -364,6 +364,8 @@ public class CPSScoreTest extends TestBase{
         submitProposalMethod();
         Map<String, Object> proposalDetails = (Map<String, Object>) cpsScore.call("getProposalDetailsByHash", "Proposal 1");
         System.out.println(proposalDetails);
+        proposalDetails.remove("sponsor_vote_reason");
+        System.out.println(proposalDetails);
         assertEquals("Proposal 1", proposalDetails.get("ipfs_hash"));
         assertEquals("Title", proposalDetails.get("project_title"));
         assertEquals(2, proposalDetails.get("project_duration"));
@@ -784,6 +786,7 @@ public class CPSScoreTest extends TestBase{
         updatePeriods();
 
         Map<String, Object> proposalDetails = getProposalDetailsByHash("Proposal 1");
+        proposalDetails.remove("sponsor_vote_reason");
         assertEquals(REJECTED, proposalDetails.get("status"));
 
         Map<String, BigInteger> claimableSponsorBond = (Map<String, BigInteger>) cpsScore.call("checkClaimableSponsorBond", testingAccount.getAddress());
@@ -1064,6 +1067,7 @@ public class CPSScoreTest extends TestBase{
         updatePeriods();
 
         Map<String, Object> proposalDetails = (Map<String, Object>) cpsScore.call("getProposalDetailsByHash", "Proposal 1");
+        proposalDetails.remove("sponsor_vote_reason");
         assertEquals(COMPLETED, proposalDetails.get("status"));
 
         Map<String, Integer> sponsorsRecord = (Map<String, Integer>) cpsScore.call("getSponsorsRecord");
@@ -1255,6 +1259,7 @@ public class CPSScoreTest extends TestBase{
         updateNextBlock();
         cpsScore.invoke(owner, "update_period");
         proposalDetails = getProposalDetailsByHash("Proposal 1");
+        proposalDetails.remove("sponsor_vote_reason");
         assertEquals(DISQUALIFIED, proposalDetails.get(STATUS));
         assertEquals(BOND_CANCELLED, proposalDetails.get(SPONSOR_DEPOSIT_STATUS));
 

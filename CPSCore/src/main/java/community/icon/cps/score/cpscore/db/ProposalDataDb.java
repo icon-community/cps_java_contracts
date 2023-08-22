@@ -65,12 +65,6 @@ public class ProposalDataDb {
     }
 
     public static Map<String, Object> getDataFromProposalDB(String prefix) {
-        String reason = sponsorVoteReason.at(prefix).getOrDefault("");
-        if (reason.equalsIgnoreCase("none")) {
-            reason = "";
-        } else {
-            reason = reason.toString();
-        }
 
         Map<String, Object> entryMap = Map.ofEntries(
         Map.entry(IPFS_HASH, ipfsHash.at(prefix).getOrDefault("")),
@@ -97,8 +91,7 @@ public class ProposalDataDb {
         Map.entry(REJECT_VOTERS, rejectVoters.at(prefix).size()),
         Map.entry(ABSTAIN_VOTERS, abstainVoters.at(prefix).size()),
         Map.entry(BUDGET_ADJUSTMENT, budgetAdjustment.at(prefix).getOrDefault(false)),
-        Map.entry(SUBMIT_PROGRESS_REPORT, submitProgressReport.at(prefix).getOrDefault(false)),
-                Map.entry(SPONSOR_VOTE_REASON,reason));
+        Map.entry(SUBMIT_PROGRESS_REPORT, submitProgressReport.at(prefix).getOrDefault(false)));
         return entryMap;
     }
 
