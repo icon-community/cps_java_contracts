@@ -184,11 +184,11 @@ public interface CPSCoreInterface {
 
 
     @External
-    void vote_progress_report(String _ipfs_key, String _report_key, String _vote, String _vote_reason, @Optional String _budget_adjustment_vote, @Optional boolean _vote_change);
+    void voteProgressReport(String _report_key, String _vote_reason, MilestoneVoteAttributes[] votes, @Optional boolean _vote_change);
 
 
     @External(readonly = true)
-    List<String> get_proposals_keys_by_status(String _status);
+    List<String> getProposalsKeysByStatus(String _status);
 
 
     @External(readonly = true)
@@ -229,10 +229,10 @@ public interface CPSCoreInterface {
     Map<String, Object> getSponsorsRequests(String status, Address sponsorAddress, @Optional int startIndex);
 
     @External(readonly = true)
-    Map<String, Object> get_vote_result(String _ipfs_key);
+    Map<String, Object> getVoteResult(String _ipfs_key);
 
     @External(readonly = true)
-    Map<String, Object> get_progress_report_result(String _report_key);
+    Map<String, Object> getProgressReportResult(String _report_key);
 
     @External(readonly = true)
     Map<String, Object> get_budget_adjustment_vote_result(String _report_key);

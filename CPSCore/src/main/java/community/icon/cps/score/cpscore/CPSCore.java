@@ -910,13 +910,9 @@ public class CPSCore implements CPSCoreInterface {
         submitProgressReport(_progress_report);
     }
 
+    @Override
     @External
-    public void voteProgressReport(String ipfsKey, String reportKey, String vote, String voteReason, @Optional String budgetAdjustmentVote, @Optional boolean voteChange) {
-        if (budgetAdjustmentVote == null) {
-            budgetAdjustmentVote = "";
-
-        }
-
+    public void voteProgressReport(String reportKey, String voteReason, MilestoneVoteAttributes[] votes, @Optional boolean voteChange) {
         checkMaintenance();
         updatePeriod();
         PeriodController period = new PeriodController();
@@ -1028,12 +1024,6 @@ public class CPSCore implements CPSCoreInterface {
     }
 
     @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External
-    public void vote_progress_report(String _ipfs_key, String _report_key, String _vote, String _vote_reason, @Optional String _budget_adjustment_vote, @Optional boolean _vote_change) {
-        voteProgressReport(_ipfs_key, _report_key, _vote, _vote_reason, _budget_adjustment_vote, _vote_change);
-    }
-
     @External(readonly = true)
     public List<String> getProposalsKeysByStatus(String status) {
         Context.require(STATUS_TYPE.contains(status), TAG + ": Not a valid status");
@@ -1041,12 +1031,6 @@ public class CPSCore implements CPSCoreInterface {
         return ArrayDBUtils.arrayDBtoList(proposalStatus);
     }
 
-    @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External(readonly = true)
-    public List<String> get_proposals_keys_by_status(String _status) {
-        return getProposalsKeysByStatus(_status);
-    }
 
     @External(readonly = true)
     public int checkChangeVote(Address address, String ipfsHash, String proposalType) {
@@ -1647,12 +1631,6 @@ public class CPSCore implements CPSCoreInterface {
         return Map.of(DATA, progressReportList, COUNT, count);
     }
 
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External(readonly = true)
-    public Map<String, ?> get_progress_reports(String _status, @Optional int _start_index) {
-        return getProgressReports(_status, _start_index);
-    }
-
     /***
      Returns all the progress reports for a specific project
      :param _report_key : project key i.e. progress report ipfs hash
@@ -1813,6 +1791,7 @@ public class CPSCore implements CPSCoreInterface {
      :return: Vote status of given _ipfs_key
      :rtype : dict
      ***/
+    @Override
     @External(readonly = true)
     public Map<String, Object> getVoteResult(String ipfsKey) {
         String prefix = proposalPrefix(ipfsKey);
@@ -1853,12 +1832,6 @@ public class CPSCore implements CPSCoreInterface {
                 TOTAL_VOTES, ProposalDataDb.totalVotes.at(prefix).getOrDefault(BigInteger.ZERO));
     }
 
-    @Override
-    @External(readonly = true)
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    public Map<String, Object> get_vote_result(String _ipfs_key) {
-        return getVoteResult(_ipfs_key);
-    }
 
     /***
      Get vote results by progress report
@@ -1867,6 +1840,7 @@ public class CPSCore implements CPSCoreInterface {
      :return: Vote status of given reportKey
      :rtype : dict
      ***/
+    @Override
     @External(readonly = true)
     public Map<String, Object> getProgressReportResult(String reportKey) {
         String prefix = progressReportPrefix(reportKey);
@@ -1906,12 +1880,6 @@ public class CPSCore implements CPSCoreInterface {
                 TOTAL_VOTES, ProgressReportDataDb.totalVotes.at(prefix).getOrDefault(BigInteger.ZERO));
     }
 
-    @Override
-    @External(readonly = true)
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    public Map<String, Object> get_progress_report_result(String _report_key) {
-        return getProgressReportResult(_report_key);
-    }
 
     /***
      Get budget adjustment vote results
