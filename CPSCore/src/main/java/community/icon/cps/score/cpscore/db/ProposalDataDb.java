@@ -64,6 +64,10 @@ public class ProposalDataDb {
         token.at(prefix).set(proposalData.token);
     }
 
+    public static void updatePercentageCompleted(String prefix, int percentage) {
+        percentageCompleted.at(prefix).set(percentage);
+    }
+
     public static Map<String, Object> getDataFromProposalDB(String prefix) {
         return Map.ofEntries(
                 Map.entry(IPFS_HASH, ipfsHash.at(prefix).getOrDefault("")),

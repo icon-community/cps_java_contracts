@@ -870,7 +870,6 @@ public class CPSCore implements CPSCoreInterface {
         addNewProgressReportKey(ipfsHash, reportHash);
         String reportHashPrefix = progressReportPrefix(reportHash);
         addDataToProgressReportDB(progressReport, reportHashPrefix);
-        int percentageCompleted = progressReport.percentage_completed;
 
         if (percentageCompleted >= 0 && percentageCompleted <= 100) {
             ProposalDataDb.percentageCompleted.at(ipfsHashPrefix).set(percentageCompleted);
@@ -1295,6 +1294,7 @@ public class CPSCore implements CPSCoreInterface {
 
                 if (_approved_reports_count == _project_duration) {
                     updateProposalStatus(_ipfs_hash, COMPLETED);
+                    ProposalDataDb.updatePercentageCompleted(proposal_prefix, 100);
 //              Transfer the Sponsor - Bond back to the Sponsor P - Rep after the project is completed.
                     this.sponsorBondReturn.at(_sponsor_address.toString()).set(flag, this.sponsorBondReturn.at(_sponsor_address.toString()).getOrDefault(flag, BigInteger.ZERO).add(_sponsor_deposit_amount));
                     sponsorDepositStatus.at(proposal_prefix).set(BOND_RETURNED);
@@ -1303,6 +1303,13 @@ public class CPSCore implements CPSCoreInterface {
                 } else if (_proposal_status.equals(PAUSED)) {
                     updateProposalStatus(_ipfs_hash, ACTIVE);
                 }
+
+                // TODO : Update with milestone count
+//                int milestoneCount = ProposalDataDb.getMilestoneCount(proposal_prefix);
+//                int percentageCompleted = (_approved_reports_count * 100) / milestoneCount;
+                int percentageCompleted = (_approved_reports_count * 100) / _project_duration;
+                ProposalDataDb.updatePercentageCompleted(proposal_prefix, percentageCompleted);
+
                 ProposalDataDb.approvedReports.at(proposal_prefix).set(_approved_reports_count);
 //                  Request CPS Treasury to add some installments amount to the contributor address
                 callScore(getCpsTreasuryScore(), "send_installment_to_contributor", _ipfs_hash);
