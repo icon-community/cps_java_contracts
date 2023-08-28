@@ -15,6 +15,7 @@ public class ProposalDataDb {
     public static final BranchDB<String, VarDB<BigInteger>> timestamp = Context.newBranchDB(TIMESTAMP, BigInteger.class);
     public static final BranchDB<String, VarDB<BigInteger>> totalBudget = Context.newBranchDB(TOTAL_BUDGET, BigInteger.class);
     public static final BranchDB<String, VarDB<Integer>> projectDuration = Context.newBranchDB(PROJECT_DURATION, Integer.class);
+    public static final BranchDB<String, VarDB<Integer>> milestoneCount = Context.newBranchDB(MILESTONE_COUNT, Integer.class);
     public static final BranchDB<String, VarDB<Integer>> approvedReports = Context.newBranchDB(APPROVED_REPORTS, Integer.class);
     public static final BranchDB<String, VarDB<Address>> sponsorAddress = Context.newBranchDB(SPONSOR_ADDRESS, Address.class);
     public static final BranchDB<String, VarDB<Address>> contributorAddress = Context.newBranchDB(CONTRIBUTOR_ADDRESS, Address.class);
@@ -62,6 +63,8 @@ public class ProposalDataDb {
         budgetAdjustment.at(prefix).set(false);
         submitProgressReport.at(prefix).set(false);
         token.at(prefix).set(proposalData.token);
+        milestoneCount.at(prefix).set(proposalData.milestoneCount);
+
     }
 
     public static void updatePercentageCompleted(String prefix, int percentage) {
@@ -94,6 +97,10 @@ public class ProposalDataDb {
                 Map.entry(ABSTAIN_VOTERS, abstainVoters.at(prefix).size()),
                 Map.entry(BUDGET_ADJUSTMENT, budgetAdjustment.at(prefix).getOrDefault(false)),
                 Map.entry(SUBMIT_PROGRESS_REPORT, submitProgressReport.at(prefix).getOrDefault(false)));
+    }
+
+    public static int getMilestoneCount(String prefix) {
+        return milestoneCount.at(prefix).getOrDefault(0);
     }
 
 

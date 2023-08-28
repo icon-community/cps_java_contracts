@@ -2,6 +2,7 @@ package community.icon.cps.score.cpscore;
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
+import community.icon.cps.score.cpscore.db.MilestoneDb;
 import community.icon.cps.score.cpscore.db.ProgressReportDataDb;
 import community.icon.cps.score.cpscore.db.ProposalDataDb;
 import community.icon.cps.score.cpscore.utils.ArrayDBUtils;
@@ -18,6 +19,7 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+import static community.icon.cps.score.cpscore.db.MilestoneDb.addDataToMilestoneDb;
 import static community.icon.cps.score.cpscore.db.ProgressReportDataDb.*;
 import static community.icon.cps.score.cpscore.db.ProposalDataDb.*;
 import static community.icon.cps.score.cpscore.utils.ArrayDBUtils.*;
@@ -86,6 +88,10 @@ public class CPSCore implements CPSCoreInterface {
     @Override
     public String proposalPrefix(String proposalKey) {
         return PROPOSAL_DB_PREFIX + "|" + "|" + proposalKey;
+    }
+
+    public String mileStonePrefix(String proposalKey, int id) {
+        return proposalKey + "|" + "|" + id;
     }
 
     @Override
@@ -871,10 +877,13 @@ public class CPSCore implements CPSCoreInterface {
         String reportHashPrefix = progressReportPrefix(reportHash);
         addDataToProgressReportDB(progressReport, reportHashPrefix);
 
-        if (percentageCompleted >= 0 && percentageCompleted <= 100) {
-            ProposalDataDb.percentageCompleted.at(ipfsHashPrefix).set(percentageCompleted);
-        } else {
-            Context.revert(TAG + ": Percentage completed should be between 0 and 100");
+        int[] milestones = progressReport.milestoneCompleted;
+
+        for (int milestone : milestones) {
+            MilestonesAttributes milestonesAttributes = new MilestonesAttributes();
+            milestonesAttributes.reportHash = reportHash;
+            milestonesAttributes.id = milestone;
+            addDataToMilestoneDb(milestonesAttributes, mileStonePrefix(ipfsHash, milestone));
         }
 
         if (progressReport.budget_adjustment) {

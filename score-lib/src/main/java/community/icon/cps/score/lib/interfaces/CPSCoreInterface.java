@@ -24,6 +24,7 @@ public interface CPSCoreInterface {
         public String token;
         public Address sponsor_address;
         public String ipfs_link;
+        public int milestoneCount;
     }
 
     public static class ProgressReportAttributes {
@@ -34,7 +35,19 @@ public interface CPSCoreInterface {
         public Boolean budget_adjustment;
         public BigInteger additional_budget;
         public int additional_month;
-        public int percentage_completed;
+        public int[] milestoneCompleted;
+        public Boolean isMilestone;
+    }
+
+    public static class MilestonesAttributes {
+        public int id;
+        public String reportHash;
+        public int status;
+    }
+
+    public static class MilestoneVoteAttributes {
+        public int id;
+        public String vote;
     }
 
     @External(readonly = true)

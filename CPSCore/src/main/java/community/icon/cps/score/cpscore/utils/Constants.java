@@ -111,12 +111,14 @@ public class Constants {
     public static final String REPORT_KEY = "report_key";
     public static final String REPORT_HASH = "report_hash";
     public static final String PROJECT_DURATION = "project_duration";
+    public static final String MILESTONE_COUNT = "milestoneCount";
     public static final String APPROVED_REPORTS = "approved_reports";
     public static final String IPFS_LINK = "ipfs_link";
     public static final String PERCENTAGE_COMPLETED = "percentage_completed";
     public static final String ADDITIONAL_BUDGET = "additional_budget";
     public static final String ADDITIONAL_DURATION = "additional_month";
     public static final String BUDGET_ADJUSTMENT = "budget_adjustment";
+    public static final String IS_MILESTONE = "isMilestone";
     public static final String BUDGETADJUSTMENT = "budgetAdjustment";
     public static final String BUDGET_ADJUSTMENT_STATUS = "budget_adjustment_status";
     public static final String BUDGET_APPROVED_VOTES = "budget_approved_votes";
@@ -192,4 +194,9 @@ public class Constants {
     public static final int MIGRATION_BATCH = 10;
 
     public static final String BATCH_SIZE = "batch_size";
+    public static final Integer MILESTONE_REPORT_SUBMITTED = 1;
+    public static final Integer MILESTONE_REPORT_REJECTED = 2;
+    public static final Integer MILESTONE_REPORT_COMPLETED = 3;
+
+
 }

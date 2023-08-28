@@ -17,6 +17,7 @@ public class ProgressReportDataDb {
     public static final BranchDB<String, VarDB<String>> status = Context.newBranchDB(STATUS, String.class);
     private static final BranchDB<String, VarDB<String>> txHash = Context.newBranchDB(TX_HASH, String.class);
     private static final BranchDB<String, VarDB<Boolean>> budgetAdjustment = Context.newBranchDB(BUDGET_ADJUSTMENT, Boolean.class);
+    private static final BranchDB<String, VarDB<Boolean>> isMilestone = Context.newBranchDB(IS_MILESTONE, Boolean.class);
     private static final BranchDB<String, VarDB<BigInteger>> additionalBudget = Context.newBranchDB(ADDITIONAL_BUDGET, BigInteger.class);
     private static final BranchDB<String, VarDB<Integer>> additionalMonth = Context.newBranchDB(ADDITIONAL_DURATION, Integer.class);
 
@@ -56,6 +57,7 @@ public class ProgressReportDataDb {
         budgetApprovedVotes.at(prefix).set(BigInteger.ZERO);
         budgetRejectedVotes.at(prefix).set(BigInteger.ZERO);
         ipfsLink.at(prefix).set(progressData.ipfs_link);
+        isMilestone.at(prefix).set(progressData.isMilestone);
     }
 
     public static Map<String, Object> getDataFromProgressReportDB(String prefix) {
