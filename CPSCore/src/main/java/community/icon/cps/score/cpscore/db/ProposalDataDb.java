@@ -65,40 +65,31 @@ public class ProposalDataDb {
     }
 
     public static Map<String, Object> getDataFromProposalDB(String prefix) {
-        String reason = sponsorVoteReason.at(prefix).getOrDefault("");
-        if (reason.equalsIgnoreCase("none")) {
-            reason = "";
-        } else {
-            reason = reason.toString();
-        }
-
-        Map<String, Object> entryMap = Map.ofEntries(
-        Map.entry(IPFS_HASH, ipfsHash.at(prefix).getOrDefault("")),
-        Map.entry(PROJECT_TITLE, projectTitle.at(prefix).getOrDefault("")),
-        Map.entry(TIMESTAMP, timestamp.at(prefix).getOrDefault(BigInteger.ZERO)),
-        Map.entry(TOTAL_BUDGET, totalBudget.at(prefix).getOrDefault(BigInteger.ZERO)),
-        Map.entry(PROJECT_DURATION, projectDuration.at(prefix).getOrDefault(0)),
-        Map.entry(APPROVED_REPORTS, approvedReports.at(prefix).getOrDefault(0)),
-        Map.entry(SPONSOR_ADDRESS, sponsorAddress.at(prefix).get()),
-        Map.entry(CONTRIBUTOR_ADDRESS, contributorAddress.at(prefix).get()),
-        Map.entry(STATUS, status.at(prefix).getOrDefault("")),
-        Map.entry(TX_HASH, txHash.at(prefix).getOrDefault("")),
-        Map.entry(PERCENTAGE_COMPLETED, percentageCompleted.at(prefix).getOrDefault(0)),
-        Map.entry(TOKEN, token.at(prefix).getOrDefault("")),
-        Map.entry(TOTAL_VOTES, totalVotes.at(prefix).getOrDefault(BigInteger.ZERO)),
-        Map.entry(TOTAL_VOTERS, totalVoters.at(prefix).getOrDefault(0)),
-        Map.entry(APPROVED_VOTES, approvedVotes.at(prefix).getOrDefault(BigInteger.ZERO)),
-        Map.entry(REJECTED_VOTES, rejectedVotes.at(prefix).getOrDefault(BigInteger.ZERO)),
-        Map.entry(ABSTAINED_VOTES, abstainedVotes.at(prefix).getOrDefault(BigInteger.ZERO)),
-        Map.entry(SPONSOR_DEPOSIT_AMOUNT, sponsorDepositAmount.at(prefix).getOrDefault(BigInteger.ZERO)),
-        Map.entry(SPONSORED_TIMESTAMP, sponsoredTimestamp.at(prefix).getOrDefault(BigInteger.ZERO)),
-        Map.entry(SPONSOR_DEPOSIT_STATUS, sponsorDepositStatus.at(prefix).getOrDefault("")),
-        Map.entry(APPROVE_VOTERS, approveVoters.at(prefix).size()),
-        Map.entry(REJECT_VOTERS, rejectVoters.at(prefix).size()),
-        Map.entry(ABSTAIN_VOTERS, abstainVoters.at(prefix).size()),
-        Map.entry(BUDGET_ADJUSTMENT, budgetAdjustment.at(prefix).getOrDefault(false)),
-        Map.entry(SUBMIT_PROGRESS_REPORT, submitProgressReport.at(prefix).getOrDefault(false)));
-        return entryMap;
+        return Map.ofEntries(
+                Map.entry(IPFS_HASH, ipfsHash.at(prefix).getOrDefault("")),
+                Map.entry(PROJECT_TITLE, projectTitle.at(prefix).getOrDefault("")),
+                Map.entry(TIMESTAMP, timestamp.at(prefix).getOrDefault(BigInteger.ZERO)),
+                Map.entry(TOTAL_BUDGET, totalBudget.at(prefix).getOrDefault(BigInteger.ZERO)),
+                Map.entry(PROJECT_DURATION, projectDuration.at(prefix).getOrDefault(0)),
+                Map.entry(APPROVED_REPORTS, approvedReports.at(prefix).getOrDefault(0)),
+                Map.entry(SPONSOR_ADDRESS, sponsorAddress.at(prefix).get()),
+                Map.entry(CONTRIBUTOR_ADDRESS, contributorAddress.at(prefix).get()),
+                Map.entry(STATUS, status.at(prefix).getOrDefault("")),
+                Map.entry(TX_HASH, txHash.at(prefix).getOrDefault("")),
+                Map.entry(TOKEN, token.at(prefix).getOrDefault("")),
+                Map.entry(TOTAL_VOTES, totalVotes.at(prefix).getOrDefault(BigInteger.ZERO)),
+                Map.entry(TOTAL_VOTERS, totalVoters.at(prefix).getOrDefault(0)),
+                Map.entry(APPROVED_VOTES, approvedVotes.at(prefix).getOrDefault(BigInteger.ZERO)),
+                Map.entry(REJECTED_VOTES, rejectedVotes.at(prefix).getOrDefault(BigInteger.ZERO)),
+                Map.entry(ABSTAINED_VOTES, abstainedVotes.at(prefix).getOrDefault(BigInteger.ZERO)),
+                Map.entry(SPONSOR_DEPOSIT_AMOUNT, sponsorDepositAmount.at(prefix).getOrDefault(BigInteger.ZERO)),
+                Map.entry(SPONSORED_TIMESTAMP, sponsoredTimestamp.at(prefix).getOrDefault(BigInteger.ZERO)),
+                Map.entry(SPONSOR_DEPOSIT_STATUS, sponsorDepositStatus.at(prefix).getOrDefault("")),
+                Map.entry(APPROVE_VOTERS, approveVoters.at(prefix).size()),
+                Map.entry(REJECT_VOTERS, rejectVoters.at(prefix).size()),
+                Map.entry(ABSTAIN_VOTERS, abstainVoters.at(prefix).size()),
+                Map.entry(BUDGET_ADJUSTMENT, budgetAdjustment.at(prefix).getOrDefault(false)),
+                Map.entry(SUBMIT_PROGRESS_REPORT, submitProgressReport.at(prefix).getOrDefault(false)));
     }
 
 
