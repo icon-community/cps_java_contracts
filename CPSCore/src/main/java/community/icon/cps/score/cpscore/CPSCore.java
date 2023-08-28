@@ -937,16 +937,18 @@ public class CPSCore implements CPSCoreInterface {
             }
         }
 
+        Map<String, Object> progressReportVoteDetails = getProgressReportVoteDetails(reportKey);
+
         if (status.equals(WAITING)) {
             BigInteger voterStake = delegationSnapshot.get(caller);
-            BigInteger totalVotes = (BigInteger) progressReportDetails.get(TOTAL_VOTES);
-            BigInteger approvedVotes = (BigInteger) progressReportDetails.get(APPROVED_VOTES);
-            BigInteger rejectedVotes = (BigInteger) progressReportDetails.get(REJECTED_VOTES);
-            Integer totalVoter = (Integer) progressReportDetails.get(TOTAL_VOTERS);
+            BigInteger totalVotes = (BigInteger) progressReportVoteDetails.get(TOTAL_VOTES);
+            BigInteger approvedVotes = (BigInteger) progressReportVoteDetails.get(APPROVED_VOTES);
+            BigInteger rejectedVotes = (BigInteger) progressReportVoteDetails.get(REJECTED_VOTES);
+            Integer totalVoter = (Integer) progressReportVoteDetails.get(TOTAL_VOTERS);
             if (totalVoter == 0) {
-                ProgressReportDataDb.totalVoters.at(progressReportPrefix).set(pReps.validPreps.size());
+                MilestoneDb.totalVoters.at(progressReportPrefix).set(pReps.validPreps.size());
             }
-            DictDB<String, Integer> votersIndexDb = votersListIndices.at(progressReportPrefix).at(caller);
+            DictDB<String, Integer> votersIndexDb = MilestoneDb.votersListIndices.at(progressReportPrefix).at(caller);
 
             if (!voteChange) {
                 ProgressReportDataDb.totalVotes.at(progressReportPrefix).set(totalVotes.add(voterStake));
@@ -1039,7 +1041,7 @@ public class CPSCore implements CPSCoreInterface {
             return ProposalDataDb.votersListIndex.at(proposalPrefix).at(address).getOrDefault(CHANGE_VOTE, NOT_VOTED);
         } else if (proposalType.equals(PROGRESS_REPORTS)) {
             String progressReportPrefix = progressReportPrefix(ipfsHash);
-            return votersListIndices.at(progressReportPrefix).at(address).getOrDefault(CHANGE_VOTE, NOT_VOTED);
+            return ProgressReportDataDb.votersListIndices.at(progressReportPrefix).at(address).getOrDefault(CHANGE_VOTE, NOT_VOTED);
         } else {
             return 0;
         }
@@ -1597,6 +1599,11 @@ public class CPSCore implements CPSCoreInterface {
 
     private Map<String, Object> getProgressReportDetails(String progressKey) {
         return getDataFromProgressReportDB(progressReportPrefix(progressKey));
+    }
+
+    @External(readonly = true)
+    public Map<String, Object> getProgressReportVoteDetails(String progressKey) {
+        return getVoteResultsFromProgressReportDB(progressReportPrefix(progressKey));
     }
 
     @Override

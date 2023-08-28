@@ -60,32 +60,37 @@ public class ProgressReportDataDb {
 
     public static Map<String, Object> getDataFromProgressReportDB(String prefix) {
         String proposalHash = ipfsHash.at(prefix).getOrDefault("");
-        Map<String, Object> entryMap =
-                Map.ofEntries(Map.entry(IPFS_HASH, proposalHash),
-                        Map.entry(REPORT_HASH, reportHash.at(prefix).getOrDefault("")),
-                        Map.entry(PROGRESS_REPORT_TITLE, progressReportTitle.at(prefix).getOrDefault("")),
-                        Map.entry(TIMESTAMP, timestamp.at(prefix).getOrDefault(BigInteger.ZERO)),
-                        Map.entry(ADDITIONAL_BUDGET, additionalBudget.at(prefix).getOrDefault(BigInteger.ZERO)),
-                        Map.entry(ADDITIONAL_DURATION, additionalMonth.at(prefix).getOrDefault(0)),
-                        Map.entry(STATUS, status.at(prefix).getOrDefault("")),
-                        Map.entry(TX_HASH, txHash.at(prefix).getOrDefault("")),
-                        Map.entry(TOTAL_VOTES, totalVotes.at(prefix).getOrDefault(BigInteger.ZERO)),
-                        Map.entry(APPROVED_VOTES, approvedVotes.at(prefix).getOrDefault(BigInteger.ZERO)),
-                        Map.entry(REJECTED_VOTES, rejectedVotes.at(prefix).getOrDefault(BigInteger.ZERO)),
-                        Map.entry(TOTAL_VOTERS, totalVoters.at(prefix).getOrDefault(0)),
-                        Map.entry(APPROVE_VOTERS, approveVoters.at(prefix).size()),
-                        Map.entry(REJECT_VOTERS, rejectVoters.at(prefix).size()),
-                        Map.entry(BUDGET_APPROVED_VOTES, budgetApprovedVotes.at(prefix).getOrDefault(BigInteger.ZERO)),
-                        Map.entry(BUDGET_REJECTED_VOTES, budgetRejectedVotes.at(prefix).getOrDefault(BigInteger.ZERO)),
-                        Map.entry(BUDGET_APPROVE_VOTERS, budgetApproveVoters.at(prefix).size()),
-                        Map.entry(BUDGET_REJECT_VOTERS, budgetRejectVoters.at(prefix).size()),
-                        Map.entry(BUDGET_ADJUSTMENT_STATUS, budgetAdjustmentStatus.at(prefix).getOrDefault("")),
-                        Map.entry(IPFS_LINK, ipfsLink.at(prefix).getOrDefault("")),
-                        Map.entry(BUDGET_ADJUSTMENT, budgetAdjustment.at(prefix).getOrDefault(false)),
-                        Map.entry(PROJECT_TITLE, ProposalDataDb.projectTitle.at(proposalPrefix(proposalHash)).getOrDefault("")),
-                        Map.entry(CONTRIBUTOR_ADDRESS, ProposalDataDb.contributorAddress.at(proposalPrefix(proposalHash)).get()));
+        return Map.ofEntries(Map.entry(IPFS_HASH, proposalHash),
+                Map.entry(REPORT_HASH, reportHash.at(prefix).getOrDefault("")),
+                Map.entry(PROGRESS_REPORT_TITLE, progressReportTitle.at(prefix).getOrDefault("")),
+                Map.entry(TIMESTAMP, timestamp.at(prefix).getOrDefault(BigInteger.ZERO)),
+                Map.entry(ADDITIONAL_BUDGET, additionalBudget.at(prefix).getOrDefault(BigInteger.ZERO)),
+                Map.entry(ADDITIONAL_DURATION, additionalMonth.at(prefix).getOrDefault(0)),
+                Map.entry(STATUS, status.at(prefix).getOrDefault("")),
+                Map.entry(TX_HASH, txHash.at(prefix).getOrDefault("")),
+                Map.entry(IPFS_LINK, ipfsLink.at(prefix).getOrDefault("")),
+                Map.entry(BUDGET_ADJUSTMENT, budgetAdjustment.at(prefix).getOrDefault(false)),
+                Map.entry(PROJECT_TITLE, ProposalDataDb.projectTitle.at(proposalPrefix(proposalHash)).getOrDefault("")),
+                Map.entry(CONTRIBUTOR_ADDRESS, ProposalDataDb.contributorAddress.at(proposalPrefix(proposalHash)).get()));
+    }
 
-        return entryMap;
+    public static Map<String, Object> getVoteResultsFromProgressReportDB(String prefix) {
+        return Map.ofEntries(Map.entry(TOTAL_VOTES, totalVotes.at(prefix).getOrDefault(BigInteger.ZERO)),
+                Map.entry(APPROVED_VOTES, approvedVotes.at(prefix).getOrDefault(BigInteger.ZERO)),
+                Map.entry(REJECTED_VOTES, rejectedVotes.at(prefix).getOrDefault(BigInteger.ZERO)),
+                Map.entry(TOTAL_VOTERS, totalVoters.at(prefix).getOrDefault(0)),
+                Map.entry(APPROVE_VOTERS, approveVoters.at(prefix).size()),
+                Map.entry(REJECT_VOTERS, rejectVoters.at(prefix).size()));
+
+    }
+
+    public static Map<String, Object> getBudgetAdjustmentVoteResultsFromProgressReportDB(String prefix) {
+        return Map.ofEntries(Map.entry(BUDGET_APPROVED_VOTES, budgetApprovedVotes.at(prefix).getOrDefault(BigInteger.ZERO)),
+                Map.entry(BUDGET_REJECTED_VOTES, budgetRejectedVotes.at(prefix).getOrDefault(BigInteger.ZERO)),
+                Map.entry(BUDGET_APPROVE_VOTERS, budgetApproveVoters.at(prefix).size()),
+                Map.entry(BUDGET_REJECT_VOTERS, budgetRejectVoters.at(prefix).size()),
+                Map.entry(BUDGET_ADJUSTMENT_STATUS, budgetAdjustmentStatus.at(prefix).getOrDefault("")));
+
     }
 
     public static String proposalPrefix(String proposalKey) {
