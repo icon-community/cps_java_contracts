@@ -177,7 +177,7 @@ public class CPSTreasuryTest extends TestBase {
     void depositProposalFund() {
         depositProposalFundMethod();
         @SuppressWarnings("unchecked")
-        Map<String, ?> proposalDataDetails = (Map<String, ?>) tokenScore.call("get_contributor_projected_fund", testing_account2.getAddress());
+        Map<String, ?> proposalDataDetails = (Map<String, ?>) tokenScore.call("getContributorProjectedFund", testing_account2.getAddress());
         @SuppressWarnings("unchecked")
         List<Map<String, ?>> proposalDetails = (List<Map<String, ?>>) proposalDataDetails.get("data");
         Map<String, ?> expectedData = Map.of(
@@ -237,7 +237,7 @@ public class CPSTreasuryTest extends TestBase {
         tokenScore.invoke(owner, "tokenFallback", cpfTreasury, BigInteger.valueOf(102).multiply(MULTIPLIER), budgetAdjustmentData.toString().getBytes());
 
         @SuppressWarnings("unchecked")
-        Map<String, ?> proposalDataDetails = (Map<String, ?>) tokenScore.call("get_contributor_projected_fund", testing_account2.getAddress());
+        Map<String, ?> proposalDataDetails = (Map<String, ?>) tokenScore.call("getContributorProjectedFund", testing_account2.getAddress());
         @SuppressWarnings("unchecked")
         List<Map<String, ?>> proposalDetails = (List<Map<String, ?>>) proposalDataDetails.get("data");
         Map<String, ?> expectedData = Map.of(
@@ -285,7 +285,7 @@ public class CPSTreasuryTest extends TestBase {
             tokenScore.invoke(owner, "send_installment_to_contributor", "Proposal 1");
         }
         @SuppressWarnings("unchecked")
-        Map<String, ?> proposalDataDetails = (Map<String, ?>) tokenScore.call("get_contributor_projected_fund", testing_account2.getAddress());
+        Map<String, ?> proposalDataDetails = (Map<String, ?>) tokenScore.call("getContributorProjectedFund", testing_account2.getAddress());
         assertEquals(proposalDataDetails.get("withdraw_amount_bnUSD"), BigInteger.valueOf(50).multiply(MULTIPLIER));
 
         try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
@@ -293,7 +293,7 @@ public class CPSTreasuryTest extends TestBase {
             tokenScore.invoke(owner, "send_installment_to_contributor", "Proposal 1");
         }
         @SuppressWarnings("unchecked")
-        Map<String, ?> proposalDataDetails2 = (Map<String, ?>) tokenScore.call("get_contributor_projected_fund", testing_account2.getAddress());
+        Map<String, ?> proposalDataDetails2 = (Map<String, ?>) tokenScore.call("getContributorProjectedFund", testing_account2.getAddress());
         assertEquals(proposalDataDetails2.get("withdraw_amount_bnUSD"), BigInteger.valueOf(100).multiply(MULTIPLIER));
     }
 
@@ -303,7 +303,7 @@ public class CPSTreasuryTest extends TestBase {
         setCpsScoreMethod();
         sendRewardToSponsorMethod();
         @SuppressWarnings("unchecked")
-        Map<String, ?> proposalDataDetails = (Map<String, ?>) tokenScore.call("get_sponsor_projected_fund", testing_account.getAddress());
+        Map<String, ?> proposalDataDetails = (Map<String, ?>) tokenScore.call("getSponsorProjectedFund", testing_account.getAddress());
         assertEquals(proposalDataDetails.get("withdraw_amount_bnUSD"), BigInteger.valueOf(1).multiply(MULTIPLIER));
 
         try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
@@ -311,7 +311,7 @@ public class CPSTreasuryTest extends TestBase {
             tokenScore.invoke(owner, "send_reward_to_sponsor", "Proposal 1");
         }
         @SuppressWarnings("unchecked")
-        Map<String, ?> proposalDataDetails2 = (Map<String, ?>) tokenScore.call("get_sponsor_projected_fund", testing_account.getAddress());
+        Map<String, ?> proposalDataDetails2 = (Map<String, ?>) tokenScore.call("getSponsorProjectedFund", testing_account.getAddress());
         assertEquals(proposalDataDetails2.get("withdraw_amount_bnUSD"), BigInteger.valueOf(2).multiply(MULTIPLIER));
     }
 
@@ -347,7 +347,7 @@ public class CPSTreasuryTest extends TestBase {
         setBnUSDScoreMethod();
         try(MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
             theMock.when(() -> Context.getCaller()).thenReturn(testing_account.getAddress());
-            tokenScore.invoke(testing_account, "claim_reward");
+            tokenScore.invoke(testing_account, "claimReward");
             theMock.verify(() -> Context.call(bnUSDScore, "transfer", testing_account.getAddress(), BigInteger.valueOf(1).multiply(MULTIPLIER)), times(1));
         }
     }
