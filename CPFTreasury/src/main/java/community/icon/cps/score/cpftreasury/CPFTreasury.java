@@ -61,21 +61,21 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
 
     @Override
     @External
-    public void setMaximumTreasuryFundIcx(BigInteger _value) {
+    public void setMaximumTreasuryFundIcx(BigInteger value) {
         validateAdmins();
-        treasuryFund.set(_value);
+        treasuryFund.set(value);
     }
 
     /**
      * Set the maximum Treasury fund. Default 1M in bnUSD
      *
-     * @param _value: value in loop
+     * @param value: value in loop
      */
     @Override
     @External
-    public void setMaximumTreasuryFundBnusd(BigInteger _value) {
+    public void setMaximumTreasuryFundBnusd(BigInteger value) {
         validateAdmins();
-        treasuryFundbnUSD.set(_value);
+        treasuryFundbnUSD.set(value);
     }
 
     @External
@@ -101,7 +101,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
      */
     @Override
     @External(readonly = true)
-    public Map<String, BigInteger> get_total_funds() {
+    public Map<String, BigInteger> getTotalFunds() {
         return Map.of(ICX, Context.getBalance(Context.getAddress()),
                 bnUSD, getBNUSDAvailableBalance());
     }
@@ -187,7 +187,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
 
         BigInteger proposalBudget = proposalBudgets.getOrDefault(_ipfs_key, BigInteger.ZERO);
         proposalBudgets.set(_ipfs_key, proposalBudget.add(totalTransfer));
-        BigInteger bnUSDFund = get_total_funds().get(bnUSD);
+        BigInteger bnUSDFund = getTotalFunds().get(bnUSD);
         Context.require(totalTransfer.compareTo(bnUSDFund) <= 0, TAG + ": Not enough " + totalTransfer + " BNUSD on treasury");
 
         JsonObject budgetAdjustmentData = new JsonObject();
@@ -216,13 +216,13 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     @Override
     @External
     @Payable
-    public void add_fund() {
+    public void addFund() {
         burnExtraFund();
         FundReceived(Context.getCaller(), "Treasury fund " + Context.getValue() + " " + ICX + " received.");
     }
 
     private void burnExtraFund() {
-        Map<String, BigInteger> amounts = get_total_funds();
+        Map<String, BigInteger> amounts = getTotalFunds();
         BigInteger icxAmount = amounts.get(ICX);
         BigInteger bnUSDAmount = amounts.get(bnUSD);
         BigInteger extraAmountIcx = icxAmount.subtract(treasuryFund.get());
@@ -295,10 +295,10 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     }
 
     @External
-    public void setSwapLimitAmount(BigInteger _value) {
+    public void setSwapLimitAmount(BigInteger value) {
         validateAdmins();
-        Context.require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Swap limit amount should be greater than 0");
-        swapLimitAmount.set(_value);
+        Context.require(value.compareTo(BigInteger.ZERO) > 0, TAG + ": Swap limit amount should be greater than 0");
+        swapLimitAmount.set(value);
 
     }
 
@@ -309,24 +309,24 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     }
 
     @External
-    public void transferToEmergencyFund(BigInteger _value) {
+    public void transferToEmergencyFund(BigInteger value) {
         validateAdmins();
-        Context.require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Emergency Fund amount should be greater than 0");
-        emergencyFund.set(_value);
+        Context.require(value.compareTo(BigInteger.ZERO) > 0, TAG + ": Emergency Fund amount should be greater than 0");
+        emergencyFund.set(value);
 
     }
 
     @External
-    public void withdrawFromEmergencyFund(BigInteger _value, Address _address) {
+    public void withdrawFromEmergencyFund(BigInteger value, Address address) {
         validateAdmins();
-        Context.require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Emergency Fund amount should be greater than 0");
+        Context.require(value.compareTo(BigInteger.ZERO) > 0, TAG + ": Emergency Fund amount should be greater than 0");
         BigInteger emergencyFund = this.emergencyFund.getOrDefault(BigInteger.ZERO);
-        Context.require(emergencyFund.compareTo(_value) >= 0, TAG + ": Request amount is greater than Available Emergency Fund");
-        this.emergencyFund.set(emergencyFund.subtract(_value));
+        Context.require(emergencyFund.compareTo(value) >= 0, TAG + ": Request amount is greater than Available Emergency Fund");
+        this.emergencyFund.set(emergencyFund.subtract(value));
         Address balancedDollar = CPFTreasury.balancedDollar.get();
 
-        Context.call(balancedDollar, TRANSFER, _address, _value, "".getBytes());
-        EmergencyFundTranserred(_address, _value);
+        Context.call(balancedDollar, TRANSFER, address, value, "".getBytes());
+        EmergencyFundTranserred(address, value);
     }
 
 
@@ -367,7 +367,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
 
     @Override
     @External(readonly = true)
-    public Map<String, Integer> get_swap_state_status() {
+    public Map<String, Integer> getSwapStateStatus() {
         return Map.of("state", swapState.getOrDefault(0), "count", swapCount.getOrDefault(0));
     }
 
@@ -391,29 +391,29 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
 
     @Override
     @External(readonly = true)
-    public Map<String, Object> get_proposal_details(@Optional int _start_index, @Optional int _end_index) {
-        if (_end_index == 0) {
-            _end_index = 20;
+    public Map<String, Object> getProposalDetails(@Optional int startIndex, @Optional int endIndex) {
+        if (endIndex == 0) {
+            endIndex = 20;
         }
         List<Map<String, Object>> proposalsList = new ArrayList<>();
-        if ((_end_index - _start_index) > 50) {
+        if ((endIndex - startIndex) > 50) {
             Context.revert(TAG + ": Page Length cannot be greater than 50");
         }
         int count = proposalsKeys.size();
-        if (_start_index > count) {
+        if (startIndex > count) {
             Context.revert(TAG + ": Start index can't be higher than total count.");
         }
 
-        if (_start_index < 0) {
-            _start_index = 0;
+        if (startIndex < 0) {
+            startIndex = 0;
         }
 
-        if (_end_index > count) {
-            _end_index = count;
+        if (endIndex > count) {
+            endIndex = count;
 
         }
 
-        for (int i = _start_index; i < _end_index; i++) {
+        for (int i = startIndex; i < endIndex; i++) {
             String proposalHash = proposalsKeys.get(i);
             Map<String, Object> proposalDetails = Map.of(TOTAL_BUDGET, proposalBudgets.getOrDefault(proposalHash, BigInteger.ZERO).toString(), IPFS_HASH, proposalHash);
             proposalsList.add(proposalDetails);
@@ -474,7 +474,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         if (Context.getCaller().equals(dexScore.get())) {
             burn(Context.getValue());
         } else {
-            Context.revert(TAG + ": Please send fund using add_fund().");
+            Context.revert(TAG + ": Please send fund using addFund().");
         }
     }
 

@@ -54,13 +54,13 @@ public interface CPFTreasuryInterface {
     Address getRouterScore();
 
     @External
-    void setMaximumTreasuryFundIcx(BigInteger _value);
+    void setMaximumTreasuryFundIcx(BigInteger value);
 
     @External
-    void setMaximumTreasuryFundBnusd(BigInteger _value);
+    void setMaximumTreasuryFundBnusd(BigInteger value);
 
     @External(readonly = true)
-    Map<String, BigInteger> get_total_funds();
+    Map<String, BigInteger> getTotalFunds();
 
     @External(readonly = true)
     Map<String, BigInteger> get_remaining_swap_amount();
@@ -76,7 +76,7 @@ public interface CPFTreasuryInterface {
 
     @External
     @Payable
-    void add_fund();
+    void addFund();
 
     @External
     void swapICXToBnUSD(BigInteger amount, @Optional BigInteger _minReceive);
@@ -85,13 +85,13 @@ public interface CPFTreasuryInterface {
     void swap_tokens(int _count);
 
     @External(readonly = true)
-    Map<String, Integer> get_swap_state_status();
+    Map<String, Integer> getSwapStateStatus();
 
     @External
     void reset_swap_state();
 
     @External(readonly = true)
-    Map<String, Object> get_proposal_details(@Optional int start_index, @Optional int end_index);
+    Map<String, Object> getProposalDetails(@Optional int startIndex, @Optional int endIndex);
 
     @External
     void tokenFallback(Address from, BigInteger value, byte[] _data);

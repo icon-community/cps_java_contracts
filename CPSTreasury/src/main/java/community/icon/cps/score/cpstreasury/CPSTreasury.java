@@ -1,7 +1,6 @@
 package community.icon.cps.score.cpstreasury;
 
 import community.icon.cps.score.cpstreasury.db.ProposalData;
-import community.icon.cps.score.cpstreasury.utils.ArrayDBUtils;
 import score.*;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
@@ -97,9 +96,9 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
 
     @Override
     @External
-    public void setCpsScore(Address _score) {
-        validateAdminScore(_score);
-        cpsScore.set(_score);
+    public void setCpsScore(Address score) {
+        validateAdminScore(score);
+        cpsScore.set(score);
     }
 
     @Override
@@ -110,9 +109,9 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
 
     @Override
     @External
-    public void setCpfTreasuryScore(Address _score) {
-        validateAdminScore(_score);
-        cpfTreasuryScore.set(_score);
+    public void setCpfTreasuryScore(Address score) {
+        validateAdminScore(score);
+        cpfTreasuryScore.set(score);
     }
 
     @Override
@@ -123,9 +122,9 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
 
     @Override
     @External
-    public void setBnUSDScore(Address _score) {
-        validateAdminScore(_score);
-        balancedDollar.set(_score);
+    public void setBnUSDScore(Address score) {
+        validateAdminScore(score);
+        balancedDollar.set(score);
     }
 
     @Override
@@ -136,18 +135,18 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
 
     @Override
     @External(readonly = true)
-    public Map<String, ?> get_contributor_projected_fund(Address _wallet_address) {
+    public Map<String, ?> getContributorProjectedFund(Address walletAddress) {
         BigInteger totalAmountToBePaidICX = BigInteger.ZERO;
         BigInteger totalAmountToBePaidbnUSD = BigInteger.ZERO;
         List<Map<String, ?>> projectDetails = new ArrayList<>();
-        ArrayDB<String> proposalKeysArray = contributorProjects.at(_wallet_address.toString());
+        ArrayDB<String> proposalKeysArray = contributorProjects.at(walletAddress.toString());
         int proposalKeysSize = proposalKeysArray.size();
         for (int i = 0; i < proposalKeysSize; i++) {
             String _ipfs_key = proposalKeysArray.get(i);
             String proposalPrefix = proposalPrefix(_ipfs_key);
             Map<String, ?> proposal_details = getDataFromProposalDB(proposalPrefix);
             if (!proposal_details.get(consts.STATUS).equals(DISQUALIFIED)) {
-                if (proposal_details.get(consts.CONTRIBUTOR_ADDRESS).equals(_wallet_address)) {
+                if (proposal_details.get(consts.CONTRIBUTOR_ADDRESS).equals(walletAddress)) {
                     int totalInstallment = (int) proposal_details.get(consts.PROJECT_DURATION);
                     int totalPaidCount = totalInstallment - (int) proposal_details.get(consts.INSTALLMENT_COUNT);
 
@@ -175,7 +174,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
                 }
             }
         }
-        DictDB<String, BigInteger> installmentRecord = installmentFundRecord.at(_wallet_address.toString());
+        DictDB<String, BigInteger> installmentRecord = installmentFundRecord.at(walletAddress.toString());
         return Map.of(
                 "data", projectDetails,
                 "project_count", projectDetails.size(),
@@ -206,21 +205,21 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
 
     @Override
     @External(readonly = true)
-    public Map<String, ?> get_sponsor_projected_fund(Address _wallet_address) {
+    public Map<String, ?> getSponsorProjectedFund(Address walletAddress) {
         ProposalData proposalData = new ProposalData();
         BigInteger totalAmountToBePaidICX = BigInteger.ZERO;
         BigInteger totalAmountToBePaidbnUSD = BigInteger.ZERO;
         BigInteger totalSponsorBondICX = BigInteger.ZERO;
         BigInteger totalSponsorBondbnUSD = BigInteger.ZERO;
         List<Map<String, ?>> projectDetails = new ArrayList<>();
-        ArrayDB<String> proposalKeysArray = sponsorProjects.at(_wallet_address.toString());
+        ArrayDB<String> proposalKeysArray = sponsorProjects.at(walletAddress.toString());
         int proposalKeysSize = proposalKeysArray.size();
         for (int i = 0; i < proposalKeysSize; i++) {
             String _ipfs_key = proposalKeysArray.get(i);
             String proposalPrefix = proposalPrefix(_ipfs_key);
             Map<String, ?> proposal_details = proposalData.getDataFromProposalDB(proposalPrefix);
             if (!proposal_details.get(consts.STATUS).equals(DISQUALIFIED)) {
-                if (proposal_details.get(consts.SPONSOR_ADDRESS).equals(_wallet_address)) {
+                if (proposal_details.get(consts.SPONSOR_ADDRESS).equals(walletAddress)) {
                     int totalInstallment = (int) proposal_details.get(consts.PROJECT_DURATION);
                     int totalPaidCount = totalInstallment - (int) proposal_details.get(consts.SPONSOR_REWARD_COUNT);
                     if (totalPaidCount < totalInstallment) {
@@ -251,7 +250,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
                 }
             }
         }
-        DictDB<String, BigInteger> installmentRecord = installmentFundRecord.at(_wallet_address.toString());
+        DictDB<String, BigInteger> installmentRecord = installmentFundRecord.at(walletAddress.toString());
         return Map.of(
                 "data", projectDetails,
                 "project_count", projectDetails.size(),
@@ -402,7 +401,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
 
     @Override
     @External
-    public void claim_reward() {
+    public void claimReward() {
         Address caller = Context.getCaller();
         DictDB<String, BigInteger> installmentFundRecord = this.installmentFundRecord.at(caller.toString());
         BigInteger availableAmountICX = installmentFundRecord.getOrDefault(consts.ICX, BigInteger.ZERO);
