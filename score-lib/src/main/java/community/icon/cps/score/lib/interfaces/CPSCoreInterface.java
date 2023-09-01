@@ -57,37 +57,21 @@ public interface CPSCoreInterface {
 
     String progressReportPrefix(String progressKey);
 
-
-    @External
-    void set_cps_treasury_score(Address _score);
-
     @External
     void setCpsTreasuryScore(Address score);
-
-
-    @External(readonly = true)
-    Address get_cps_treasury_score();
 
     @External(readonly = true)
     Address getCpsTreasuryScore();
 
-
-    @External
-    void set_cpf_treasury_score(Address _score);
-
     @External
     void setCpfTreasuryScore(Address score);
-
-
-    @External(readonly = true)
-    Address get_cpf_treasury_score();
 
     @External(readonly = true)
     Address getCpfTreasuryScore();
 
 
     @External
-    void setBnusdScore(Address _score);
+    void setBnusdScore(Address score);
 
 
     @External(readonly = true)
@@ -123,11 +107,11 @@ public interface CPSCoreInterface {
 
 
     @External
-    void unregister_prep();
+    void unregisterPrep();
 
 
     @External
-    void register_prep();
+    void registerPrep();
 
     @External(readonly = true)
     boolean checkPriorityVoting(Address prep);
@@ -151,11 +135,11 @@ public interface CPSCoreInterface {
 
 
     @External(readonly = true)
-    Map<String, BigInteger> login_prep(Address _address);
+    Map<String, BigInteger> loginPrep(Address address);
 
 
     @External(readonly = true)
-    List<Address> get_admins();
+    List<Address> getAdmins();
 
     @SuppressWarnings("unchecked")
 
@@ -164,40 +148,40 @@ public interface CPSCoreInterface {
 
 
     @External(readonly = true)
-    List<Map<String, Object>> get_PReps();
+    List<Map<String, Object>> getPReps();
 
 
     @External(readonly = true)
-    List<Address> get_denylist();
+    List<Address> getDenylist();
 
 
     @External(readonly = true)
-    Map<String, ?> get_period_status();
+    Map<String, ?> getPeriodStatus();
 
 
     @External(readonly = true)
-    List<Address> get_contributors();
+    List<Address> getContributors();
 
 
     @External(readonly = true)
-    Map<String, BigInteger> check_claimable_sponsor_bond(Address _address);
+    Map<String, BigInteger> checkClaimableSponsorBond(Address address);
 
 
     @Payable
     @External
-    void submit_proposal(ProposalAttributes _proposals);
+    void submitProposal(ProposalAttributes proposals);
 
 
     @External
-    void vote_proposal(String _ipfs_key, String _vote, String _vote_reason, @Optional boolean _vote_change);
+    void voteProposal(String ipfsKey, String vote, String voteReason, @Optional boolean voteChange);
 
 
     @External
-    void submit_progress_report(ProgressReportAttributes _progress_report);
+    void submitProgressReport(ProgressReportAttributes progressReport);
 
 
     @External
-    void voteProgressReport(String _report_key, String _vote_reason, MilestoneVoteAttributes[] votes, @Optional boolean _vote_change);
+    void voteProgressReport(String reportKey, String voteReason, MilestoneVoteAttributes[] votes, @Optional String budgetAdjustmentVote,@Optional boolean voteChange);
 
 
     @External(readonly = true)
@@ -205,25 +189,25 @@ public interface CPSCoreInterface {
 
 
     @External(readonly = true)
-    int check_change_vote(Address _address, String _ipfs_hash, String _proposal_type);
+    int checkChangeVote(Address address, String ipfsHash, String proposalType);
 
 
     @External(readonly = true)
-    Map<String, ?> get_project_amounts();
+    Map<String, ?> getProjectAmounts();
 
 
     @External(readonly = true)
-    Map<String, Integer> get_sponsors_record();
+    Map<String, Integer> getSponsorsRecord();
 
     @External
-    void update_period();
+    void updatePeriod();
 
 
     @External(readonly = true)
     Map<String, ?> getProposalDetails(String status, @Optional Address walletAddress, @Optional int startIndex);
 
     @External(readonly = true)
-    Map<String, Object> get_proposal_details_by_hash(String _ipfs_key);
+    Map<String, Object> getProposalDetailsByHash(String ipfs_key);
 
 
     @External(readonly = true)
@@ -231,36 +215,36 @@ public interface CPSCoreInterface {
 
 
     @External(readonly = true)
-    Map<String, Object> get_progress_reports_by_hash(String _report_key);
+    Map<String, Object> getProgressReportsByHash(String reportKey);
 
 
     @External(readonly = true)
-    Map<String, Object> get_progress_reports_by_proposal(String _ipfs_key);
+    Map<String, Object> getProgressReportsByProposal(String ipfsKey);
 
 
     @External(readonly = true)
     Map<String, Object> getSponsorsRequests(String status, Address sponsorAddress, @Optional int startIndex);
 
     @External(readonly = true)
-    Map<String, Object> getVoteResult(String _ipfs_key);
+    Map<String, Object> getVoteResult(String ipfsKey);
 
     @External(readonly = true)
-    Map<String, Object> getProgressReportResult(String _report_key);
+    Map<String, Object> getProgressReportResult(String reportKey);
 
     @External(readonly = true)
-    Map<String, Object> get_budget_adjustment_vote_result(String _report_key);
+    Map<String, Object> getBudgetAdjustmentVoteResult(String reportKey);
 
     @External
-    void tokenFallback(Address _from, BigInteger _value, byte[] _data);
+    void tokenFallback(Address from, BigInteger value, byte[] data);
 
     @External
-    void remove_denylist_preps();
+    void removeDenylistPreps();
 
     @External
-    void claim_sponsor_bond();
+    void claimSponsorBond();
 
     @External
-    void set_swap_count(int value);
+    void setSwapCount(int value);
 
     @External
     void updateNextBlock(int blockCount);

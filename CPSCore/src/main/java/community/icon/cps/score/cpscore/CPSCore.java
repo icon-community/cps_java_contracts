@@ -99,17 +99,6 @@ public class CPSCore implements CPSCoreInterface {
         return PROGRESS_REPORT_DB_PREFIX + "|" + "|" + progressKey;
     }
 
-    /***
-     * Deprecated because JAVA convention will be used in the future versions for method name and parameter name
-     * i.e. set_cps_treasury_score -> setCpsTreasuryScore and _score -> score
-     * @param _score: Address of CPS Treasury Score
-     */
-    @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External
-    public void set_cps_treasury_score(Address _score) {
-        setCpsTreasuryScore(_score);
-    }
 
     @Override
     @External
@@ -119,12 +108,6 @@ public class CPSCore implements CPSCoreInterface {
         setterGetter.cpsTreasuryScore.set(score);
     }
 
-    @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External(readonly = true)
-    public Address get_cps_treasury_score() {
-        return getCpsTreasuryScore();
-    }
 
     @Override
     @External(readonly = true)
@@ -133,12 +116,7 @@ public class CPSCore implements CPSCoreInterface {
         return setterGetter.cpsTreasuryScore.get();
     }
 
-    @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External
-    public void set_cpf_treasury_score(Address _score) {
-        setCpfTreasuryScore(_score);
-    }
+
 
     @Override
     @External
@@ -148,12 +126,7 @@ public class CPSCore implements CPSCoreInterface {
         setterGetter.cpfScore.set(score);
     }
 
-    @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External(readonly = true)
-    public Address get_cpf_treasury_score() {
-        return getCpfTreasuryScore();
-    }
+
 
     @Override
     @External(readonly = true)
@@ -179,11 +152,7 @@ public class CPSCore implements CPSCoreInterface {
         return setterGetter.balancedDollar.get();
     }
 
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External(readonly = true)
-    public Address get_bnUSD_score() {
-        return getBnusdScore();
-    }
+
 
     private boolean proposalKeyExists(String key) {
         return proposalsKeyListIndex.get(key) != null;
@@ -198,11 +167,7 @@ public class CPSCore implements CPSCoreInterface {
         return ArrayDBUtils.containsInArrayDb(address, admins);
     }
 
-    @Deprecated
-    @External
-    public boolean is_admin(Address _address) {
-        return isAdmin(_address);
-    }
+
 
     @Override
     @External
@@ -234,10 +199,11 @@ public class CPSCore implements CPSCoreInterface {
         return setterGetter.maintenance.getOrDefault(false);
     }
 
-    @External(readonly = true)
-    public boolean get_maintenance_mode() {
-        return getMaintenanceMode();
-    }
+    // TODO: is this deprecated
+//    @External(readonly = true)
+//    public boolean get_maintenance_mode() {
+//        return getMaintenanceMode();
+//    }
 
     @Override
     @Payable
@@ -292,6 +258,7 @@ public class CPSCore implements CPSCoreInterface {
     }
 
 
+    @Override
     @External
     public void unregisterPrep() {
         checkMaintenance();
@@ -344,12 +311,7 @@ public class CPSCore implements CPSCoreInterface {
 
     }
 
-    @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External
-    public void register_prep() {
-        registerPrep();
-    }
+
 
     @SuppressWarnings("unchecked")
     private List<Map<String, Object>> getPrepTerm() {
@@ -510,11 +472,7 @@ public class CPSCore implements CPSCoreInterface {
     }
 
 
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External
-    public void set_prep_penalty_amount(BigInteger[] _penalty) {
-        setPrepPenaltyAmount(_penalty);
-    }
+
 
 
     @Override
@@ -529,6 +487,7 @@ public class CPSCore implements CPSCoreInterface {
         period.previousPeriodName.set("None");
     }
 
+    @Override
     @External(readonly = true)
     public Map<String, BigInteger> loginPrep(Address address) {
         Map<String, BigInteger> loginData = new HashMap<>();
@@ -570,25 +529,14 @@ public class CPSCore implements CPSCoreInterface {
         return loginData;
     }
 
-    @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External(readonly = true)
-    public Map<String, BigInteger> login_prep(Address _address) {
-        return loginPrep(_address);
-    }
 
+    @Override
     @External(readonly = true)
     public List<Address> getAdmins() {
         return ArrayDBUtils.arrayDBtoList(admins);
 
     }
 
-    @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External(readonly = true)
-    public List<Address> get_admins() {
-        return getAdmins();
-    }
 
     @Override
     @External(readonly = true)
@@ -599,12 +547,9 @@ public class CPSCore implements CPSCoreInterface {
     }
 
 
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External(readonly = true)
-    public Map<String, BigInteger> get_remaining_fund() {
-        return getRemainingFund();
-    }
 
+
+    @Override
     @External(readonly = true)
     public List<Map<String, Object>> getPReps() {
         List<Map<String, Object>> prepsList = new ArrayList<>();
@@ -621,12 +566,6 @@ public class CPSCore implements CPSCoreInterface {
     }
 
     @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External(readonly = true)
-    public List<Map<String, Object>> get_PReps() {
-        return getPReps();
-    }
-
     @External(readonly = true)
     public List<Address> getDenylist() {
         List<Address> denyList = new ArrayList<>();
@@ -639,12 +578,6 @@ public class CPSCore implements CPSCoreInterface {
     }
 
     @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External(readonly = true)
-    public List<Address> get_denylist() {
-        return getDenylist();
-    }
-
     @External(readonly = true)
     public Map<String, ?> getPeriodStatus() {
         PeriodController period = new PeriodController();
@@ -661,25 +594,13 @@ public class CPSCore implements CPSCoreInterface {
     }
 
     @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External(readonly = true)
-    public Map<String, ?> get_period_status() {
-        return getPeriodStatus();
-    }
-
     @External(readonly = true)
     public List<Address> getContributors() {
         return ArrayDBUtils.arrayDBtoList(this.contributors);
     }
 
+
     @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External(readonly = true)
-    public List<Address> get_contributors() {
-        return getContributors();
-    }
-
-
     @External(readonly = true)
     public Map<String, BigInteger> checkClaimableSponsorBond(Address address) {
         DictDB<String, BigInteger> userAmounts = sponsorBondReturn.at(address.toString());
@@ -688,12 +609,6 @@ public class CPSCore implements CPSCoreInterface {
 
     }
 
-    @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External(readonly = true)
-    public Map<String, BigInteger> check_claimable_sponsor_bond(Address _address) {
-        return checkClaimableSponsorBond(_address);
-    }
 
     @SuppressWarnings("unchecked")
     private BigInteger getMaxCapBNUsd() {
@@ -702,6 +617,7 @@ public class CPSCore implements CPSCoreInterface {
         return cpfAmount.get("maxCap");
     }
 
+    @Override
     @Payable
     @External
     public void submitProposal(ProposalAttributes proposals) {
@@ -744,14 +660,8 @@ public class CPSCore implements CPSCoreInterface {
         swapBNUsdToken();
     }
 
-    @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @Payable
-    @External
-    public void submit_proposal(ProposalAttributes _proposals) {
-        submitProposal(_proposals);
-    }
 
+    @Override
     @External
     public void voteProposal(String ipfsKey, String vote, String voteReason, @Optional boolean voteChange) {
         checkMaintenance();
@@ -836,13 +746,8 @@ public class CPSCore implements CPSCoreInterface {
         swapBNUsdToken();
     }
 
-    @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External
-    public void vote_proposal(String _ipfs_key, String _vote, String _vote_reason, @Optional boolean _vote_change) {
-        voteProposal(_ipfs_key, _vote, _vote_reason, _vote_change);
-    }
 
+    @Override
     @External
     public void submitProgressReport(ProgressReportAttributes progressReport) {
         checkMaintenance();
@@ -912,16 +817,11 @@ public class CPSCore implements CPSCoreInterface {
                 " --> Progress Report Submitted Successfully.");
     }
 
-    @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External
-    public void submit_progress_report(ProgressReportAttributes _progress_report) {
-        submitProgressReport(_progress_report);
-    }
 
     @Override
     @External
-    public void voteProgressReport(String reportKey, String voteReason, MilestoneVoteAttributes[] votes, @Optional boolean voteChange) {
+    public void voteProgressReport(String reportKey, String voteReason, MilestoneVoteAttributes[] votes,@Optional String budgetAdjustmentVote, @Optional boolean voteChange) {
+
         checkMaintenance();
         updatePeriod();
         PeriodController period = new PeriodController();
@@ -1042,7 +942,7 @@ public class CPSCore implements CPSCoreInterface {
         return ArrayDBUtils.arrayDBtoList(proposalStatus);
     }
 
-
+    @Override
     @External(readonly = true)
     public int checkChangeVote(Address address, String ipfsHash, String proposalType) {
         if (proposalType.equals(PROPOSAL)) {
@@ -1057,12 +957,6 @@ public class CPSCore implements CPSCoreInterface {
     }
 
     @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External(readonly = true)
-    public int check_change_vote(Address _address, String _ipfs_hash, String _proposal_type) {
-        return checkChangeVote(_address, _ipfs_hash, _proposal_type);
-    }
-
     @External(readonly = true)
     public Map<String, Object> getProjectAmounts() {
         List<String> statusList = List.of(PENDING, ACTIVE, PAUSED, COMPLETED, DISQUALIFIED);
@@ -1122,12 +1016,6 @@ public class CPSCore implements CPSCoreInterface {
     }
 
     @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External(readonly = true)
-    public Map<String, Object> get_project_amounts() {
-        return getProjectAmounts();
-    }
-
     @External(readonly = true)
     public Map<String, Integer> getSponsorsRecord() {
         Map<String, Integer> sponsorsDict = new HashMap<>();
@@ -1139,13 +1027,8 @@ public class CPSCore implements CPSCoreInterface {
         return sponsorsDict;
     }
 
-    @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External(readonly = true)
-    public Map<String, Integer> get_sponsors_record() {
-        return getSponsorsRecord();
-    }
 
+    @Override
     @External
     public void updatePeriod() {
         checkMaintenance();
@@ -1212,12 +1095,7 @@ public class CPSCore implements CPSCoreInterface {
         }
     }
 
-    @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External
-    public void update_period() {
-        updatePeriod();
-    }
+
 
     private void updateDenylistPreps() {
         PReps pReps = new PReps();
@@ -1584,12 +1462,8 @@ public class CPSCore implements CPSCoreInterface {
 
     }
 
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External(readonly = true)
-    public Map<String, ?> get_proposal_details(String _status, @Optional Address _wallet_address, @Optional int _start_index) {
-        return getProposalDetails(_status, _wallet_address, _start_index);
-    }
 
+    @Override
     @External(readonly = true)
     public Map<String, Object> getProposalDetailsByHash(String ipfsKey) {
         Map<String, Object> proposalDetails = new HashMap<>();
@@ -1599,12 +1473,7 @@ public class CPSCore implements CPSCoreInterface {
         return proposalDetails;
     }
 
-    @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External(readonly = true)
-    public Map<String, Object> get_proposal_details_by_hash(String _ipfs_key) {
-        return getProposalDetailsByHash(_ipfs_key);
-    }
+
 
     private Map<String, Object> getProgressReportDetails(String progressKey) {
         return getDataFromProgressReportDB(progressReportPrefix(progressKey));
@@ -1654,6 +1523,7 @@ public class CPSCore implements CPSCoreInterface {
      :return : List of all progress report with status
      :rtype : dict
      ***/
+    @Override
     @External(readonly = true)
     public Map<String, Object> getProgressReportsByHash(String reportKey) {
         if (progressKeyExists(reportKey)) {
@@ -1664,13 +1534,8 @@ public class CPSCore implements CPSCoreInterface {
 
     }
 
-    @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External(readonly = true)
-    public Map<String, Object> get_progress_reports_by_hash(String _report_key) {
-        return getProgressReportsByHash(_report_key);
-    }
 
+    @Override
     @External(readonly = true)
     public Map<String, Object> getProgressReportsByProposal(String ipfsKey) {
         String proposalPrefix = proposalPrefix(ipfsKey);
@@ -1686,12 +1551,7 @@ public class CPSCore implements CPSCoreInterface {
         return Map.of(DATA, progressReportList, COUNT, reportCount);
     }
 
-    @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External(readonly = true)
-    public Map<String, Object> get_progress_reports_by_proposal(String _ipfs_key) {
-        return getProgressReportsByProposal(_ipfs_key);
-    }
+
 
     @Override
     @External(readonly = true)
@@ -1753,30 +1613,25 @@ public class CPSCore implements CPSCoreInterface {
                 SPONSOR_DEPOSIT_AMOUNT, Map.of(ICX, sponsorAmountICX, bnUSD, sponsorAmountBnusd));
     }
 
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External(readonly = true)
-    public Map<String, Object> get_sponsors_requests(String _status, Address _sponsor_address, @Optional int _start_index) {
-        return getSponsorsRequests(_status, _sponsor_address, _start_index);
-    }
 
     /***
      Returns remaining projects and progress reports to vote on the current voting period
-     :param _project_type: "proposal" or "progress_report" which type, remaining votes need to be checked
-     :type _project_type: str
-     :param _wallet_address: Wallet Address of the P-Rep
-     :type _wallet_address: str
+     :param projectType: "proposal" or "progress_report" which type, remaining votes need to be checked
+     :type projectType: str
+     :param walletAddress: Wallet Address of the P-Rep
+     :type walletAddress: str
      :return: list of details of proposal or progress report what they need to vote on the same voting period
      ***/
     @External(readonly = true)
-    public List<Map<String, Object>> get_remaining_project(String _project_type, Address _wallet_address) {
+    public List<Map<String, Object>> getRemainingProject(String projectType, Address walletAddress) {
         List<Map<String, Object>> _remaining_proposals = new ArrayList<>();
         List<Map<String, Object>> _remaining_progress_report = new ArrayList<>();
-        if (_project_type.equals(PROPOSAL)) {
+        if (projectType.equals(PROPOSAL)) {
             List<String> _proposal_keys = getProposalsKeysByStatus(PENDING);
             for (String _ipfs_key : _proposal_keys) {
                 String prefix = proposalPrefix(_ipfs_key);
 
-                if (!containsInArrayDb(_wallet_address, ProposalDataDb.votersList.at(prefix))) {
+                if (!containsInArrayDb(walletAddress, ProposalDataDb.votersList.at(prefix))) {
                     Map<String, Object> _proposal_details = getProposalDetails(_ipfs_key);
                     _remaining_proposals.add(_proposal_details);
                 }
@@ -1784,12 +1639,12 @@ public class CPSCore implements CPSCoreInterface {
             return _remaining_proposals;
         }
 
-        if (_project_type.equals(PROGRESS_REPORTS)) {
+        if (projectType.equals(PROGRESS_REPORTS)) {
             for (int i = 0; i < waitingProgressReports.size(); i++) {
                 String reportHash = waitingProgressReports.get(i);
                 String prefix = progressReportPrefix(reportHash);
 
-                if (!containsInArrayDb(_wallet_address, ProgressReportDataDb.votersList.at(prefix))) {
+                if (!containsInArrayDb(walletAddress, ProgressReportDataDb.votersList.at(prefix))) {
                     Map<String, Object> progressReportDetails = getProgressReportDetails(reportHash);
                     _remaining_progress_report.add(progressReportDetails);
                 }
@@ -1905,6 +1760,7 @@ public class CPSCore implements CPSCoreInterface {
      :rtype : dict
      ***/
 
+    @Override
     @External(readonly = true)
     public Map<String, Object> getBudgetAdjustmentVoteResult(String reportKey) {
         String prefix = progressReportPrefix(reportKey);
@@ -1938,12 +1794,6 @@ public class CPSCore implements CPSCoreInterface {
                 TOTAL_VOTES, ProgressReportDataDb.totalVotes.at(prefix).getOrDefault(BigInteger.ZERO));
     }
 
-    @Override
-    @External(readonly = true)
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    public Map<String, Object> get_budget_adjustment_vote_result(String _report_key) {
-        return getBudgetAdjustmentVoteResult(_report_key);
-    }
 
 
     private void snapshotDelegation() {
@@ -2025,10 +1875,10 @@ public class CPSCore implements CPSCoreInterface {
 
     @Override
     @External
-    public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
+    public void tokenFallback(Address from, BigInteger value, byte[] data) {
         Context.require(Context.getCaller().equals(getBnusdScore()), TAG + " Only bnUSD token accepted.");
 
-        String unpacked_data = new String(_data);
+        String unpacked_data = new String(data);
         JsonObject transferData = Json.parse(unpacked_data).asObject();
         String methodName = transferData.get("method").asString();
         JsonObject paramsName = transferData.get("params").asObject();
@@ -2037,9 +1887,9 @@ public class CPSCore implements CPSCoreInterface {
             String ipfsKey = paramsName.get(IPFS_HASH).asString();
             String vote = paramsName.get(VOTE).asString();
             String voteReason = paramsName.get(VOTE_REASON).asString();
-            sponsorVote(ipfsKey, vote, voteReason, _from, _value);
+            sponsorVote(ipfsKey, vote, voteReason, from, value);
         } else if (methodName.equals("pay_prep_penalty")) {
-            payPrepPenalty(_from, _value);
+            payPrepPenalty(from, value);
 
         } else {
             Context.revert(TAG + " Not supported method. Token transfer fails.");
@@ -2097,6 +1947,7 @@ public class CPSCore implements CPSCoreInterface {
         }
     }
 
+    @Override
     @External
     public void removeDenylistPreps() {
         validateAdmins();
@@ -2107,13 +1958,8 @@ public class CPSCore implements CPSCoreInterface {
         }
     }
 
-    @Override
-    @External
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    public void remove_denylist_preps() {
-        removeDenylistPreps();
-    }
 
+    @Override
     @External
     public void claimSponsorBond() {
         Address caller = Context.getCaller();
@@ -2135,12 +1981,6 @@ public class CPSCore implements CPSCoreInterface {
         }
     }
 
-    @Override
-    @External
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    public void claim_sponsor_bond() {
-        claimSponsorBond();
-    }
 
     private void swapBNUsdToken() {
         BigInteger sbh = swapBlockHeight.getOrDefault(BigInteger.ZERO);
@@ -2151,6 +1991,7 @@ public class CPSCore implements CPSCoreInterface {
         }
     }
 
+    @Override
     @External
     public void setSwapCount(int value) {
         validateAdmins();
@@ -2161,12 +2002,6 @@ public class CPSCore implements CPSCoreInterface {
         }
     }
 
-    @Override
-    @External
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    public void set_swap_count(int value) {
-        setSwapCount(value);
-    }
 
     @External(readonly = true)
     public int getSwapCount() {
@@ -2248,11 +2083,6 @@ public class CPSCore implements CPSCoreInterface {
         return _proposal_titles;
     }
 
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External(readonly = true)
-    public List<Map<String, Object>> get_active_proposals(Address _wallet_address) {
-        return getActiveProposals(_wallet_address);
-    }
 
 
     /***
