@@ -202,11 +202,6 @@ public class CPSCore implements CPSCoreInterface {
         return setterGetter.maintenance.getOrDefault(false);
     }
 
-    // TODO: is this deprecated
-//    @External(readonly = true)
-//    public boolean get_maintenance_mode() {
-//        return getMaintenanceMode();
-//    }
 
     @Override
     @Payable
@@ -281,12 +276,6 @@ public class CPSCore implements CPSCoreInterface {
     }
 
     @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External
-    public void unregister_prep() {
-        unregisterPrep();
-    }
-
     @External
     public void registerPrep() {
         checkMaintenance();
@@ -2154,10 +2143,6 @@ public class CPSCore implements CPSCoreInterface {
         return Map.of(DATA, _proposals_list, COUNT, size);
     }
 
-    @External(readonly = true)
-    public Map<String, Object> get_proposal_detail_by_wallet(Address _wallet_address, @Optional int startIndex) {
-        return getProposalDetailByWallet(_wallet_address, startIndex);
-    }
 
     @Override
     @External(readonly = true)
