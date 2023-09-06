@@ -58,7 +58,7 @@ public interface CPSTreasuryInterface {
                               int _added_installment_count);
 
     @External
-    void send_installment_to_contributor(String _ipfs_key);
+    void send_installment_to_contributor(String _ipfs_key,int installment_count);
 
     @External
     void send_reward_to_sponsor(String _ipfs_key);

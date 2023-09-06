@@ -137,7 +137,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
 
     @Override
     @External
-    public void transfer_proposal_fund_to_cps_treasury(String _ipfs_key, int _total_installment_count,
+    public void transfer_proposal_fund_to_cps_treasury(String _ipfs_key, int project_duration,int _total_installment_count,
                                                        Address _sponsor_address, Address _contributor_address,
                                                        String token_flag, BigInteger _total_budget) {
         validateCpsScore();
@@ -157,7 +157,8 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         depositProposal.add(METHOD, "deposit_proposal_fund");
         JsonObject params = new JsonObject();
         params.add("ipfs_hash", _ipfs_key);
-        params.add("project_duration", _total_installment_count);
+        params.add("project_duration", project_duration);
+        params.add("milestone_count", _total_installment_count);
         params.add("sponsor_address", _sponsor_address.toString());
         params.add("contributor_address", _contributor_address.toString());
         params.add("total_budget", _total_budget.toString(16));

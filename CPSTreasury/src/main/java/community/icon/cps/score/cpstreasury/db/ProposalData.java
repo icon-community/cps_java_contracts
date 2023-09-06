@@ -16,6 +16,7 @@ public class ProposalData {
         public String contributor_address;
         public String sponsor_address;
         public String status;
+        public int milestoneCount;
     }
     private final BranchDB<String, VarDB<String>> ipfsHash = Context.newBranchDB(consts.IPFS_HASH, String.class);
     private final BranchDB<String, VarDB<BigInteger>> totalBudget = Context.newBranchDB(consts.TOTAL_BUDGET, BigInteger.class);
@@ -46,8 +47,8 @@ public class ProposalData {
         sponsorWithdrawAmount.at(prefix).set(BigInteger.ZERO);
         remainingAmount.at(prefix).set(_proposals.total_budget);
         sponsorRemainingAmount.at(prefix).set(_proposals.sponsor_reward);
-        installmentCount.at(prefix).set(_proposals.project_duration);
-        sponsorRewardCount.at(prefix).set(_proposals.project_duration);
+        installmentCount.at(prefix).set(_proposals.milestoneCount);
+        sponsorRewardCount.at(prefix).set(_proposals.milestoneCount);
         token.at(prefix).set(_proposals.token);
         status.at(prefix).set(_proposals.status);
     }

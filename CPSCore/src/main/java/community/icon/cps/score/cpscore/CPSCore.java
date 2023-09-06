@@ -1333,6 +1333,7 @@ public class CPSCore implements CPSCoreInterface {
             Address contributorAddress = (Address) proposalDetails.get(CONTRIBUTOR_ADDRESS);
             BigInteger totalBudget = (BigInteger) proposalDetails.get(TOTAL_BUDGET);
             int projectDuration = (int) proposalDetails.get(PROJECT_DURATION);
+            int milestoneCount = (int) proposalDetails.get(MILESTONE_COUNT);
             BigInteger sponsorDepositAmount = (BigInteger) proposalDetails.get(SPONSOR_DEPOSIT_AMOUNT);
             int approvedVoters = (int) proposalDetails.get(APPROVE_VOTERS);
             BigInteger approvedVotes = (BigInteger) proposalDetails.get(APPROVED_VOTES);
@@ -1361,7 +1362,7 @@ public class CPSCore implements CPSCoreInterface {
                     sponsorProjects.at(sponsorAddress).add(proposal);
                     ProposalDataDb.sponsorDepositStatus.at(proposalPrefix).set(BOND_APPROVED);
                     callScore(getCpfTreasuryScore(), "transfer_proposal_fund_to_cps_treasury",
-                            proposal, projectDuration, sponsorAddress, contributorAddress, flag, totalBudget);
+                            proposal,projectDuration, milestoneCount, sponsorAddress, contributorAddress, flag, totalBudget);
                     distributionAmount = distributionAmount.subtract(totalBudget);
 
                 } else {

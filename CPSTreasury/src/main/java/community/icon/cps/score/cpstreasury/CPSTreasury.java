@@ -431,6 +431,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
         if (methodName.equals("deposit_proposal_fund")) {
             String ipfs_hash = params.get("ipfs_hash").asString();
             int project_duration = params.get("project_duration").asInt();
+            int milestone_count = params.get("milestone_count").asInt();
             BigInteger total_budget = new BigInteger(params.get("total_budget").asString(), 16);
             BigInteger sponsor_reward = new BigInteger(params.get("sponsor_reward").asString(), 16);
             String token = params.get("token").asString();
@@ -439,6 +440,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
             ProposalAttributes proposalAttributes = new ProposalAttributes();
             proposalAttributes.ipfs_hash = ipfs_hash;
             proposalAttributes.project_duration = project_duration;
+            proposalAttributes.milestoneCount = milestone_count;
             proposalAttributes.total_budget = total_budget;
             proposalAttributes.sponsor_reward = sponsor_reward;
             proposalAttributes.token = token;
