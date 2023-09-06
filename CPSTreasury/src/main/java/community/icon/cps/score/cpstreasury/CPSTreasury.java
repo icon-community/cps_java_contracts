@@ -299,7 +299,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
 
     @Override
     @External
-    public void send_installment_to_contributor(String _ipfs_key) {
+    public void send_installment_to_contributor(String _ipfs_key, int installment_count) {
         validateCpsScore();
         Context.require(proposalExists(_ipfs_key), TAG + ": Invalid IPFS Hash.");
         BigInteger installmentAmount;
@@ -315,9 +315,9 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
         if (installmentCount == 1) {
             installmentAmount = remainingAmount;
         } else {
-            installmentAmount = remainingAmount.divide(BigInteger.valueOf(installmentCount));
+            installmentAmount = remainingAmount.divide(BigInteger.valueOf(installmentCount)).multiply(BigInteger.valueOf(installment_count));
         }
-        int newInstallmentCount = installmentCount - 1;
+        int newInstallmentCount = installmentCount - installment_count; // TODO: check for negative value
 
         setInstallmentCount(prefix, newInstallmentCount);
         setRemainingAmount(prefix, remainingAmount.subtract(installmentAmount));
