@@ -477,6 +477,7 @@ public class CPSCore implements CPSCoreInterface {
         period.nextBlock.set(BigInteger.valueOf(Context.getBlockHeight()).add(BLOCKS_DAY_COUNT.multiply(DAY_COUNT)));
         period.periodName.set(APPLICATION_PERIOD);
         period.previousPeriodName.set("None");
+        period.periodCount.set(0);
     }
 
     @Override
@@ -706,9 +707,15 @@ public class CPSCore implements CPSCoreInterface {
             int voteIndex = votersIndexDb.getOrDefault(VOTE, 0);
             ProposalDataDb.votersReasons.at(proposalPrefix).set(index - 1, voteReason);
             if (voteIndex == APPROVE_) {
+                if (vote.equals(APPROVE)){
+                    Context.revert("Cannot cast same vote. Change your vote" );
+                }
                 ArrayDBUtils.removeArrayItem(ProposalDataDb.approveVoters.at(proposalPrefix), caller);
                 ProposalDataDb.approvedVotes.at(proposalPrefix).set(approvedVotes.subtract(voterStake));
             } else if (voteIndex == REJECT_) {
+                if (vote.equals(REJECT)){
+                    Context.revert("Cannot cast same vote. Change your vote" );
+                }
                 ArrayDBUtils.removeArrayItem(ProposalDataDb.rejectVoters.at(proposalPrefix), caller);
                 ProposalDataDb.rejectedVotes.at(proposalPrefix).set(rejectedVotes.subtract(voterStake));
             } else {
@@ -777,6 +784,12 @@ public class CPSCore implements CPSCoreInterface {
         int[] milestones = progressReport.milestoneCompleted;
 
         for (int milestone : milestones) {
+
+            int milestoneStatus = getMileststoneStatusOf(ipfsHash,milestone);
+            if (milestoneStatus == MILESTONE_REPORT_COMPLETED || milestoneStatus == MILESTONE_REPORT_SUBMITTED) {
+                Context.revert("Cannot submit progress report of completed milestone"); // TODO: better error message
+            }
+
             MilestonesAttributes milestonesAttributes = new MilestonesAttributes();
             milestonesAttributes.reportHash = reportHash;
             milestonesAttributes.id = milestone;
@@ -855,7 +868,7 @@ public class CPSCore implements CPSCoreInterface {
             BigInteger rejectedVotes = (BigInteger) milestonesReportDetails.get(REJECTED_VOTES);
             Integer totalVoter = (Integer) milestonesReportDetails.get(TOTAL_VOTERS);
             if (totalVoter == 0) {
-                MilestoneDb.totalVoters.at(progressReportPrefix).set(pReps.validPreps.size());
+                MilestoneDb.totalVoters.at(milestonePrefix).set(pReps.validPreps.size());
             }
             DictDB<String, Integer> votersIndexDb = MilestoneDb.votersListIndices.at(milestonePrefix).at(caller);
             if (!voteChange) {
@@ -1784,6 +1797,38 @@ public class CPSCore implements CPSCoreInterface {
                 APPROVED_VOTES, ProgressReportDataDb.approvedVotes.at(prefix).getOrDefault(BigInteger.ZERO),
                 REJECTED_VOTES, ProgressReportDataDb.rejectedVotes.at(prefix).getOrDefault(BigInteger.ZERO),
                 TOTAL_VOTES, ProgressReportDataDb.totalVotes.at(prefix).getOrDefault(BigInteger.ZERO));
+    }
+
+    @External(readonly = true)
+    public Map<String,Object> getMilestonesReport(String ipfsKey, int milestoneId){
+        String milestonePrefix = mileStonePrefix(ipfsKey,milestoneId);
+        return getDataFromMilestoneDB(milestonePrefix);
+    }
+
+    @External(readonly = true)
+    public int getMilestoneCount(String ipfsHash){
+        if (proposalKeyExists(ipfsHash)) {
+            return ProposalDataDb.getMilestoneCount(proposalPrefix(ipfsHash));
+        }
+        return 0;
+    }
+
+    @External(readonly = true) // from milestone db // TODO: give a better name
+    public int getMileststoneStatusOf(String proposalKey, int milestoneId){
+        String milestonePrefix = mileStonePrefix(proposalKey,milestoneId);
+        return MilestoneDb.status.at(milestonePrefix).getOrDefault(0);
+    }
+
+    @External(readonly = true)
+    public List<Map<String,Object>> getMilestonesReportByReportHash(String reportKey){
+        List<Map<String,Object>> milestoneList = new ArrayList<>();
+        if (progressKeyExists(reportKey)){
+            ArrayDB<String> milestonePrefix = this.progressReportToMilestone.at(reportKey);
+            for (int i = 0; i < milestonePrefix.size(); i++) {
+                milestoneList.add(getDataFromMilestoneDB(milestonePrefix.get(i)));
+            }
+        }
+        return milestoneList;
     }
 
 
