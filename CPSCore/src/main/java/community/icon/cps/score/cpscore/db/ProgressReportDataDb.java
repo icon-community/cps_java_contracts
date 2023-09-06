@@ -10,7 +10,7 @@ import static community.icon.cps.score.cpscore.utils.Constants.*;
 import static community.icon.cps.score.lib.interfaces.CPSCoreInterface.ProgressReportAttributes;
 
 public class ProgressReportDataDb {
-    private static final BranchDB<String, VarDB<String>> ipfsHash = Context.newBranchDB(IPFS_HASH, String.class);
+    public static final BranchDB<String, VarDB<String>> ipfsHash = Context.newBranchDB(IPFS_HASH, String.class);
     private static final BranchDB<String, VarDB<String>> reportHash = Context.newBranchDB(REPORT_HASH, String.class);
     private static final BranchDB<String, VarDB<String>> progressReportTitle = Context.newBranchDB(PROGRESS_REPORT_TITLE, String.class);
     public static final BranchDB<String, VarDB<BigInteger>> timestamp = Context.newBranchDB(TIMESTAMP, BigInteger.class);
@@ -74,6 +74,10 @@ public class ProgressReportDataDb {
                 Map.entry(BUDGET_ADJUSTMENT, budgetAdjustment.at(prefix).getOrDefault(false)),
                 Map.entry(PROJECT_TITLE, ProposalDataDb.projectTitle.at(proposalPrefix(proposalHash)).getOrDefault("")),
                 Map.entry(CONTRIBUTOR_ADDRESS, ProposalDataDb.contributorAddress.at(proposalPrefix(proposalHash)).get()));
+    }
+
+    public static boolean hasMilestone(String prefix){
+        return isMilestone.at(prefix).getOrDefault(false);
     }
 
     public static Map<String, Object> getVoteResultsFromProgressReportDB(String prefix) {

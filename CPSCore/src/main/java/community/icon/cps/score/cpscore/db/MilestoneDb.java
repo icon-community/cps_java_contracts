@@ -4,13 +4,14 @@ import community.icon.cps.score.lib.interfaces.CPSCoreInterface;
 import score.*;
 
 import java.math.BigInteger;
+import java.util.Map;
 
 import static community.icon.cps.score.cpscore.utils.Constants.*;
 
 public class MilestoneDb {
-    private static final BranchDB<String, VarDB<Integer>> id = Context.newBranchDB("milestoneID", String.class);
-    private static final BranchDB<String, VarDB<String>> progressReportHash = Context.newBranchDB(REPORT_HASH, String.class);
-    private static final BranchDB<String, VarDB<Integer>> status = Context.newBranchDB(STATUS, String.class);
+    public static final BranchDB<String, VarDB<Integer>> id = Context.newBranchDB(MILESTONE_ID, String.class);
+    public static final BranchDB<String, VarDB<String>> progressReportHash = Context.newBranchDB(REPORT_HASH, String.class);
+    public static final BranchDB<String, VarDB<Integer>> status = Context.newBranchDB(STATUS, String.class);
     public static final BranchDB<String, VarDB<BigInteger>> totalVotes = Context.newBranchDB(TOTAL_VOTES, BigInteger.class);
     public static final BranchDB<String, VarDB<BigInteger>> approvedVotes = Context.newBranchDB(APPROVED_VOTES, BigInteger.class);
     public static final BranchDB<String, VarDB<BigInteger>> rejectedVotes = Context.newBranchDB(REJECTED_VOTES, BigInteger.class);
@@ -30,6 +31,19 @@ public class MilestoneDb {
         approvedVotes.at(prefix).set(BigInteger.ZERO);
         rejectedVotes.at(prefix).set(BigInteger.ZERO);
 
+    }
+
+    public static Map<String, Object> getDataFromMilestoneDB(String prefix) {
+        return Map.ofEntries(
+                Map.entry(MILESTONE_ID, id.at(prefix).get()),
+                Map.entry(STATUS, status.at(prefix).getOrDefault(0)),
+                Map.entry(REPORT_HASH, progressReportHash.at(prefix).getOrDefault("")),
+                Map.entry(TOTAL_VOTES, totalVotes.at(prefix).getOrDefault(BigInteger.ZERO)),
+                Map.entry(APPROVED_VOTES, approvedVotes.at(prefix).getOrDefault(BigInteger.ZERO)),
+                Map.entry(REJECTED_VOTES, rejectedVotes.at(prefix).getOrDefault(BigInteger.ZERO)),
+                Map.entry(TOTAL_VOTERS, totalVoters.at(prefix).getOrDefault(0)),
+                Map.entry(APPROVE_VOTERS, approveVoters.at(prefix).size()),
+                Map.entry(REJECT_VOTERS, rejectVoters.at(prefix).size()));
     }
 
     public static String progressReportPrefix(String progressHash) {

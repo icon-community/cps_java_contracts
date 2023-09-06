@@ -110,6 +110,7 @@ public class Constants {
     public static final String IPFS_HASH = "ipfs_hash";
     public static final String REPORT_KEY = "report_key";
     public static final String REPORT_HASH = "report_hash";
+    public static final String MILESTONE_ID= "milestoneID";
     public static final String PROJECT_DURATION = "project_duration";
     public static final String MILESTONE_COUNT = "milestoneCount";
     public static final String APPROVED_REPORTS = "approved_reports";
