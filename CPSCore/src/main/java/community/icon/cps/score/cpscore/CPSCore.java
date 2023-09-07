@@ -7,7 +7,12 @@ import community.icon.cps.score.cpscore.db.ProgressReportDataDb;
 import community.icon.cps.score.cpscore.db.ProposalDataDb;
 import community.icon.cps.score.cpscore.utils.ArrayDBUtils;
 import community.icon.cps.score.lib.interfaces.CPSCoreInterface;
-import score.*;
+import score.Address;
+import score.ArrayDB;
+import score.BranchDB;
+import score.Context;
+import score.DictDB;
+import score.VarDB;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
@@ -77,9 +82,13 @@ public class CPSCore implements CPSCoreInterface {
     private final ArrayDB<Address> priorityVotedPreps = Context.newArrayDB(PRIORITY_VOTED_PREPS, Address.class);
     private final BranchDB<Address, ArrayDB<String>> sponsorProjects = Context.newBranchDB(SPONSOR_PROJECTS, String.class);
     private final BranchDB<Address, ArrayDB<String>> contributorProjects = Context.newBranchDB(CONTRIBUTOR_PROJECTS, String.class);
+    private final VarDB<BigInteger> sponsorBondPercentage = Context.newVarDB(SPONSOR_BOND_PERCENTAGE, BigInteger.class);
+    private final DictDB<String,BigInteger> period = Context.newDictDB(PERIOD,BigInteger.class);
+    private static final BigInteger HUNDRED = BigInteger.valueOf(100);
 
-    public CPSCore() {
+    public CPSCore(@Optional BigInteger bondValue) { // TODO
         PeriodController periodController = new PeriodController();
+        sponsorBondPercentage.set(bondValue);
     }
 
     @Override
@@ -153,6 +162,44 @@ public class CPSCore implements CPSCoreInterface {
     public Address getBnusdScore() {
         SetterGetter setterGetter = new SetterGetter();
         return setterGetter.balancedDollar.get();
+    }
+    // TODO : set in CPFTreasury
+    @External(readonly = true)
+    public BigInteger getSponsorBondPercentage(){
+        return sponsorBondPercentage.get();
+    }
+
+    @External
+    public void setSponsorBondPercentage(BigInteger bondValue){
+        onlyCPFTreasury();
+        Context.require(bondValue.compareTo(BigInteger.valueOf(12)) >= 0,TAG +
+                ": Cannot set bond percentage less than 12%");
+        sponsorBondPercentage.set(bondValue);
+    }
+
+    @External(readonly = true)
+    public BigInteger getVotingPeriod(){
+        return period.get(VOTING_PERIOD);
+    }
+
+    @External(readonly = true)
+    public BigInteger getApplicationPeriod(){
+        return period.get(APPLICATION_PERIOD);
+    }
+
+    @External
+    public void setPeriod(BigInteger applicationPeriod){
+        onlyCPFTreasury();
+        BigInteger votingPeriod = TOTAL_PERIOD.subtract(applicationPeriod);
+
+        Context.require(votingPeriod.compareTo(BigInteger.TEN) <= 0,
+                TAG + ": Voting period cannot be more than 10 days");
+        Context.require(applicationPeriod.compareTo(BigInteger.valueOf(14)) >0 &&
+                        applicationPeriod.compareTo(BigInteger.valueOf(21)) <=0
+                ,TAG+": Application period should be between 2-3 weeks");
+
+        this.period.set(APPLICATION_PERIOD,applicationPeriod);
+        this.period.set(VOTING_PERIOD,votingPeriod);
     }
 
 
@@ -254,6 +301,8 @@ public class CPSCore implements CPSCoreInterface {
         Context.require(check, TAG + ": Address not registered as admin.");
         ArrayDBUtils.removeArrayItem(admins, address);
     }
+// voting -> register, not valid
+    // start of application -> setPreps -> register is valid prep
 
 
     @Override
@@ -614,6 +663,7 @@ public class CPSCore implements CPSCoreInterface {
     @Payable
     @External
     public void submitProposal(ProposalAttributes proposals) {
+        // TODO : add sponsor bond
         checkMaintenance();
         updatePeriod();
         PeriodController period = new PeriodController();
@@ -1067,9 +1117,9 @@ public class CPSCore implements CPSCoreInterface {
         if (currentBlock.compareTo(nextBlock) >= 0) {
             if (period.periodName.get().equals(APPLICATION_PERIOD)) {
                 period.periodName.set(VOTING_PERIOD);
-                period.periodCount.set(period.periodCount.get() + 1);
+                period.periodCount.set(period.periodCount.getOrDefault(0) + 1);
                 period.previousPeriodName.set(APPLICATION_PERIOD);
-                period.nextBlock.set(nextBlock.add(BLOCKS_DAY_COUNT.multiply(DAY_COUNT)));
+                period.nextBlock.set(nextBlock.add(BLOCKS_DAY_COUNT.multiply(getApplicationPeriod()))); // APPLICATION PERIOD KO TIMESTAMP
                 updateApplicationResult();
 
                 period.updatePeriodIndex.set(0);
@@ -1101,7 +1151,7 @@ public class CPSCore implements CPSCoreInterface {
                 } else {
                     SetterGetter setterGetter = new SetterGetter();
                     updateDenylistPreps();
-                    period.nextBlock.set(nextBlock.add(BLOCKS_DAY_COUNT.multiply(DAY_COUNT)));
+                    period.nextBlock.set(nextBlock.add(BLOCKS_DAY_COUNT.multiply(getVotingPeriod()))); // VOTING PERIOD
                     period.periodName.set(APPLICATION_PERIOD);
                     period.previousPeriodName.set(VOTING_PERIOD);
                     PeriodUpdate("Period Update State 4/4. Period Successfully Updated to Application Period.");
@@ -1324,9 +1374,9 @@ public class CPSCore implements CPSCoreInterface {
         }
     }
 
-    private void updateProposalsResult() {
+    private void updateProposalsResult() { // TODO: THE PROPSAL IS ACCEPTED OR REJECTED HERE // WHEN PENDING
         BigInteger distributionAmount = getRemainingFund().get(bnUSD);
-        List<String> proposals = sortPriorityProposals();
+        List<String> proposals = sortPriorityProposals(); // priority proposal mean?
         PReps pReps = new PReps();
 
         for (String proposal : proposals) {
@@ -1356,7 +1406,7 @@ public class CPSCore implements CPSCoreInterface {
                 updatedStatus = REJECTED;
             } else if ((voters_ratio) >= MAJORITY &&
                     (approvedVotes.doubleValue() / totalVotes.doubleValue()) >= MAJORITY) {
-                if (totalBudget.multiply(BigInteger.valueOf(102)).divide(BigInteger.valueOf(100)).
+                if (totalBudget.multiply(BigInteger.valueOf(102)).divide(BigInteger.valueOf(100)). // total budget + 2% of sponsor
                         compareTo(distributionAmount) < 0) {
                     updateProposalStatus(proposal, ACTIVE);
                     updatedStatus = ACTIVE;
@@ -2004,8 +2054,8 @@ public class CPSCore implements CPSCoreInterface {
 
             BigInteger projectBudget = (BigInteger) proposalDetails.get(TOTAL_BUDGET);
 
-            Context.require(value.equals(projectBudget.divide(BigInteger.TEN)),
-                    TAG + ": Deposit 10% of the total budget of the project.");
+            Context.require(value.equals(projectBudget.multiply(getSponsorBondPercentage()).divide(HUNDRED)), // TODO : check calculations
+                    TAG + ": Deposit " + getSponsorBondPercentage() +"% of the total budget of the project.");
 
             updateProposalStatus(ipfsKey, PENDING);
             String proposalPrefix = proposalPrefix(ipfsKey);
@@ -2300,5 +2350,9 @@ public class CPSCore implements CPSCoreInterface {
         validateAdmins();
         Context.require(scoreAddress.isContract(), scoreAddress + " is not a SCORE Address");
 
+    }
+
+    public void onlyCPFTreasury() {
+        Context.require(Context.getCaller().equals(getCpfTreasuryScore()), TAG + ": Only CPF treasury can call this method");
     }
 }

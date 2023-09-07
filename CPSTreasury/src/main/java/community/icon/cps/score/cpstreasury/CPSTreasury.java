@@ -4,6 +4,12 @@ import community.icon.cps.score.cpstreasury.db.ProposalData;
 import score.*;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
+import score.Address;
+import score.ArrayDB;
+import score.BranchDB;
+import score.Context;
+import score.DictDB;
+import score.VarDB;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Payable;
@@ -33,6 +39,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
     private static final String COMPLETED = "completed";
     private static final String CONTRIBUTOR_PROJECTS = "contributor_projects";
     private static final String SPONSOR_PROJECTS = "sponsor_projects";
+    public static final String ONSET_PAYMENT = "onset_payment";
 
     private final ArrayDB<String> proposalsKeys = Context.newArrayDB(PROPOSALS_KEYS, String.class);
     private final DictDB<String, Integer> proposalsKeyListIndex = Context.newDictDB(PROPOSALS_KEY_LIST_INDEX, Integer.class);
@@ -44,6 +51,10 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
     private final BranchDB<String, ArrayDB<String>> contributorProjects = Context.newBranchDB(CONTRIBUTOR_PROJECTS, String.class);
     private final BranchDB<String, ArrayDB<String>> sponsorProjects = Context.newBranchDB(SPONSOR_PROJECTS, String.class);
     private final VarDB<Integer> batchSize = Context.newVarDB("batch_size", Integer.class);
+    private final VarDB<BigInteger> onsetPaymentPercentage = Context.newVarDB(ONSET_PAYMENT,BigInteger.class);
+
+    private static final BigInteger HUNDRED = BigInteger.valueOf(100);
+    public static final BigInteger MAX_ONSET_PAYMENT = BigInteger.valueOf(20);
 
     public CPSTreasury() {
     }
@@ -133,6 +144,26 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
         return balancedDollar.get();
     }
 
+    @External
+    public void setOnsetPayment(BigInteger paymentPercentage){
+        Context.require(Context.getCaller().equals(cpfTreasuryScore.get()), TAG + ": Only receiving from  " +
+                cpfTreasuryScore.get());
+        Context.require(paymentPercentage.compareTo(MAX_ONSET_PAYMENT) <= 0,
+                TAG + ": Initial payment cannot be greater than " + MAX_ONSET_PAYMENT + " percentage");
+
+        BigInteger bondPercentage = callScore(BigInteger.class,getCpsScore(),"getSponsorBondPercentage");
+        Context.require(paymentPercentage.compareTo(bondPercentage) <=0,
+                TAG+": Payment cannot be greater than sponsor bond percentage");
+
+        onsetPaymentPercentage.set(paymentPercentage);
+    }
+
+    @External(readonly = true)
+    public BigInteger getOnsetPayment(){
+        return onsetPaymentPercentage.get();
+    }
+
+
     @Override
     @External(readonly = true)
     public Map<String, ?> getContributorProjectedFund(Address walletAddress) {
@@ -155,6 +186,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
                         BigInteger totalBudget = (BigInteger) proposal_details.get(consts.TOTAL_BUDGET);
                         BigInteger totalPaidAmount = (BigInteger) proposal_details.get(consts.WITHDRAW_AMOUNT);
 
+                        BigInteger remaingAmount = totalBudget.subtract(totalPaidAmount);
                         Map<String, ?> project_details = Map.of(
                                 consts.IPFS_HASH, _ipfs_key,
                                 consts.TOKEN, flag,
@@ -162,7 +194,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
                                 consts.TOTAL_INSTALLMENT_PAID, totalPaidAmount,
                                 consts.TOTAL_INSTALLMENT_COUNT, totalInstallment,
                                 consts.TOTAL_TIMES_INSTALLMENT_PAID, totalPaidCount,
-                                consts.INSTALLMENT_AMOUNT, totalBudget.divide(BigInteger.valueOf(totalInstallment)));
+                                consts.INSTALLMENT_AMOUNT, remaingAmount.divide(BigInteger.valueOf(totalInstallment)));
 
                         projectDetails.add(project_details);
                         if (flag.equals(consts.ICX)) {
@@ -227,7 +259,8 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
                         BigInteger totalBudget = (BigInteger) proposal_details.get(consts.SPONSOR_REWARD);
                         BigInteger totalPaidAmount = (BigInteger) proposal_details.get(consts.WITHDRAW_AMOUNT);
                         BigInteger depositedSponsorBond = ((BigInteger) proposal_details.get(consts.TOTAL_BUDGET)).divide(BigInteger.TEN);
-
+                        BigInteger remaingAmount = totalBudget.subtract(totalPaidAmount);
+                        // TODO: won't work for second
                         Map<String, ?> project_details = Map.of(
                                 consts.IPFS_HASH, _ipfs_key,
                                 consts.TOKEN, flag,
@@ -235,7 +268,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
                                 consts.TOTAL_INSTALLMENT_PAID, totalPaidAmount,
                                 consts.TOTAL_INSTALLMENT_COUNT, totalInstallment,
                                 consts.TOTAL_TIMES_INSTALLMENT_PAID, totalPaidCount,
-                                consts.INSTALLMENT_AMOUNT, totalBudget.divide(BigInteger.valueOf(totalInstallment)),
+                                consts.INSTALLMENT_AMOUNT, remaingAmount.divide(BigInteger.valueOf(totalInstallment)),
                                 consts.SPONSOR_BOND_AMOUNT, depositedSponsorBond);
 
                         projectDetails.add(project_details);
@@ -332,6 +365,30 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
         }
     }
 
+private void onsetPaymentContributor(String _ipfs_key){
+        Context.require(proposalExists(_ipfs_key), TAG + ": Invalid IPFS Hash.");
+        String prefix = proposalPrefix(_ipfs_key);
+        Map<String, ?> proposalData = getDataFromProposalDB(prefix);
+        Address contributorAddress = (Address) proposalData.get(consts.CONTRIBUTOR_ADDRESS);
+        String flag = (String) proposalData.get(consts.TOKEN);
+
+        BigInteger totalBudget = (BigInteger) proposalData.get(consts.TOTAL_BUDGET);
+        BigInteger withdrawAmount = (BigInteger) proposalData.get(consts.WITHDRAW_AMOUNT);
+
+        BigInteger onSetPaymentPercentage = getOnsetPayment();
+        BigInteger onsetAmount = (totalBudget.multiply(getOnsetPayment()).divide(HUNDRED));
+
+        setRemainingAmount(prefix,totalBudget.subtract(onsetAmount));
+
+        setWithdrawAmount(prefix,withdrawAmount.add(onsetAmount));
+        DictDB<String, BigInteger> installmentFund = this.installmentFundRecord.at(contributorAddress.toString());
+
+        BigInteger installmentFundAmount = installmentFund.getOrDefault(flag, BigInteger.ZERO);
+        installmentFund.set(flag, installmentFundAmount.add(onsetAmount));
+
+        InitialPaymentSent(contributorAddress,"initial payment of " + onSetPaymentPercentage + "% is send to contributor address");
+    }
+
     @Override
     @External
     public void send_reward_to_sponsor(String _ipfs_key) {
@@ -361,6 +418,31 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
         installmentFunds.set(flag, installmentFunds.getOrDefault(flag, BigInteger.ZERO).add(installmentAmount));
         ProposalFundSent(sponsorAddress, "New installment " + installmentAmount + " " +
                 flag + " sent to sponsor address.");
+    }
+
+    private void onsetPaymentSponsor(String _ipfs_key){
+        Context.require(proposalExists(_ipfs_key), TAG + ": Invalid IPFS Hash.");
+        String prefix = proposalPrefix(_ipfs_key);
+
+        BigInteger sponsorWithdrawAmount = getSponsorWithdrawAmount(prefix);
+        BigInteger sponsorRemainingAmount = getSponsorRemainingAmount(prefix);
+        Address sponsorAddress = getSponsorAddress(prefix);
+        String flag = getToken(prefix);
+
+        BigInteger onSetPaymentPercentage = getOnsetPayment();
+        BigInteger onsetAmount = (sponsorRemainingAmount.multiply(onSetPaymentPercentage).divide(HUNDRED));
+
+        setSponsorRemainingAmount(prefix,sponsorRemainingAmount.subtract(onsetAmount));
+        setSponsorWithdrawAmount(prefix,sponsorWithdrawAmount.add(onsetAmount));
+
+        DictDB<String, BigInteger> installmentFunds = installmentFundRecord.at(sponsorAddress.toString());
+        installmentFunds.set(flag, installmentFunds.getOrDefault(flag, BigInteger.ZERO).add(onsetAmount));
+        installmentFunds = installmentFundRecord.at(sponsorAddress.toString());
+
+
+        InitialPaymentSent(sponsorAddress, "initial amount of " + onSetPaymentPercentage +
+                "%  sent to sponsor address.");
+
     }
 
     @Override
@@ -448,6 +530,9 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
             proposalAttributes.sponsor_address = sponsor_address;
             proposalAttributes.status = ACTIVE;
             depositProposalFund(proposalAttributes, _value);
+            onsetPaymentContributor(proposalAttributes.ipfs_hash);
+            onsetPaymentSponsor(proposalAttributes.ipfs_hash);
+
         } else if (methodName.equals("budget_adjustment")) {
             String ipfs_key = params.get("_ipfs_key").asString();
             BigInteger added_budget = new BigInteger(params.get("_added_budget").asString(), 16);
@@ -483,7 +568,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
     }
 
 
-        public <T> T callScore(Class<T> t, Address address, String method, Object... params) {
+    public <T> T callScore(Class<T> t, Address address, String method, Object... params) {
         return Context.call(t, address, method, params);
     }
 
@@ -509,6 +594,12 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
     @EventLog(indexed = 1)
     public void ProposalFundSent(Address _receiver_address, String note) {
     }
+
+    @EventLog(indexed = 1)
+    public void InitialPaymentSent(Address _receiver_address, String note) {
+    }
+
+
 
     @Override
     @EventLog(indexed = 1)

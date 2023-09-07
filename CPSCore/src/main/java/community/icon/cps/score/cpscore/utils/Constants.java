@@ -147,6 +147,8 @@ public class Constants {
     public static final String PRIORITY_VOTED_PREPS = "priority_voted_preps";
     public static final String SPONSOR_PROJECTS = "sponsor_projects";
     public static final String CONTRIBUTOR_PROJECTS = "contributor_projects";
+    public static final String SPONSOR_BOND_PERCENTAGE = "sponsor_bond_percentage";
+    public static final String PERIOD = "period";
 
 
     //    VOTE KEYS
@@ -200,4 +202,5 @@ public class Constants {
     public static final Integer MILESTONE_REPORT_COMPLETED = 3;
 
 
+    public static final BigInteger TOTAL_PERIOD = BigInteger.valueOf(30);
 }
