@@ -2074,7 +2074,8 @@ public class CPSCore implements CPSCoreInterface {
     public void removeDenylistPreps() {
         validateAdmins();
         PReps pReps = new PReps();
-        for (int i = 0; i < pReps.denylist.size(); i++) {
+        int size = pReps.denylist.size();
+        for (int i = 0; i < size; i++) {
             Address prep = pReps.denylist.pop();
             pReps.prepsDenylistStatus.set(prep.toString(), 0);
         }
