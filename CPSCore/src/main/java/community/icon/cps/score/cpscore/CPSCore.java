@@ -1202,7 +1202,7 @@ public class CPSCore implements CPSCoreInterface {
             Address _contributor_address = (Address) _proposal_details.get(CONTRIBUTOR_ADDRESS);
             boolean _budget_adjustment = (boolean) _report_result.get(BUDGET_ADJUSTMENT);
             BigInteger _sponsor_deposit_amount = (BigInteger) _proposal_details.get(SPONSOR_DEPOSIT_AMOUNT);
-            String flag = (String) _proposal_details.get("token");
+            String flag = (String) _proposal_details.get(TOKEN);
 
             // checking which prep(s) did not vote the progress report
             checkInactivePreps(ProgressReportDataDb.votersList.at(progressPrefix));
@@ -1296,7 +1296,7 @@ public class CPSCore implements CPSCoreInterface {
             String _proposal_status = (String) _proposal_details.get(STATUS);
             Address _sponsor_address = (Address) _proposal_details.get(SPONSOR_ADDRESS);
             Address _contributor_address = (Address) _proposal_details.get(CONTRIBUTOR_ADDRESS);
-            String flag = (String) _proposal_details.get("token");
+            String flag = (String) _proposal_details.get(TOKEN);
 
             if (!ProposalDataDb.submitProgressReport.at(proposalPrefix).getOrDefault(Boolean.FALSE)) {
                 if (_proposal_status.equals(ACTIVE)) {
