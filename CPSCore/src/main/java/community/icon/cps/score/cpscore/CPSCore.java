@@ -564,7 +564,7 @@ public class CPSCore implements CPSCoreInterface {
     public Map<String, BigInteger> getRemainingFund() {
         SetterGetter setterGetter = new SetterGetter();
         //noinspection unchecked
-        return callScore(Map.class, setterGetter.cpfScore.get(), "get_total_funds");
+        return callScore(Map.class, setterGetter.cpfScore.get(), "getTotalFunds");
     }
 
 
