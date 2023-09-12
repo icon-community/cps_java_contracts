@@ -127,7 +127,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
 
     @Override
     @External(readonly = true)
-    public Map<String, BigInteger> get_remaining_swap_amount() {
+    public Map<String, BigInteger> getRemainingSwapAmount() {
         BigInteger maxCap = treasuryFundbnUSD.get();
         return Map.of("maxCap", maxCap,
                 "remainingToSwap", maxCap.subtract(getBNUSDAvailableBalance()));
@@ -342,7 +342,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         BigInteger sicxICXPrice = (BigInteger) Context.call(dexScore.get(), "getPrice", sICXICXPoolID);
         BigInteger sicxBnusdPrice = (BigInteger) Context.call(dexScore.get(), "getPrice", sICXBNUSDPoolID);
         BigInteger icxbnUSDPrice = sicxBnusdPrice.multiply(EXA).divide(sicxICXPrice);
-        BigInteger bnUSDRemainingToSwap = get_remaining_swap_amount().get("remainingToSwap");
+        BigInteger bnUSDRemainingToSwap = getRemainingSwapAmount().get("remainingToSwap");
         if (bnUSDRemainingToSwap.compareTo(BigInteger.TEN.multiply(EXA)) < 0 || _count == 0) {
             swapState.set(SwapCompleted);
             swapCount.set(SwapReset);
