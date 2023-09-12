@@ -391,7 +391,7 @@ private void onsetPaymentContributor(String _ipfs_key){
 
     @Override
     @External
-    public void send_reward_to_sponsor(String _ipfs_key) {
+    public void send_reward_to_sponsor(String _ipfs_key, int installment_count) {
         validateCpsScore();
 
         Context.require(proposalExists(_ipfs_key), TAG + ": Invalid IPFS Hash.");
@@ -407,9 +407,9 @@ private void onsetPaymentContributor(String _ipfs_key){
         if (sponsorRewardCount == 1) {
             installmentAmount = sponsorRemainingAmount;
         } else {
-            installmentAmount = sponsorRemainingAmount.divide(BigInteger.valueOf(sponsorRewardCount));
+            installmentAmount = sponsorRemainingAmount.divide(BigInteger.valueOf(sponsorRewardCount)).multiply(BigInteger.valueOf(installment_count));
         }
-        int newSponsorRewardCount = sponsorRewardCount - 1;
+        int newSponsorRewardCount = sponsorRewardCount - installment_count;
 
         setSponsorRewardCount(prefix, newSponsorRewardCount);
         setSponsorWithdrawAmount(prefix, sponsorWithdrawAmount.add(installmentAmount));
