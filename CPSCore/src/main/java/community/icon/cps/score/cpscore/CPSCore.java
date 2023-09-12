@@ -46,32 +46,10 @@ public class CPSCore implements CPSCoreInterface {
     private final ArrayDB<Address> contributors = Context.newArrayDB(CONTRIBUTORS, Address.class);
     private final ArrayDB<Address> sponsors = Context.newArrayDB(SPONSORS, Address.class);
     private static final ArrayDB<Address> admins = Context.newArrayDB(ADMINS, Address.class);
-    private final ArrayDB<String> sponsorPending = Context.newArrayDB(SPONSOR_PENDING, String.class);
-    private final ArrayDB<String> pending = Context.newArrayDB(PENDING, String.class);
-    private final ArrayDB<String> active = Context.newArrayDB(ACTIVE, String.class);
-    private final ArrayDB<String> paused = Context.newArrayDB(PAUSED, String.class);
-    private final ArrayDB<String> completed = Context.newArrayDB(COMPLETED, String.class);
-    private final ArrayDB<String> rejected = Context.newArrayDB(REJECTED, String.class);
-    private final ArrayDB<String> disqualified = Context.newArrayDB(DISQUALIFIED, String.class);
-    public final Map<String, ArrayDB<String>> proposalStatus = Map.of(SPONSOR_PENDING, sponsorPending,
-            PENDING, pending,
-            ACTIVE, active,
-            PAUSED, paused,
-            COMPLETED, completed,
-            REJECTED, rejected,
-            DISQUALIFIED, disqualified);
-
-
-    private final ArrayDB<String> waitingProgressReports = Context.newArrayDB(WAITING, String.class);
-    private final ArrayDB<String> approvedProgressReports = Context.newArrayDB(APPROVED, String.class);
-    private final ArrayDB<String> progressRejected = Context.newArrayDB(PROGRESS_REPORT_REJECTED, String.class);
-    public final Map<String, ArrayDB<String>> progressReportStatus = Map.of(WAITING, waitingProgressReports,
-            APPROVED, approvedProgressReports,
-            PROGRESS_REPORT_REJECTED, progressRejected
-    );
+    public final DictDB<String, BigInteger> period = Context.newDictDB(PERIOD,BigInteger.class);
     // TODO: change this name
-    public final BranchDB<String, ArrayDB<String>> progressReportToMilestone = Context.newBranchDB("ptom",String.class);
-
+    public   final BranchDB<String, ArrayDB<String>> progressReportToMilestone = Context.newBranchDB("ptom",String.class);
+    public   final VarDB<BigInteger> sponsorBondPercentage = Context.newVarDB(SPONSOR_BOND_PERCENTAGE, BigInteger.class);
     private final BranchDB<String, DictDB<String, BigInteger>> sponsorBondReturn = Context.newBranchDB(SPONSOR_BOND_RETURN, BigInteger.class);
     private final DictDB<Address, BigInteger> delegationSnapshot = Context.newDictDB(DELEGATION_SNAPSHOT, BigInteger.class);
     private final VarDB<BigInteger> maxDelegation = Context.newVarDB(MAX_DELEGATION, BigInteger.class);
@@ -82,8 +60,6 @@ public class CPSCore implements CPSCoreInterface {
     private final ArrayDB<Address> priorityVotedPreps = Context.newArrayDB(PRIORITY_VOTED_PREPS, Address.class);
     private final BranchDB<Address, ArrayDB<String>> sponsorProjects = Context.newBranchDB(SPONSOR_PROJECTS, String.class);
     private final BranchDB<Address, ArrayDB<String>> contributorProjects = Context.newBranchDB(CONTRIBUTOR_PROJECTS, String.class);
-    private final VarDB<BigInteger> sponsorBondPercentage = Context.newVarDB(SPONSOR_BOND_PERCENTAGE, BigInteger.class);
-    private final DictDB<String,BigInteger> period = Context.newDictDB(PERIOD,BigInteger.class);
     private static final BigInteger HUNDRED = BigInteger.valueOf(100);
 
     public CPSCore(@Optional BigInteger bondValue) { // TODO
@@ -454,11 +430,12 @@ public class CPSCore implements CPSCoreInterface {
     @Override
     @External(readonly = true)
     public List<String> sortPriorityProposals() {
-        String[] pendingProposals = new String[pending.size()];
-        for (int i = 0; i < pending.size(); i++) {
-            pendingProposals[i] = pending.get(i);
+        Status status = new Status();
+        String[] pendingProposals = new String[status.pending.size()];
+        for (int i = 0; i < status.pending.size(); i++) {
+            pendingProposals[i] = status.pending.get(i);
         }
-        mergeSort(pendingProposals, 0, pending.size() - 1, getPriorityVoteResult());
+        mergeSort(pendingProposals, 0, status.pending.size() - 1, getPriorityVoteResult());
         return arrayToList(pendingProposals);
     }
 
@@ -466,9 +443,10 @@ public class CPSCore implements CPSCoreInterface {
     @External(readonly = true)
     public Map<String, Integer> getPriorityVoteResult() {
         Map<String, Integer> priorityVoteResult = new HashMap<>();
+        Status status = new Status();
 
-        for (int i = 0; i < pending.size(); i++) {
-            String prop = pending.get(i);
+        for (int i = 0; i < status.pending.size(); i++) {
+            String prop = status.pending.get(i);
             priorityVoteResult.put(prop, proposalRank.getOrDefault(prop, 0));
 
         }
@@ -488,9 +466,10 @@ public class CPSCore implements CPSCoreInterface {
 
         priorityVotedPreps.add(caller);
         int size = _proposals.length;
+        Status status = new Status();
         for (int i = 0; i < size; i++) {
             String proposal = _proposals[i];
-            Context.require(ArrayDBUtils.containsInArrayDb(proposal, pending),
+            Context.require(ArrayDBUtils.containsInArrayDb(proposal, status.pending),
                     proposal + " not in pending state.");
             proposalRank.set(proposal, proposalRank.getOrDefault(proposal, 0) + size - i);
         }
@@ -691,7 +670,8 @@ public class CPSCore implements CPSCoreInterface {
         addDataToProposalDB(proposals, ipfsHashPrefix);
         proposalsKeyList.add(proposals.ipfs_hash);
         proposalsKeyListIndex.set(ipfsHash, proposalsKeyList.size() - 1);
-        sponsorPending.add(ipfsHash);
+        Status status = new Status();
+        status.sponsorPending.add(ipfsHash);
         contributors.add(Context.getCaller());
         contributorProjects.at(Context.getCaller()).add(ipfsHash);
         ProposalSubmitted(Context.getCaller(), "Successfully submitted a Proposal.");
@@ -866,7 +846,8 @@ public class CPSCore implements CPSCoreInterface {
         progressKeyListIndex.set(reportHash, progressKeyList.size() - 1);
 
         submitProgressReport.at(ipfsHashPrefix).set(true);
-        waitingProgressReports.add(reportHash);
+        Status _status = new Status();
+        _status.waitingProgressReports.add(reportHash);
         swapBNUsdToken();
         ProgressReportSubmitted(caller, progressReport.progress_report_title +
                 " --> Progress Report Submitted Successfully.");
@@ -1015,8 +996,9 @@ public class CPSCore implements CPSCoreInterface {
     @Override
     @External(readonly = true)
     public List<String> getProposalsKeysByStatus(String status) {
+        Status _status = new Status();
         Context.require(STATUS_TYPE.contains(status), TAG + ": Not a valid status");
-        ArrayDB<String> proposalStatus = this.proposalStatus.get(status);
+        ArrayDB<String> proposalStatus = _status.proposalStatus.get(status);
         return ArrayDBUtils.arrayDBtoList(proposalStatus);
     }
 
@@ -1084,11 +1066,12 @@ public class CPSCore implements CPSCoreInterface {
 
 
         }
-        return Map.of(statusList.get(0), Map.of(AMOUNT, Map.of(ICX, pendingAmountIcx, bnUSD, pendingAmountBnusd), "_count", proposalStatus.get(statusList.get(0)).size()),
-                statusList.get(1), Map.of(AMOUNT, Map.of(ICX, activeAmountIcx, bnUSD, activeAmountBnusd), "_count", proposalStatus.get(statusList.get(1)).size()),
-                statusList.get(2), Map.of(AMOUNT, Map.of(ICX, pausedAmountIcx, bnUSD, pausedAmountBnusd), "_count", proposalStatus.get(statusList.get(2)).size()),
-                statusList.get(3), Map.of(AMOUNT, Map.of(ICX, completedAmountIcx, bnUSD, completedAmountBnusd), "_count", proposalStatus.get(statusList.get(3)).size()),
-                statusList.get(4), Map.of(AMOUNT, Map.of(ICX, disqualifiedAmountIcx, bnUSD, disqualifiedAmountBnusd), "_count", proposalStatus.get(statusList.get(4)).size()));
+        Status status = new Status();
+        return Map.of(statusList.get(0), Map.of(AMOUNT, Map.of(ICX, pendingAmountIcx, bnUSD, pendingAmountBnusd), "_count", status.proposalStatus.get(statusList.get(0)).size()),
+                statusList.get(1), Map.of(AMOUNT, Map.of(ICX, activeAmountIcx, bnUSD, activeAmountBnusd), "_count", status.proposalStatus.get(statusList.get(1)).size()),
+                statusList.get(2), Map.of(AMOUNT, Map.of(ICX, pausedAmountIcx, bnUSD, pausedAmountBnusd), "_count", status.proposalStatus.get(statusList.get(2)).size()),
+                statusList.get(3), Map.of(AMOUNT, Map.of(ICX, completedAmountIcx, bnUSD, completedAmountBnusd), "_count", status.proposalStatus.get(statusList.get(3)).size()),
+                statusList.get(4), Map.of(AMOUNT, Map.of(ICX, disqualifiedAmountIcx, bnUSD, disqualifiedAmountBnusd), "_count", status.proposalStatus.get(statusList.get(4)).size()));
 
 
     }
@@ -1114,6 +1097,8 @@ public class CPSCore implements CPSCoreInterface {
         PeriodController period = new PeriodController();
         BigInteger nextBlock = period.nextBlock.get();
         PReps pReps = new PReps();
+//        Context.println("before if in update period");
+        Status status = new Status();
         if (currentBlock.compareTo(nextBlock) >= 0) {
             if (period.periodName.get().equals(APPLICATION_PERIOD)) {
                 period.periodName.set(VOTING_PERIOD);
@@ -1126,7 +1111,7 @@ public class CPSCore implements CPSCoreInterface {
                 setPreps();
                 snapshotDelegation();
 
-                int activeProposalCount = pending.size() + waitingProgressReports.size();
+                int activeProposalCount = status.pending.size() + status.waitingProgressReports.size();
                 swapCount.set(activeProposalCount + pReps.validPreps.size());
 
             } else {
@@ -1157,7 +1142,7 @@ public class CPSCore implements CPSCoreInterface {
                     PeriodUpdate("Period Update State 4/4. Period Successfully Updated to Application Period.");
                     setPreps();
 
-                    int activeProposalCount = active.size() + paused.size();
+                    int activeProposalCount = status.active.size() + status.paused.size();
                     swapCount.set(activeProposalCount + activeProposalCount * pReps.validPreps.size());
                     callScore(setterGetter.cpfScore.get(), "reset_swap_state");
 
@@ -1196,7 +1181,8 @@ public class CPSCore implements CPSCoreInterface {
      ***/
 
     private void updateProgressReportResult() {
-        List<String> waiting_progress_reports = arrayDBtoList(this.waitingProgressReports);
+        Status status = new Status();
+        List<String> waiting_progress_reports = arrayDBtoList(status.waitingProgressReports);
         PReps pReps = new PReps();
         List<Address> _main_preps_list = arrayDBtoList(pReps.validPreps);
 
@@ -1463,14 +1449,15 @@ public class CPSCore implements CPSCoreInterface {
     }
 
     private void updateProposalStatus(String proposalHash, String propStatus) {
+        Status status = new Status();
         String proposalPrefix = proposalPrefix(proposalHash);
         String currentStatus = ProposalDataDb.status.at(proposalPrefix).get();
         ProposalDataDb.timestamp.at(proposalPrefix).set(BigInteger.valueOf(Context.getBlockTimestamp()));
         ProposalDataDb.status.at(proposalPrefix).set(propStatus);
 
-        ArrayDB<String> proposalStatus = this.proposalStatus.get(currentStatus);
+        ArrayDB<String> proposalStatus = status.proposalStatus.get(currentStatus);
         ArrayDBUtils.removeArrayItem(proposalStatus, proposalHash);
-        this.proposalStatus.get(propStatus).add(proposalHash);
+        status.proposalStatus.get(propStatus).add(proposalHash);
     }
 
     private void updateProgressReportStatus(String progressHash, String progressStatus) {
@@ -1479,9 +1466,10 @@ public class CPSCore implements CPSCoreInterface {
         ProgressReportDataDb.timestamp.at(progressPrefix).set(BigInteger.valueOf(Context.getBlockTimestamp()));
         ProgressReportDataDb.status.at(progressPrefix).set(progressStatus);
 
-        ArrayDB<String> progressReportStatus = this.progressReportStatus.get(currentStatus);
+        Status status = new Status();
+        ArrayDB<String> progressReportStatus = status.progressReportStatus.get(currentStatus);
         ArrayDBUtils.removeArrayItem(progressReportStatus, progressHash);
-        this.progressReportStatus.get(progressStatus).add(progressHash);
+        status.progressReportStatus.get(progressStatus).add(progressHash);
     }
 
     private void updateMilestoneStatus(String milestonePrefix, int milestoneStatus, String progressHash ){
@@ -1590,7 +1578,8 @@ public class CPSCore implements CPSCoreInterface {
         }
 
         List<Object> progressReportList = new ArrayList<>();
-        ArrayDB<String> progressReportKeys = this.progressReportStatus.get(status);
+        Status _status = new Status();
+        ArrayDB<String> progressReportKeys = _status.progressReportStatus.get(status);
 
         if (startIndex < 0) {
             startIndex = 0;
@@ -1737,9 +1726,10 @@ public class CPSCore implements CPSCoreInterface {
             return _remaining_proposals;
         }
 
+        Status status = new Status();
         if (projectType.equals(PROGRESS_REPORTS)) {
-            for (int i = 0; i < waitingProgressReports.size(); i++) {
-                String reportHash = waitingProgressReports.get(i);
+            for (int i = 0; i < status.waitingProgressReports.size(); i++) {
+                String reportHash = status.waitingProgressReports.get(i);
                 String prefix = progressReportPrefix(reportHash);
 
                 if (!containsInArrayDb(walletAddress, ProgressReportDataDb.votersList.at(prefix))) {
@@ -1942,18 +1932,19 @@ public class CPSCore implements CPSCoreInterface {
 
     private void updateApplicationResult() {
         PReps pReps = new PReps();
+        Status status = new Status();
         PeriodController period = new PeriodController();
         if (pReps.validPreps.size() < MINIMUM_PREPS) {
             period.periodName.set(APPLICATION_PERIOD);
             PeriodUpdate("Period Updated back to Application Period due to less Registered P-Reps Count");
 
-        } else if (getProposalsKeysByStatus(PENDING).size() == 0 && this.progressReportStatus.get(WAITING).size() == 0 && activeProposals.size() + paused.size() == 0) {
+        } else if (getProposalsKeysByStatus(PENDING).size() == 0 && status.progressReportStatus.get(WAITING).size() == 0 && activeProposals.size() + status.paused.size() == 0) {
             createActiveProposalDb();
             checkProgressReportSubmission();
             period.periodName.set(APPLICATION_PERIOD);
             PeriodUpdate("Period Updated back to Application Period due not enough " +
                     "Voting Proposals or Progress Reports.");
-        } else if (pending.size() == 0 && waitingProgressReports.size() == 0 && activeProposals.size() + paused.size() > 0) {
+        } else if (status.pending.size() == 0 && status.waitingProgressReports.size() == 0 && activeProposals.size() + status.paused.size() > 0) {
             createActiveProposalDb();
             checkProgressReportSubmission();
             period.periodName.set(APPLICATION_PERIOD);
@@ -1967,14 +1958,15 @@ public class CPSCore implements CPSCoreInterface {
     }
 
     private void createActiveProposalDb() {
-        for (int i = 0; i < active.size(); i++) {
-            String proposal = active.get(i);
+        Status status = new Status();
+        for (int i = 0; i < status.active.size(); i++) {
+            String proposal = status.active.get(i);
             if (!ArrayDBUtils.containsInArrayDb(proposal, activeProposals)) {
                 activeProposals.add(proposal);
             }
         }
-        for (int i = 0; i < paused.size(); i++) {
-            String proposal = paused.get(i);
+        for (int i = 0; i < status.paused.size(); i++) {
+            String proposal = status.paused.get(i);
             if (!ArrayDBUtils.containsInArrayDb(proposal, activeProposals)) {
                 activeProposals.add(proposal);
             }
