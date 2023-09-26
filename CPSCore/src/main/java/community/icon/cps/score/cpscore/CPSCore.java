@@ -806,16 +806,24 @@ public class CPSCore implements CPSCoreInterface {
         Context.require(proposalKeyExists(ipfsHash), TAG + ": Invalid proposal key");
         addNewProgressReportKey(ipfsHash, reportHash);
         String reportHashPrefix = progressReportPrefix(reportHash);
+        if(progressReport.milestoneCompleted == null){
+            progressReport.milestoneCompleted = new int[]{};
+        }
         addDataToProgressReportDB(progressReport, reportHashPrefix);
+        int proposalMilestoneCount = ProposalDataDb.getMilestoneCount(ipfsHashPrefix);
+        if (proposalMilestoneCount !=0 ) {
+            int[] milestones = progressReport.milestoneCompleted;
 
-        int[] milestones = progressReport.milestoneCompleted;
+//      TODO: check that submitted milestones are in proposal db
+            Context.require(milestones.length <= proposalMilestoneCount,
+                    TAG + " Submitted milestone is greater than recorded on proposal.");
 
-        for (int milestone : milestones) {
+            for (int milestone : milestones) {
 
-            int milestoneStatus = getMileststoneStatusOf(ipfsHash,milestone);
-            if (milestoneStatus == MILESTONE_REPORT_COMPLETED || milestoneStatus == MILESTONE_REPORT_SUBMITTED) {
-                Context.revert("Cannot submit progress report of completed milestone"); // TODO: better error message
-            }
+                int milestoneStatus = getMileststoneStatusOf(ipfsHash, milestone);
+                if (milestoneStatus == MILESTONE_REPORT_COMPLETED || milestoneStatus == MILESTONE_REPORT_SUBMITTED) {
+                    Context.revert(TAG + " Milestone already completed/submitted " + milestoneStatus);
+                }
 
             MilestonesAttributes milestonesAttributes = new MilestonesAttributes();
             milestonesAttributes.reportHash = reportHash;
