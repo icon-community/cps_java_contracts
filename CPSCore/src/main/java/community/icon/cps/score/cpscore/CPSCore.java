@@ -881,17 +881,21 @@ public class CPSCore implements CPSCoreInterface {
         for (MilestoneVoteAttributes milestoneVote : votes) {
             Context.require(List.of(APPROVE, REJECT).contains(milestoneVote.vote),
                     TAG + ": Vote should be either _approve or _reject");
+            ArrayDB<Integer> submittedMilestones = milestoneSubmitted.at(progressReportPrefix);// CAN TAKE FROM READONLY METHOD
+
+            if (!ArrayDBUtils.containsInArrayDb(milestoneVote.id,submittedMilestones)){
+                Context.revert(TAG + ": Voting can only be done for milestone submitted in this reportKey");
+            }
         }
         Map<String, Object> progressReportDetails = getProgressReportDetails(reportKey);
         String status = (String) progressReportDetails.get(STATUS);
 
-        if (status.equals(WAITING)){
-            BigInteger voterStake = delegationSnapshot.get(caller);
-        for (MilestoneVoteAttributes milestoneVote : votes) {
-            // proposal Key to how to get?
-            String proposalKey = ProgressReportDataDb.ipfsHash.at(progressReportPrefix).get();
-            String milestonePrefix = mileStonePrefix(proposalKey,milestoneVote.id);
-            ArrayDB<Address> voterList = MilestoneDb.votersList.at(milestonePrefix);
+        if(!status.equals(WAITING)){
+            Context.revert(TAG + ": Voting can be only be done in waiting progress reports.");
+        }
+
+        BigInteger voterStake = delegationSnapshot.get(caller); // TODO : why voter stake is added
+        String proposalKey = ProgressReportDataDb.ipfsHash.at(progressReportPrefix).get();
 
             if (!voteChange) {
                 if (ArrayDBUtils.containsInArrayDb(caller, voterList)) {
@@ -922,13 +926,13 @@ public class CPSCore implements CPSCoreInterface {
                 ProgressReportDataDb.votersReasons.at(progressReportPrefix).set(index - 1, voteReason);
                 if (voteIndex == APPROVE_) {
                     if (milestoneVote.vote.equals(APPROVE)){
-                        Context.revert("Cannot cast same vote. Change your vote" );
+                        Context.revert(TAG+": Cannot cast same vote. Change your vote" );
                     }
                     ArrayDBUtils.removeArrayItem(MilestoneDb.approveVoters.at(milestonePrefix), caller);
                     MilestoneDb.approvedVotes.at(milestonePrefix).set(approvedVotes.subtract(voterStake));
                 } else {
                     if (milestoneVote.vote.equals(REJECT)){
-                        Context.revert("Cannot cast same vote. Change your vote" );
+                        Context.revert(TAG + ": Cannot cast same vote. Change your vote" );
                     }
                     ArrayDBUtils.removeArrayItem(MilestoneDb.rejectVoters.at(milestonePrefix), caller);
                     MilestoneDb.rejectedVotes.at(milestonePrefix).set(rejectedVotes.subtract(voterStake));
@@ -956,11 +960,18 @@ public class CPSCore implements CPSCoreInterface {
             approvedVotes = MilestoneDb.approvedVotes.at(milestonePrefix).getOrDefault(BigInteger.ZERO);
             rejectedVotes = MilestoneDb.rejectedVotes.at(milestonePrefix).getOrDefault(BigInteger.ZERO);
             if (milestoneVote.vote.equals(APPROVE)) {
+                // TODO : find more efficient way to do this
+                if (ArrayDBUtils.containsInArrayDb(caller,MilestoneDb.approveVoters.at(milestonePrefix))){
+                    continue;
+                }
                 MilestoneDb.approveVoters.at(milestonePrefix).add(caller);
                 votersIndexDb.set(VOTE, APPROVE_);
                 MilestoneDb.approvedVotes.at(milestonePrefix).set(approvedVotes.add(voterStake));
 
             } else {
+                if (ArrayDBUtils.containsInArrayDb(caller,MilestoneDb.rejectVoters.at(milestonePrefix))){
+                    continue;
+                }
                 MilestoneDb.rejectVoters.at(milestonePrefix).add(caller);
                 votersIndexDb.set(VOTE, REJECT_);
                 MilestoneDb.rejectedVotes.at(milestonePrefix).set(rejectedVotes.add(voterStake));
