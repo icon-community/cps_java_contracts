@@ -1612,6 +1612,11 @@ public class CPSCore implements CPSCoreInterface {
     }
 
     @External(readonly = true)
+    public List<Integer> getMilestoneCountOfProgressReport(String progressKey){
+        return getMilestoneSubmittedFromProgressReportDB(progressReportPrefix(progressKey));
+    }
+
+    @External(readonly = true)
     public Map<String, Object> getProgressReportVoteDetails(String progressKey) {
         return getVoteResultsFromProgressReportDB(progressReportPrefix(progressKey));
     }
