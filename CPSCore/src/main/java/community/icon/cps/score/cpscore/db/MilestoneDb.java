@@ -9,9 +9,9 @@ import java.util.Map;
 import static community.icon.cps.score.cpscore.utils.Constants.*;
 
 public class MilestoneDb {
-    public static final BranchDB<String, VarDB<Integer>> id = Context.newBranchDB(MILESTONE_ID, String.class);
+    public static final BranchDB<String, VarDB<Integer>> id = Context.newBranchDB(MILESTONE_ID, Integer.class);
     public static final BranchDB<String, VarDB<String>> progressReportHash = Context.newBranchDB(REPORT_HASH, String.class);
-    public static final BranchDB<String, VarDB<Integer>> status = Context.newBranchDB(STATUS, String.class);
+    public static final BranchDB<String, VarDB<Integer>> status = Context.newBranchDB(STATUS, Integer.class);
     public static final BranchDB<String, VarDB<BigInteger>> totalVotes = Context.newBranchDB(TOTAL_VOTES, BigInteger.class);
     public static final BranchDB<String, VarDB<BigInteger>> approvedVotes = Context.newBranchDB(APPROVED_VOTES, BigInteger.class);
     public static final BranchDB<String, VarDB<BigInteger>> rejectedVotes = Context.newBranchDB(REJECTED_VOTES, BigInteger.class);
