@@ -897,25 +897,30 @@ public class CPSCore implements CPSCoreInterface {
         BigInteger voterStake = delegationSnapshot.get(caller); // TODO : why voter stake is added
         String proposalKey = ProgressReportDataDb.ipfsHash.at(progressReportPrefix).get();
 
-            if (!voteChange) {
-                if (ArrayDBUtils.containsInArrayDb(caller, voterList)) {
-                    Context.revert(TAG + ": Already Voted");
-                }
+        ArrayDB<Address> voterList = ProgressReportDataDb.votersList.at(progressReportPrefix);
+        if (!voteChange) {
+            if (ArrayDBUtils.containsInArrayDb(caller, voterList)) {
+                Context.revert(TAG + ": Already Voted");
             }
+        }
+        BigInteger totalVotes = ProgressReportDataDb.totalVotes.at(progressReportPrefix).getOrDefault(BigInteger.ZERO);
+        Integer totalVoter = ProgressReportDataDb.totalVoters.at(progressReportPrefix).getOrDefault(0);
 
-            Map<String, Object> milestonesReportDetails = getDataFromMilestoneDB(milestonePrefix);
-            BigInteger totalVotes = (BigInteger) milestonesReportDetails.get(TOTAL_VOTES);
-            BigInteger approvedVotes = (BigInteger) milestonesReportDetails.get(APPROVED_VOTES);
-            BigInteger rejectedVotes = (BigInteger) milestonesReportDetails.get(REJECTED_VOTES);
-            Integer totalVoter = (Integer) milestonesReportDetails.get(TOTAL_VOTERS);
-            if (totalVoter == 0) {
-                MilestoneDb.totalVoters.at(milestonePrefix).set(pReps.validPreps.size());
-            }
-            DictDB<String, Integer> votersIndexDb = MilestoneDb.votersListIndices.at(milestonePrefix).at(caller);
+        if (totalVoter == 0 || totalVotes.equals(BigInteger.ZERO)) {
+            ProgressReportDataDb.totalVoters.at(progressReportPrefix).set(pReps.validPreps.size());
+            ProgressReportDataDb.totalVotes.at(progressReportPrefix).set(this.totalDelegationSnaptshot.getOrDefault(BigInteger.ZERO));
+        }
+
+        for (MilestoneVoteAttributes milestoneVote : votes) {
+            String milestonePrefix = mileStonePrefix(proposalKey,milestoneVote.id);
+
+            Map<String, Object> milestoneDetails = getDataFromMilestoneDB(milestonePrefix);
+            BigInteger approvedVotes = (BigInteger) milestoneDetails.get(APPROVED_VOTES);
+            BigInteger rejectedVotes = (BigInteger) milestoneDetails.get(REJECTED_VOTES);
+            DictDB<String, Integer> votersIndexDb = ProgressReportDataDb.votersListIndices.at(progressReportPrefix).at(caller);
             if (!voteChange) {
-                MilestoneDb.totalVotes.at(milestonePrefix).set(totalVotes.add(voterStake));
-                MilestoneDb.votersList.at(milestonePrefix).add(caller);
-                votersIndexDb.set(INDEX, MilestoneDb.votersList.at(milestonePrefix).size());
+                ProgressReportDataDb.votersList.at(progressReportPrefix).add(caller);
+                votersIndexDb.set(INDEX, ProgressReportDataDb.votersList.at(progressReportPrefix).size());
                 ProgressReportDataDb.votersReasons.at(progressReportPrefix).add(voteReason);
             } else {
                 Context.require(votersIndexDb.getOrDefault(CHANGE_VOTE, 0) == 0,
@@ -941,24 +946,11 @@ public class CPSCore implements CPSCoreInterface {
 
             boolean budgetAdjustment = (boolean) progressReportDetails.get(BUDGET_ADJUSTMENT);
             if (budgetAdjustment && getBudgetAdjustmentFeature()) { //
-                if (ArrayDBUtils.containsInArrayDb(reportKey, budgetApprovalsList)) {
-                    BigInteger budgetApprovedVotes = (BigInteger) progressReportDetails.get(BUDGET_APPROVED_VOTES);
-                    BigInteger budgetRejectedVotes = (BigInteger) progressReportDetails.get(BUDGET_REJECTED_VOTES);
-                    int budgetVoteIndex = budgetVotersListIndices.at(progressReportPrefix).at(caller).getOrDefault(VOTE, 0);
-                    if (budgetVoteIndex == APPROVE_) {
-                        ArrayDBUtils.removeArrayItem(budgetApproveVoters.at(progressReportPrefix), caller);
-                        ProgressReportDataDb.budgetApprovedVotes.at(progressReportPrefix).set(budgetApprovedVotes.subtract(voterStake));
-                    } else if (budgetVoteIndex == REJECT_) {
-                        ArrayDBUtils.removeArrayItem(budgetRejectVoters.at(progressReportPrefix), caller);
-                        ProgressReportDataDb.budgetRejectedVotes.at(progressReportPrefix).set(budgetRejectedVotes.subtract(voterStake));
-                    } else {
-                        Context.revert(TAG + ": Choose option " + APPROVE + " or " + REJECT + " for budget adjustment");
-                    }
-
-                }
+                budgetAdjustment(reportKey,budgetAdjustmentVote,voteChange);
             }
             approvedVotes = MilestoneDb.approvedVotes.at(milestonePrefix).getOrDefault(BigInteger.ZERO);
             rejectedVotes = MilestoneDb.rejectedVotes.at(milestonePrefix).getOrDefault(BigInteger.ZERO);
+            // TODO: URGENCY on voting again the the approved vote and total vote is adding up
             if (milestoneVote.vote.equals(APPROVE)) {
                 // TODO : find more efficient way to do this
                 if (ArrayDBUtils.containsInArrayDb(caller,MilestoneDb.approveVoters.at(milestonePrefix))){
@@ -977,9 +969,10 @@ public class CPSCore implements CPSCoreInterface {
                 MilestoneDb.rejectedVotes.at(milestonePrefix).set(rejectedVotes.add(voterStake));
 
             }
-
-            if (budgetAdjustment) {
-                budgetAdjustment(reportKey,budgetAdjustmentVote);
+            // is this required while voiting?
+            MilestoneDb.progressReportHash.at(milestonePrefix).set(progressReportPrefix);
+            if (budgetAdjustment && getBudgetAdjustmentFeature()) {
+                budgetAdjustment(reportKey,budgetAdjustmentVote,voteChange);
 
             }
             VotedSuccessfully(caller, "Proposal Vote for " + progressReportDetails.get(PROGRESS_REPORT_TITLE) + " Successful.");
@@ -988,24 +981,38 @@ public class CPSCore implements CPSCoreInterface {
         }
     }
 
-    private void budgetAdjustment(String reportKey, String budgetAdjustmentVote){
+    private void budgetAdjustment(String reportKey, String budgetAdjustmentVote,boolean voteChange){
         String progressReportPrefix = progressReportPrefix(reportKey);
         Address caller = Context.getCaller();
         BigInteger voterStake = delegationSnapshot.get(caller);
         if (ArrayDBUtils.containsInArrayDb(reportKey, budgetApprovalsList)) {
             BigInteger budgetApprovedVotes = ProgressReportDataDb.budgetApprovedVotes.at(progressReportPrefix).getOrDefault(BigInteger.ZERO);
             BigInteger budgetRejectedVotes = ProgressReportDataDb.budgetRejectedVotes.at(progressReportPrefix).getOrDefault(BigInteger.ZERO);
-            DictDB<String, Integer> budgetVoteIndex = budgetVotersListIndices.at(progressReportPrefix).at(caller);
-            if (budgetAdjustmentVote.equals(APPROVE)) {
-                ProgressReportDataDb.budgetApproveVoters.at(progressReportPrefix).add(caller);
-                ProgressReportDataDb.budgetApprovedVotes.at(progressReportPrefix).set(budgetApprovedVotes.add(voterStake));
-                budgetVoteIndex.set(VOTE, APPROVE_);
-            } else if (budgetAdjustmentVote.equals(REJECT)) {
-                ProgressReportDataDb.budgetRejectVoters.at(progressReportPrefix).add(caller);
-                ProgressReportDataDb.budgetRejectedVotes.at(progressReportPrefix).set(budgetRejectedVotes.add(voterStake));
-                budgetVoteIndex.set(VOTE, REJECT_);
-            } else {
-                Context.revert(TAG + ": Choose option " + APPROVE + " or " + REJECT + " for budget adjustment");
+
+            if (voteChange){
+                int budgetVoteIndex = budgetVotersListIndices.at(progressReportPrefix).at(caller).getOrDefault(VOTE, 0);
+                if (budgetVoteIndex == APPROVE_) {
+                    ArrayDBUtils.removeArrayItem(budgetApproveVoters.at(progressReportPrefix), caller);
+                    ProgressReportDataDb.budgetApprovedVotes.at(progressReportPrefix).set(budgetApprovedVotes.subtract(voterStake));
+                } else if (budgetVoteIndex == REJECT_) {
+                    ArrayDBUtils.removeArrayItem(budgetRejectVoters.at(progressReportPrefix), caller);
+                    ProgressReportDataDb.budgetRejectedVotes.at(progressReportPrefix).set(budgetRejectedVotes.subtract(voterStake));
+                } else {
+                    Context.revert(TAG + ": Choose option " + APPROVE + " or " + REJECT + " for budget adjustment");
+                }
+            }else{
+                DictDB<String, Integer> budgetVoteIndex = budgetVotersListIndices.at(progressReportPrefix).at(caller);
+                if (budgetAdjustmentVote.equals(APPROVE)) {
+                    ProgressReportDataDb.budgetApproveVoters.at(progressReportPrefix).add(caller);
+                    ProgressReportDataDb.budgetApprovedVotes.at(progressReportPrefix).set(budgetApprovedVotes.add(voterStake));
+                    budgetVoteIndex.set(VOTE, APPROVE_);
+                } else if (budgetAdjustmentVote.equals(REJECT)) {
+                    ProgressReportDataDb.budgetRejectVoters.at(progressReportPrefix).add(caller);
+                    ProgressReportDataDb.budgetRejectedVotes.at(progressReportPrefix).set(budgetRejectedVotes.add(voterStake));
+                    budgetVoteIndex.set(VOTE, REJECT_);
+                } else {
+                    Context.revert(TAG + ": Choose option " + APPROVE + " or " + REJECT + " for budget adjustment");
+                }
             }
         }
     }
@@ -1200,7 +1207,6 @@ public class CPSCore implements CPSCoreInterface {
         Status status = new Status();
         List<String> waiting_progress_reports = arrayDBtoList(status.waitingProgressReports);
         PReps pReps = new PReps();
-        List<Address> _main_preps_list = arrayDBtoList(pReps.validPreps);
 
         for (String _reports : waiting_progress_reports) {
             Map<String, Object> _report_result = getProgressReportDetails(_reports);
@@ -1212,16 +1218,10 @@ public class CPSCore implements CPSCoreInterface {
 
             submitProgressReport.at(proposal_prefix).set(Boolean.FALSE);
 
-            String _proposal_status = (String) _proposal_details.get(STATUS);
-            int _approved_reports_count = (int) _proposal_details.get(APPROVED_REPORTS);
-            Address _sponsor_address = (Address) _proposal_details.get(SPONSOR_ADDRESS);
-            Address _contributor_address = (Address) _proposal_details.get(CONTRIBUTOR_ADDRESS);
             boolean _budget_adjustment = (boolean) _report_result.get(BUDGET_ADJUSTMENT);
-            BigInteger _sponsor_deposit_amount = (BigInteger) _proposal_details.get(SPONSOR_DEPOSIT_AMOUNT);
-            String flag = (String) _proposal_details.get(TOKEN);
 
             // checking which prep(s) did not vote the progress report
-            checkInactivePreps(ProgressReportDataDb.votersList.at(progressPrefix));
+            checkInactivePreps(ProgressReportDataDb.votersList.at(progressPrefix));// TODO: fix this, voterList to be where
 
 //          If a progress report have any budget_adjustment, then it checks the budget adjustment first
             if (_budget_adjustment && getBudgetAdjustmentFeature()) {
@@ -1230,72 +1230,101 @@ public class CPSCore implements CPSCoreInterface {
             int milestonePassed = 0;
             int milestoneCount = ProposalDataDb.getMilestoneCount(proposalPrefix(_ipfs_hash));
 
-            for (int i = 0; i < milestoneCount; i++) {
-                String milestonePrefix = mileStonePrefix(_ipfs_hash, milestoneCount);
-                Map<String, Object> dataFromMilesstoneDB = getDataFromMilestoneDB(milestonePrefix);
-                int milestoneStatus = (int)dataFromMilesstoneDB.get(STATUS);
-                if (milestoneStatus == MILESTONE_REPORT_SUBMITTED){
-                    int _approve_voters = (int) dataFromMilesstoneDB.get(APPROVE_VOTERS);
-                    BigInteger _approved_votes = (BigInteger) dataFromMilesstoneDB.get(APPROVED_VOTES);
-                    BigInteger _total_votes = (BigInteger) dataFromMilesstoneDB.get(TOTAL_VOTES);
-                    int _total_voters = (int) dataFromMilesstoneDB.get(TOTAL_VOTERS);
+            String _proposal_status = (String) _proposal_details.get(STATUS);
+            int _approved_reports_count = (int) _proposal_details.get(APPROVED_REPORTS); // todo get milestone count
+            Address _sponsor_address = (Address) _proposal_details.get(SPONSOR_ADDRESS);
+            BigInteger _sponsor_deposit_amount = (BigInteger) _proposal_details.get(SPONSOR_DEPOSIT_AMOUNT);
+            String flag = (String) _proposal_details.get(TOKEN);
 
-                    double votersRatio = (double) _approve_voters / _total_voters;
+            List<Address> _main_preps_list = arrayDBtoList(pReps.validPreps);
+
+            ArrayDB<Integer> milestoneSubmitted = ProgressReportDataDb.milestoneSubmitted.at(progressPrefix);
+            for (int i = 1; i <= milestoneSubmitted.size(); i++) {
+                String milestonePrefix = mileStonePrefix(_ipfs_hash, i);
+
+                Map<String, Object> _milestone_details = getDataFromMilestoneDB(milestonePrefix);
+
+
+
+                int milestoneStatus = (int)_milestone_details.get(STATUS);
+                if (milestoneStatus == MILESTONE_REPORT_SUBMITTED){
+                    int _approve_voters = (int) _milestone_details.get(APPROVE_VOTERS);
+                    BigInteger _approved_votes = (BigInteger) _milestone_details.get(APPROVED_VOTES);
+                    BigInteger _total_votes = ProgressReportDataDb.totalVotes.at(progressPrefix).get(); // TODO: take from progressreportdb
+                    int _total_voters = ProgressReportDataDb.totalVoters.at(progressPrefix).getOrDefault(0);
 
                     if (_total_voters == 0 || _total_votes.equals(BigInteger.ZERO) || _main_preps_list.size() < MINIMUM_PREPS) {
                         updateMilestoneStatus(milestonePrefix, MILESTONE_REPORT_REJECTED,_reports);
-                    } else if (votersRatio >= MAJORITY && (_approved_votes.doubleValue() / _total_votes.doubleValue()) >= MAJORITY) {
-                        updateMilestoneStatus(milestonePrefix, MILESTONE_REPORT_COMPLETED,_reports);
-                        _approved_reports_count +=1 ;
-                        milestonePassed +=1;
+                    } else {
+                        double votersRatio = (double) _approve_voters / _total_voters;
+                        double votesRatio = _approved_votes.doubleValue() / _total_votes.doubleValue();
+                        if (votersRatio >= MAJORITY && votesRatio >= MAJORITY) {
+                            updateMilestoneStatus(milestonePrefix, MILESTONE_REPORT_COMPLETED,_reports);
+                            _approved_reports_count +=1 ;
+                            milestonePassed +=1;
 
-                        if (_approved_reports_count == milestoneCount){
-                            updateProposalStatus(_ipfs_hash,COMPLETED);
-                            ProposalDataDb.updatePercentageCompleted(proposal_prefix, 100);
+                            if (_approved_reports_count == milestoneCount){
+                                updateProposalStatus(_ipfs_hash,COMPLETED);
+                                ProposalDataDb.updatePercentageCompleted(proposal_prefix, 100);
 
-//                            Transfer the Sponsor - Bond back to the Sponsor P - Rep after the project is completed.
-                            this.sponsorBondReturn.at(_sponsor_address.toString()).set(flag, this.sponsorBondReturn.at(_sponsor_address.toString()).getOrDefault(flag, BigInteger.ZERO).add(_sponsor_deposit_amount));
-                            sponsorDepositStatus.at(proposal_prefix).set(BOND_RETURNED);
-                            SponsorBondReturned(_sponsor_address,
-                                    _sponsor_deposit_amount + " " + flag + " returned to sponsor address.");
+                                // Transfer the Sponsor - Bond back to the Sponsor P - Rep after the project is completed.
+                                this.sponsorBondReturn.at(_sponsor_address.toString()).set(flag,
+                                        this.sponsorBondReturn.at(_sponsor_address.toString()).getOrDefault(flag, BigInteger.ZERO).
+                                                add(_sponsor_deposit_amount));
+                                sponsorDepositStatus.at(proposal_prefix).set(BOND_RETURNED);
+                                SponsorBondReturned(_sponsor_address,
+                                        _sponsor_deposit_amount + " " + flag + " returned to sponsor address.");
+                            }
+
+                            else if (_proposal_status.equals(PAUSED)) {
+                                updateProposalStatus(_ipfs_hash, ACTIVE);
+                            }
+
+                            int percentageCompleted = (_approved_reports_count * 100) / milestoneCount;
+                            ProposalDataDb.updatePercentageCompleted(proposal_prefix, percentageCompleted);
+
+                            ProposalDataDb.approvedReports.at(proposal_prefix).set(_approved_reports_count);
+
+                        }else {
+                            updateMilestoneStatus(milestonePrefix, MILESTONE_REPORT_REJECTED,_reports);
                         }
-                        else if (_proposal_status.equals(PAUSED)) {
-                            updateProposalStatus(_ipfs_hash, ACTIVE);
-                        }
-
-                        int percentageCompleted = (_approved_reports_count * 100) / milestoneCount;
-                        ProposalDataDb.updatePercentageCompleted(proposal_prefix, percentageCompleted);
-
-                        ProposalDataDb.approvedReports.at(proposal_prefix).set(_approved_reports_count);
-//                      Request CPS Treasury to add some installments amount to the contributor address
-                        callScore(getCpsTreasuryScore(), "send_installment_to_contributor", _ipfs_hash,milestonePassed);
-//                      Request CPS Treasury to add some sponsor reward amount to the sponsor address
-                        callScore(getCpsTreasuryScore(), "send_reward_to_sponsor", _ipfs_hash,milestonePassed);
-
-                    }else {
-                        updateMilestoneStatus(milestonePrefix, MILESTONE_REPORT_REJECTED,_reports);
                     }
                 }
-
-
-
-                }
-            if (milestonePassed == 0) {
-                if (_proposal_status.equals(ACTIVE)) {
-                    updateProposalStatus(_ipfs_hash, PAUSED);
-                } else if (_proposal_status.equals(PAUSED)) {
-                    updateProposalStatus(_ipfs_hash, DISQUALIFIED);
-                    callScore(getCpsTreasuryScore(), "disqualify_project", _ipfs_hash);
-
-                    removeContributor(_contributor_address, _ipfs_hash);
-                    removeSponsor(_sponsor_address, _ipfs_hash);
-
-                    sponsorDepositStatus.at(proposal_prefix).set(BOND_CANCELLED);
-
-//                  Transferring the sponsor bond deposit to CPF after the project being disqualified
-                    disqualifyProject(_sponsor_address, _sponsor_deposit_amount, flag);
-                }
             }
+            if (milestonePassed > 0) {
+
+                // Request CPS Treasury to add some installments amount to the contributor address
+                callScore(getCpsTreasuryScore(), "send_installment_to_contributor", _ipfs_hash,milestonePassed);
+                //Request CPS Treasury to add some sponsor reward amount to the sponsor address
+                callScore(getCpsTreasuryScore(), "send_reward_to_sponsor", _ipfs_hash,milestonePassed);
+            }
+            else {
+                // TODO: better name for the method
+                rejectProgressReport(_ipfs_hash, proposal_prefix,_proposal_details);
+            }
+        }
+    }
+
+    private void rejectProgressReport(String _ipfs_hash,String proposal_prefix,Map<String,Object> _proposal_details){
+        String _proposal_status = (String) _proposal_details.get(STATUS);
+        Address _sponsor_address = (Address) _proposal_details.get(SPONSOR_ADDRESS);
+        Address _contributor_address = (Address) _proposal_details.get(CONTRIBUTOR_ADDRESS);
+        BigInteger _sponsor_deposit_amount = (BigInteger) _proposal_details.get(SPONSOR_DEPOSIT_AMOUNT);
+        String flag = (String) _proposal_details.get(TOKEN);
+
+        if (_proposal_status.equals(ACTIVE)) {
+            updateProposalStatus(_ipfs_hash, PAUSED);
+        } else if (_proposal_status.equals(PAUSED)) {
+            updateProposalStatus(_ipfs_hash, DISQUALIFIED);
+            callScore(getCpsTreasuryScore(), "disqualify_project", _ipfs_hash);
+
+            removeContributor(_contributor_address, _ipfs_hash);
+            removeSponsor(_sponsor_address, _ipfs_hash);
+
+            sponsorDepositStatus.at(proposal_prefix).set(BOND_CANCELLED);
+
+//          Transferring the sponsor bond deposit to CPF after the project being disqualified
+            disqualifyProject(_sponsor_address, _sponsor_deposit_amount, flag);
         }
     }
 
