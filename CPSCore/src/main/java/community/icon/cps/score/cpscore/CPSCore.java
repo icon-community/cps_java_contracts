@@ -639,7 +639,6 @@ public class CPSCore implements CPSCoreInterface {
     @Payable
     @External
     public void submitProposal(ProposalAttributes proposals) {
-        // TODO : add sponsor bond
         checkMaintenance();
         updatePeriod();
         PeriodController period = new PeriodController();
@@ -825,10 +824,12 @@ public class CPSCore implements CPSCoreInterface {
                     Context.revert(TAG + " Milestone already completed/submitted " + milestoneStatus);
                 }
 
-            MilestonesAttributes milestonesAttributes = new MilestonesAttributes();
-            milestonesAttributes.reportHash = reportHash;
-            milestonesAttributes.id = milestone;
-            addDataToMilestoneDb(milestonesAttributes, mileStonePrefix(ipfsHash, milestone));
+                MilestonesAttributes milestonesAttributes = new MilestonesAttributes();
+                milestonesAttributes.reportHash = reportHash;
+                milestonesAttributes.id = milestone;
+                addDataToMilestoneDb(milestonesAttributes, mileStonePrefix(ipfsHash, milestone));
+                milestoneSubmitted.at(reportHashPrefix).add(milestone);
+            }
         }
 
         if (progressReport.budget_adjustment) {
@@ -876,12 +877,12 @@ public class CPSCore implements CPSCoreInterface {
         PReps pReps = new PReps();
         Context.require(ArrayDBUtils.containsInArrayDb(caller, pReps.validPreps),
                 TAG + ": Voting can only be done by registered P-Reps.");
+        String progressReportPrefix = progressReportPrefix(reportKey);
         for (MilestoneVoteAttributes milestoneVote : votes) {
             Context.require(List.of(APPROVE, REJECT).contains(milestoneVote.vote),
                     TAG + ": Vote should be either _approve or _reject");
         }
         Map<String, Object> progressReportDetails = getProgressReportDetails(reportKey);
-        String progressReportPrefix = progressReportPrefix(reportKey);
         String status = (String) progressReportDetails.get(STATUS);
 
         if (status.equals(WAITING)){
@@ -1102,7 +1103,6 @@ public class CPSCore implements CPSCoreInterface {
         PeriodController period = new PeriodController();
         BigInteger nextBlock = period.nextBlock.get();
         PReps pReps = new PReps();
-//        Context.println("before if in update period");
         Status status = new Status();
         if (currentBlock.compareTo(nextBlock) >= 0) {
             if (period.periodName.get().equals(APPLICATION_PERIOD)) {

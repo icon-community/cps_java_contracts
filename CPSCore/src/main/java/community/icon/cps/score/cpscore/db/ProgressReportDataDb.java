@@ -1,8 +1,11 @@
 package community.icon.cps.score.cpscore.db;
 
 import score.*;
+import scorex.util.ArrayList;
 
 import java.math.BigInteger;
+
+import java.util.List;
 import java.util.Map;
 
 import static community.icon.cps.score.cpscore.utils.ArrayDBUtils.recordTxHash;
@@ -38,6 +41,7 @@ public class ProgressReportDataDb {
     public static final BranchDB<String, VarDB<String>> budgetAdjustmentStatus = Context.newBranchDB(BUDGET_ADJUSTMENT_STATUS, String.class);
     public static final BranchDB<String, VarDB<String>> ipfsLink = Context.newBranchDB(IPFS_LINK, String.class);
     public static final BranchDB<String, BranchDB<Address, DictDB<String, Integer>>> budgetVotersListIndices = Context.newBranchDB(BUDGET_VOTERS_LIST_INDICES, Integer.class);
+    public static final BranchDB<String,ArrayDB<Integer>> milestoneSubmitted = Context.newBranchDB(MILESTONE_SUBMITTED_COUNT,Integer.class);
 
     public static void addDataToProgressReportDB(ProgressReportAttributes progressData, String prefix) {
         ipfsHash.at(prefix).set(progressData.ipfs_hash);
@@ -72,11 +76,16 @@ public class ProgressReportDataDb {
                 Map.entry(IPFS_LINK, ipfsLink.at(prefix).getOrDefault("")),
                 Map.entry(BUDGET_ADJUSTMENT, budgetAdjustment.at(prefix).getOrDefault(false)),
                 Map.entry(PROJECT_TITLE, ProposalDataDb.projectTitle.at(proposalPrefix(proposalHash)).getOrDefault("")),
+                Map.entry(MILESTONE_SUBMITTED_COUNT, milestoneSubmitted.at(prefix).size()),
                 Map.entry(CONTRIBUTOR_ADDRESS, ProposalDataDb.contributorAddress.at(proposalPrefix(proposalHash)).get()));
     }
-
-    public static boolean hasMilestone(String prefix){
-        return isMilestone.at(prefix).getOrDefault(false);
+    public static List<Integer> getMilestoneSubmittedFromProgressReportDB(String prefix){
+        ArrayDB<Integer> milestoneSize = milestoneSubmitted.at(prefix);
+        List<Integer> m = new ArrayList<>();
+        for (int i = 0; i < milestoneSize.size(); i++) {
+            m.add(milestoneSize.get(i));
+        }
+        return m;
     }
 
     public static Map<String, Object> getVoteResultsFromProgressReportDB(String prefix) {
