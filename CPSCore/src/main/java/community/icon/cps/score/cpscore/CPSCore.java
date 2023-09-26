@@ -277,9 +277,6 @@ public class CPSCore implements CPSCoreInterface {
         Context.require(check, TAG + ": Address not registered as admin.");
         ArrayDBUtils.removeArrayItem(admins, address);
     }
-// voting -> register, not valid
-    // start of application -> setPreps -> register is valid prep
-
 
     @Override
     @External
@@ -634,7 +631,7 @@ public class CPSCore implements CPSCoreInterface {
     @SuppressWarnings("unchecked")
     private BigInteger getMaxCapBNUsd() {
         SetterGetter setterGetter = new SetterGetter();
-        Map<String, BigInteger> cpfAmount = callScore(Map.class, setterGetter.cpfScore.get(), "get_remaining_swap_amount");
+        Map<String, BigInteger> cpfAmount = callScore(Map.class, setterGetter.cpfScore.get(), "getRemainingSwapAmount");
         return cpfAmount.get("maxCap");
     }
 
