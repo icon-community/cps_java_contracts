@@ -53,6 +53,7 @@ public class CPSCore implements CPSCoreInterface {
     private final BranchDB<String, DictDB<String, BigInteger>> sponsorBondReturn = Context.newBranchDB(SPONSOR_BOND_RETURN, BigInteger.class);
     private final DictDB<Address, BigInteger> delegationSnapshot = Context.newDictDB(DELEGATION_SNAPSHOT, BigInteger.class);
     private final VarDB<BigInteger> maxDelegation = Context.newVarDB(MAX_DELEGATION, BigInteger.class);
+    private final VarDB<BigInteger> totalDelegationSnaptshot = Context.newVarDB("totalDelegationSnapshot",BigInteger.class);
     private final VarDB<BigInteger> proposalFees = Context.newVarDB(PROPOSAL_FEES, BigInteger.class);
     private final VarDB<BigInteger> swapBlockHeight = Context.newVarDB(SWAP_BLOCK_HEIGHT, BigInteger.class);
     private final VarDB<Integer> swapCount = Context.newVarDB(SWAP_COUNT, Integer.class);
@@ -1964,15 +1965,18 @@ public class CPSCore implements CPSCoreInterface {
     private void snapshotDelegation() {
         BigInteger maxDelegation = BigInteger.ZERO;
         PReps pReps = new PReps();
+        BigInteger totalStake = BigInteger.ZERO;
         for (int i = 0; i < pReps.validPreps.size(); i++) {
             Address prep = pReps.validPreps.get(i);
             BigInteger stake = getStake(prep);
             delegationSnapshot.set(prep, stake);
+            totalStake= totalStake.add(stake);
             if (stake.compareTo(maxDelegation) > 0) {
                 maxDelegation = stake;
             }
         }
         this.maxDelegation.set(maxDelegation);
+        this.totalDelegationSnaptshot.set(totalStake);
     }
 
     private void updateApplicationResult() {
