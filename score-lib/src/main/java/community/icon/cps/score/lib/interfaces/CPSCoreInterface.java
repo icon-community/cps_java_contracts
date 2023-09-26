@@ -25,6 +25,8 @@ public interface CPSCoreInterface {
         public Address sponsor_address;
         public String ipfs_link;
         public int milestoneCount; //TODO: duration> milestoneCount
+        public Boolean isMilestone;
+
     }
 
     public static class ProgressReportAttributes {
@@ -36,7 +38,6 @@ public interface CPSCoreInterface {
         public BigInteger additional_budget;
         public int additional_month;
         public int[] milestoneCompleted;
-        public Boolean isMilestone;
     }
 
     public static class MilestonesAttributes {

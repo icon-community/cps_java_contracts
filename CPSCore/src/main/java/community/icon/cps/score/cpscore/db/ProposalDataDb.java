@@ -42,6 +42,7 @@ public class ProposalDataDb {
     public static final BranchDB<String, ArrayDB<String>> progressReports = Context.newBranchDB(PROGRESS_REPORTS, String.class);
     public static final BranchDB<String, VarDB<Boolean>> budgetAdjustment = Context.newBranchDB(BUDGET_ADJUSTMENT, Boolean.class);
     public static final BranchDB<String, VarDB<Boolean>> submitProgressReport = Context.newBranchDB(SUBMIT_PROGRESS_REPORT, Boolean.class);
+    private static final BranchDB<String, VarDB<Boolean>> isMilestone = Context.newBranchDB(IS_MILESTONE, Boolean.class);
 
     public static void addDataToProposalDB(ProposalAttributes proposalData, String prefix) {
         ipfsHash.at(prefix).set(proposalData.ipfs_hash);
@@ -64,6 +65,7 @@ public class ProposalDataDb {
         submitProgressReport.at(prefix).set(false);
         token.at(prefix).set(proposalData.token);
         milestoneCount.at(prefix).set(proposalData.milestoneCount);
+        isMilestone.at(prefix).set(proposalData.isMilestone);
 
     }
 
@@ -97,6 +99,7 @@ public class ProposalDataDb {
                 Map.entry(ABSTAIN_VOTERS, abstainVoters.at(prefix).size()),
                 Map.entry(BUDGET_ADJUSTMENT, budgetAdjustment.at(prefix).getOrDefault(false)),
                 Map.entry(MILESTONE_COUNT,milestoneCount.at(prefix).getOrDefault(0)),
+                Map.entry(IS_MILESTONE,isMilestone.at(prefix).getOrDefault(false)),
                 Map.entry(SUBMIT_PROGRESS_REPORT, submitProgressReport.at(prefix).getOrDefault(false)));
     }
 
