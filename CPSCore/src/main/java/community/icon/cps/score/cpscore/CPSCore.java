@@ -979,7 +979,6 @@ public class CPSCore implements CPSCoreInterface {
             VotedSuccessfully(caller, "Proposal Vote for " + progressReportDetails.get(PROGRESS_REPORT_TITLE) + " Successful.");
             swapBNUsdToken();
         }
-        }
     }
 
     private void budgetAdjustment(String reportKey, String budgetAdjustmentVote,boolean voteChange){
@@ -1240,8 +1239,9 @@ public class CPSCore implements CPSCoreInterface {
             List<Address> _main_preps_list = arrayDBtoList(pReps.validPreps);
 
             ArrayDB<Integer> milestoneSubmitted = ProgressReportDataDb.milestoneSubmitted.at(progressPrefix);
-            for (int i = 1; i <= milestoneSubmitted.size(); i++) {
-                String milestonePrefix = mileStonePrefix(_ipfs_hash, i);
+            int milestoneSubmittedSize = milestoneSubmitted.size();
+            for (int i = 0; i < milestoneSubmittedSize; i++) {
+                String milestonePrefix = mileStonePrefix(_ipfs_hash, milestoneSubmitted.get(i));
 
                 Map<String, Object> _milestone_details = getDataFromMilestoneDB(milestonePrefix);
 
@@ -1619,6 +1619,11 @@ public class CPSCore implements CPSCoreInterface {
     @External(readonly = true)
     public Map<String, Object> getProgressReportVoteDetails(String progressKey) {
         return getVoteResultsFromProgressReportDB(progressReportPrefix(progressKey));
+    }
+
+    @External(readonly = true)
+    public Map<String, Object> getProgressReportBudgetAdjustmentDetails(String progressKey) {
+        return getBudgetAdjustmentVoteResultsFromProgressReportDB(progressReportPrefix(progressKey));
     }
 
     @Override
