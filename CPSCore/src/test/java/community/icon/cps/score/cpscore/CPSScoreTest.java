@@ -425,7 +425,7 @@ public class CPSScoreTest extends TestBase{
         proposalAttributes.token = bnUSD;
         proposalAttributes.sponsor_address = testingAccount.getAddress();
         proposalAttributes.ipfs_link = "link";
-        proposalAttributes.milestoneCount = 5;
+        proposalAttributes.milestoneCount = 2;
 
         Map<String, BigInteger> remainingSwapAmount = Map.of(
                 "remaining_swap_amount", BigInteger.valueOf(1000).multiply(MULTIPLIER),
@@ -738,7 +738,7 @@ public class CPSScoreTest extends TestBase{
 
         doReturn(totalFunds).when(scoreSpy).callScore(eq(Map.class), eq(cpfTreasury), eq("getTotalFunds"));
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("transfer_proposal_fund_to_cps_treasury"),
-                eq("Proposal 1"), eq(2),eq(5), eq(testingAccount.getAddress()), eq(owner.getAddress()),
+                eq("Proposal 1"), eq(2),eq(2), eq(testingAccount.getAddress()), eq(owner.getAddress()),
                 eq(bnUSD), eq(BigInteger.valueOf(100).multiply(MULTIPLIER)));
 
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("reset_swap_state"));
@@ -780,7 +780,7 @@ public class CPSScoreTest extends TestBase{
         contextMock.when(() -> Context.transfer(any(), any())).thenAnswer((Answer<Void>) invocation -> null);
         doReturn(totalFunds).when(scoreSpy).callScore(eq(Map.class), eq(cpfTreasury), eq("getTotalFunds"));
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("transfer_proposal_fund_to_cps_treasury"),
-                eq("Proposal 1"), eq(2), eq(5),eq(testingAccount.getAddress()), eq(owner.getAddress()),
+                eq("Proposal 1"), eq(2), eq(2),eq(testingAccount.getAddress()), eq(owner.getAddress()),
                 eq(bnUSD), eq(BigInteger.valueOf(100).multiply(MULTIPLIER)));
 
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("reset_swap_state"));
@@ -962,7 +962,7 @@ public class CPSScoreTest extends TestBase{
 
         doReturn(totalFunds).when(scoreSpy).callScore(eq(Map.class), eq(cpfTreasury), eq("get_total_funds"));
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("transfer_proposal_fund_to_cps_treasury"),
-                eq("Proposal 1"), eq(2), eq(testingAccount.getAddress()), eq(owner.getAddress()),
+                eq("Proposal 1"), eq(2),eq(2), eq(testingAccount.getAddress()), eq(owner.getAddress()),
                 eq(bnUSD), eq(BigInteger.valueOf(100).multiply(MULTIPLIER)));
 
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("reset_swap_state"));
@@ -992,6 +992,7 @@ public class CPSScoreTest extends TestBase{
         progressReport.budget_adjustment = false;
         progressReport.additional_budget = BigInteger.valueOf(0);
         progressReport.additional_month = 0;
+        progressReport.milestoneCompleted = new int[]{1};
 //        progressReport.percentage_completed = 50;
         updatePeriodAfterProposalVoting();
 
@@ -1007,25 +1008,37 @@ public class CPSScoreTest extends TestBase{
         cpsScore.invoke(owner, "updatePeriod");
         getPeriodStatusMethod();
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("swap_tokens"), eq(8));
-        cpsScore.invoke(owner, "voteProgressReport", "Proposal 1", "Report 1", APPROVE, "reason", APPROVE, false);
+
+
+        CPSCoreInterface.MilestoneVoteAttributes milestoneVoteAttributes= new CPSCoreInterface.MilestoneVoteAttributes();
+        milestoneVoteAttributes.vote = APPROVE;
+        milestoneVoteAttributes.id = 1;
+
+
+        CPSCoreInterface.MilestoneVoteAttributes[] milestoneVoteAttributesList = new CPSCoreInterface.MilestoneVoteAttributes[]{
+                milestoneVoteAttributes};
+
+        cpsScore.invoke(owner, "voteProgressReport",  "Report 1", "reason", milestoneVoteAttributesList ,APPROVE,false);
         contextMock.when(caller()).thenReturn(testingAccount.getAddress());
-        cpsScore.invoke(testingAccount, "voteProgressReport", "Proposal 1", "Report 1", APPROVE, "reason", APPROVE, false);
+        cpsScore.invoke(testingAccount, "voteProgressReport",  "Report 1", "reason", milestoneVoteAttributesList ,APPROVE,false);
         contextMock.when(caller()).thenReturn(testingAccount1.getAddress());
-        cpsScore.invoke(testingAccount1, "voteProgressReport", "Proposal 1", "Report 1", APPROVE, "reason", APPROVE, false);
+        cpsScore.invoke(testingAccount1, "voteProgressReport",  "Report 1", "reason", milestoneVoteAttributesList ,APPROVE,false);
         contextMock.when(caller()).thenReturn(testingAccount2.getAddress());
-        cpsScore.invoke(testingAccount2, "voteProgressReport", "Proposal 1", "Report 1", APPROVE, "reason", APPROVE, false);
+        cpsScore.invoke(testingAccount2, "voteProgressReport",  "Report 1", "reason", milestoneVoteAttributesList ,APPROVE,false);
         contextMock.when(caller()).thenReturn(testingAccount3.getAddress());
-        cpsScore.invoke(testingAccount3, "voteProgressReport", "Proposal 1", "Report 1", APPROVE, "reason", APPROVE, false);
+        cpsScore.invoke(testingAccount3, "voteProgressReport",  "Report 1", "reason", milestoneVoteAttributesList ,APPROVE,false);
         contextMock.when(caller()).thenReturn(testingAccount4.getAddress());
-        cpsScore.invoke(testingAccount4, "voteProgressReport", "Proposal 1", "Report 1", APPROVE, "reason", APPROVE, false);
+        cpsScore.invoke(testingAccount4, "voteProgressReport",  "Report 1", "reason", milestoneVoteAttributesList ,APPROVE,false);
         contextMock.when(caller()).thenReturn(testingAccount5.getAddress());
-        cpsScore.invoke(testingAccount5, "voteProgressReport", "Proposal 1", "Report 1", APPROVE, "reason", APPROVE, false);
+        cpsScore.invoke(testingAccount5, "voteProgressReport",  "Report 1", "reason", milestoneVoteAttributesList ,APPROVE,false);
 
         @SuppressWarnings("unchecked")
-        Map<String, Object> progressReportDetails = (Map<String, Object>) cpsScore.call("getProgressReportsByHash", "Report 1");
+        Map<String, Object> progressReportDetails = (Map<String, Object>) cpsScore.call("getProgressReportVoteDetails", "Report 1");
 
         assertEquals(7, progressReportDetails.get(TOTAL_VOTERS));
-        assertEquals(7, progressReportDetails.get(APPROVE_VOTERS));
+
+        Map<String, Object> milestonesReport =(Map<String, Object>) cpsScore.call("getMilestonesReport", "Proposal 1", 1);
+        assertEquals(7, milestonesReport.get(APPROVE_VOTERS));
 
         contextMock.when(caller()).thenReturn(owner.getAddress());
         updateNextBlock();
@@ -1037,13 +1050,13 @@ public class CPSScoreTest extends TestBase{
 
         doReturn(totalFunds).when(scoreSpy).callScore(eq(Map.class), eq(cpfTreasury), eq("get_total_funds"));
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("transfer_proposal_fund_to_cps_treasury"),
-                eq("Proposal 1"), eq(2), eq(testingAccount.getAddress()), eq(owner.getAddress()),
+                eq("Proposal 1"), eq(2),eq(2), eq(testingAccount.getAddress()), eq(owner.getAddress()),
                 eq(bnUSD), eq(BigInteger.valueOf(100).multiply(MULTIPLIER)));
 
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("reset_swap_state"));
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("update_proposal_fund"), eq("Proposal 1"), eq(bnUSD), eq(BigInteger.valueOf(10).multiply(MULTIPLIER)), eq(1));
-        doNothing().when(scoreSpy).callScore(eq(cpsTreasury), eq("send_installment_to_contributor"), eq("Proposal 1"));
-        doNothing().when(scoreSpy).callScore(eq(cpsTreasury), eq("send_reward_to_sponsor"), eq("Proposal 1"));
+        doNothing().when(scoreSpy).callScore(eq(cpsTreasury), eq("send_installment_to_contributor"), eq("Proposal 1"),eq(1));
+        doNothing().when(scoreSpy).callScore(eq(cpsTreasury), eq("send_reward_to_sponsor"), eq("Proposal 1"),eq(1));
         doNothing().when(scoreSpy).callScore(eq(BigInteger.ZERO), eq(SYSTEM_ADDRESS), eq("burn"));
         updatePeriods();
 
@@ -1058,6 +1071,7 @@ public class CPSScoreTest extends TestBase{
         progressReport.budget_adjustment = false;
         progressReport.additional_budget = BigInteger.valueOf(0);
         progressReport.additional_month = 0;
+        progressReport.milestoneCompleted = new int[]{2};
 //        progressReport.percentage_completed = 50;
 
         cpsScore.invoke(owner, "submitProgressReport", progressReport);
@@ -1066,24 +1080,34 @@ public class CPSScoreTest extends TestBase{
         cpsScore.invoke(owner, "updatePeriod");
         getPeriodStatusMethod();
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("swap_tokens"), eq(8));
-        cpsScore.invoke(owner, "voteProgressReport", "Proposal 1", "Report 2", APPROVE, "reason", APPROVE, false);
-        contextMock.when(caller()).thenReturn(testingAccount.getAddress());
-        cpsScore.invoke(testingAccount, "voteProgressReport", "Proposal 1", "Report 2", APPROVE, "reason", APPROVE, false);
-        contextMock.when(caller()).thenReturn(testingAccount1.getAddress());
-        cpsScore.invoke(testingAccount1, "voteProgressReport", "Proposal 1", "Report 2", APPROVE, "reason", APPROVE, false);
-        contextMock.when(caller()).thenReturn(testingAccount2.getAddress());
-        cpsScore.invoke(testingAccount2, "voteProgressReport", "Proposal 1", "Report 2", APPROVE, "reason", APPROVE, false);
-        contextMock.when(caller()).thenReturn(testingAccount3.getAddress());
-        cpsScore.invoke(testingAccount3, "voteProgressReport", "Proposal 1", "Report 2", APPROVE, "reason", APPROVE, false);
-        contextMock.when(caller()).thenReturn(testingAccount4.getAddress());
-        cpsScore.invoke(testingAccount4, "voteProgressReport", "Proposal 1", "Report 2", APPROVE, "reason", APPROVE, false);
-        contextMock.when(caller()).thenReturn(testingAccount5.getAddress());
-        cpsScore.invoke(testingAccount5, "voteProgressReport", "Proposal 1", "Report 2", APPROVE, "reason", APPROVE, false);
 
-        progressReportDetails = (Map<String, Object>) cpsScore.call("getProgressReportsByHash", "Report 1");
+        milestoneVoteAttributes= new CPSCoreInterface.MilestoneVoteAttributes();
+        milestoneVoteAttributes.vote = APPROVE;
+        milestoneVoteAttributes.id = 2;
+
+        milestoneVoteAttributesList = new CPSCoreInterface.MilestoneVoteAttributes[]{
+                milestoneVoteAttributes};
+
+        cpsScore.invoke(owner, "voteProgressReport",  "Report 2", "reason", milestoneVoteAttributesList ,APPROVE,false);
+        contextMock.when(caller()).thenReturn(testingAccount.getAddress());
+        cpsScore.invoke(testingAccount, "voteProgressReport",  "Report 2", "reason", milestoneVoteAttributesList ,APPROVE,false);
+        contextMock.when(caller()).thenReturn(testingAccount1.getAddress());
+        cpsScore.invoke(testingAccount1, "voteProgressReport",  "Report 2", "reason", milestoneVoteAttributesList ,APPROVE,false);
+        contextMock.when(caller()).thenReturn(testingAccount2.getAddress());
+        cpsScore.invoke(testingAccount2, "voteProgressReport",  "Report 2", "reason", milestoneVoteAttributesList ,APPROVE,false);
+        contextMock.when(caller()).thenReturn(testingAccount3.getAddress());
+        cpsScore.invoke(testingAccount3, "voteProgressReport",  "Report 2", "reason", milestoneVoteAttributesList ,APPROVE,false);
+        contextMock.when(caller()).thenReturn(testingAccount4.getAddress());
+        cpsScore.invoke(testingAccount4, "voteProgressReport",  "Report 2", "reason", milestoneVoteAttributesList ,APPROVE,false);
+        contextMock.when(caller()).thenReturn(testingAccount5.getAddress());
+        cpsScore.invoke(testingAccount5, "voteProgressReport",  "Report 2", "reason", milestoneVoteAttributesList ,APPROVE,false);
+
+        progressReportDetails = (Map<String, Object>) cpsScore.call("getProgressReportVoteDetails", "Report 2");
 
         assertEquals(7, progressReportDetails.get(TOTAL_VOTERS));
-        assertEquals(7, progressReportDetails.get(APPROVE_VOTERS));
+
+        milestonesReport =(Map<String, Object>) cpsScore.call("getMilestonesReport", "Proposal 1", 2);
+        assertEquals(7, milestonesReport.get(APPROVE_VOTERS));
 
         contextMock.when(caller()).thenReturn(owner.getAddress());
         updateNextBlock();
@@ -1095,13 +1119,13 @@ public class CPSScoreTest extends TestBase{
 
         doReturn(totalFunds).when(scoreSpy).callScore(eq(Map.class), eq(cpfTreasury), eq("get_total_funds"));
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("transfer_proposal_fund_to_cps_treasury"),
-                eq("Proposal 1"), eq(2), eq(testingAccount.getAddress()), eq(owner.getAddress()),
+                eq("Proposal 1"), eq(2), eq(2),eq(testingAccount.getAddress()), eq(owner.getAddress()),
                 eq(bnUSD), eq(BigInteger.valueOf(100).multiply(MULTIPLIER)));
 
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("reset_swap_state"));
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("update_proposal_fund"), eq("Proposal 1"), eq(bnUSD), eq(BigInteger.valueOf(10).multiply(MULTIPLIER)), eq(1));
-        doNothing().when(scoreSpy).callScore(eq(cpsTreasury), eq("send_installment_to_contributor"), eq("Proposal 1"));
-        doNothing().when(scoreSpy).callScore(eq(cpsTreasury), eq("send_reward_to_sponsor"), eq("Proposal 1"));
+        doNothing().when(scoreSpy).callScore(eq(cpsTreasury), eq("send_installment_to_contributor"), eq("Proposal 1"),eq(1));
+        doNothing().when(scoreSpy).callScore(eq(cpsTreasury), eq("send_reward_to_sponsor"), eq("Proposal 1"),eq(1));
         doNothing().when(scoreSpy).callScore(eq(BigInteger.ZERO), eq(SYSTEM_ADDRESS), eq("burn"));
         updatePeriods();
 
@@ -1112,7 +1136,7 @@ public class CPSScoreTest extends TestBase{
         Map<String, Integer> sponsorsRecord = (Map<String, Integer>) cpsScore.call("getSponsorsRecord");
         assertEquals(1, sponsorsRecord.get(testingAccount.getAddress().toString()));
 
-        Map<String, Map<String, Map<String, BigInteger>>> projectAmounts = (Map<String, Map<String, Map<String, BigInteger>>>) cpsScore.call("get_project_amounts");
+        Map<String, Map<String, Map<String, BigInteger>>> projectAmounts = (Map<String, Map<String, Map<String, BigInteger>>>) cpsScore.call("getProjectAmounts");
         System.out.println("Project Amount: " + projectAmounts);
         Map<String, Object> amount = Map.of(AMOUNT, Map.of(Constants.ICX, BigInteger.ZERO,
                         bnUSD, BigInteger.valueOf(100).multiply(MULTIPLIER)),
@@ -1195,14 +1219,15 @@ public class CPSScoreTest extends TestBase{
         penaltyAmount[1] = BigInteger.valueOf(10);
         penaltyAmount[2] = BigInteger.valueOf(15);
         contextMock.when(caller()).thenReturn(owner.getAddress());
-        cpsScore.invoke(owner, "set_prep_penalty_amount", (Object) penaltyAmount);
+        cpsScore.invoke(owner, "setPrepPenaltyAmount", (Object) penaltyAmount);
         updateNextBlock();
         doReturn(BigInteger.TEN).when(scoreSpy).getApplicationPeriod();
-        cpsScore.invoke(owner, "update_period");
+        cpsScore.invoke(owner, "updatePeriod");
         getPeriodStatusMethod();
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("swap_tokens"), eq(8));
         String[] proposal = new String[1];
         proposal[0] = "Proposal 1";
+
         cpsScore.invoke(owner, "voteProposal", "Proposal 1", APPROVE, "reason", false);
         cpsScore.invoke(owner, "votePriority", (Object) proposal);
 
@@ -1234,9 +1259,9 @@ public class CPSScoreTest extends TestBase{
                 bnUSD, BigInteger.valueOf(1000).multiply(MULTIPLIER)
         );
 
-        doReturn(totalFunds).when(scoreSpy).callScore(eq(Map.class), eq(cpfTreasury), eq("get_total_funds"));
+        doReturn(totalFunds).when(scoreSpy).callScore(eq(Map.class), eq(cpfTreasury), eq("getTotalFunds"));
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("transfer_proposal_fund_to_cps_treasury"),
-                eq("Proposal 1"), eq(2), eq(testingAccount.getAddress()), eq(owner.getAddress()),
+                eq("Proposal 1"), eq(2), eq(2),eq(testingAccount.getAddress()), eq(owner.getAddress()),
                 eq(bnUSD), eq(BigInteger.valueOf(100).multiply(MULTIPLIER)));
 
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("reset_swap_state"));
@@ -1247,7 +1272,7 @@ public class CPSScoreTest extends TestBase{
 
 
         @SuppressWarnings("unchecked")
-        List<Address> denyList = (List<Address>) cpsScore.call("get_denylist");
+        List<Address> denyList = (List<Address>) cpsScore.call("getDenylist");
         assertEquals(List.of(testingAccount5.getAddress()), denyList);
 
         @SuppressWarnings("unchecked")
@@ -1352,25 +1377,35 @@ public class CPSScoreTest extends TestBase{
         disqualifyProject.add("params", params);
 
         doNothing().when(scoreSpy).callScore(eq(bnUSDScore), eq("transfer"), eq(cpfTreasury), eq(BigInteger.valueOf(10).multiply(MULTIPLIER)), eq(disqualifyProject.toString().getBytes()));
-        cpsScore.invoke(owner, "voteProgressReport", "Proposal 1", "Report 1", REJECT, "reason", APPROVE, false);
+
+        CPSCoreInterface.MilestoneVoteAttributes milestoneVoteAttributes = new CPSCoreInterface.MilestoneVoteAttributes();
+        milestoneVoteAttributes.id = 1;
+        milestoneVoteAttributes.vote = REJECT;
+
+        CPSCoreInterface.MilestoneVoteAttributes[] milestoneVoteAttributesList = new CPSCoreInterface.MilestoneVoteAttributes[]{
+                milestoneVoteAttributes};
+        cpsScore.invoke(owner, "voteProgressReport",  "Report 1", "reason", milestoneVoteAttributesList ,APPROVE,false);
         contextMock.when(caller()).thenReturn(testingAccount.getAddress());
-        cpsScore.invoke(testingAccount, "voteProgressReport", "Proposal 1", "Report 1", REJECT, "reason", APPROVE, false);
+        cpsScore.invoke(testingAccount, "voteProgressReport",  "Report 1", "reason", milestoneVoteAttributesList ,APPROVE,false);
         contextMock.when(caller()).thenReturn(testingAccount1.getAddress());
-        cpsScore.invoke(testingAccount1, "voteProgressReport", "Proposal 1", "Report 1", REJECT, "reason", APPROVE, false);
+        cpsScore.invoke(testingAccount1, "voteProgressReport",  "Report 1", "reason", milestoneVoteAttributesList ,APPROVE,false);
         contextMock.when(caller()).thenReturn(testingAccount2.getAddress());
-        cpsScore.invoke(testingAccount2, "voteProgressReport", "Proposal 1", "Report 1", REJECT, "reason", APPROVE, false);
+        cpsScore.invoke(testingAccount2, "voteProgressReport",  "Report 1", "reason", milestoneVoteAttributesList ,APPROVE,false);
         contextMock.when(caller()).thenReturn(testingAccount3.getAddress());
-        cpsScore.invoke(testingAccount3, "voteProgressReport", "Proposal 1", "Report 1", REJECT, "reason", APPROVE, false);
+        cpsScore.invoke(testingAccount3, "voteProgressReport",  "Report 1", "reason", milestoneVoteAttributesList ,APPROVE,false);
         contextMock.when(caller()).thenReturn(testingAccount4.getAddress());
-        cpsScore.invoke(testingAccount4, "voteProgressReport", "Proposal 1", "Report 1", REJECT, "reason", APPROVE, false);
+        cpsScore.invoke(testingAccount4, "voteProgressReport",  "Report 1", "reason", milestoneVoteAttributesList ,APPROVE,false);
         contextMock.when(caller()).thenReturn(testingAccount5.getAddress());
-        cpsScore.invoke(testingAccount5, "voteProgressReport", "Proposal 1", "Report 1", REJECT, "reason", APPROVE, false);
+        cpsScore.invoke(testingAccount5, "voteProgressReport",  "Report 1", "reason", milestoneVoteAttributesList ,APPROVE,false);
 
         @SuppressWarnings("unchecked")
-        Map<String, Object> progressReportDetails = (Map<String, Object>) cpsScore.call("getProgressReportsByHash", "Report 1");
+        Map<String, Object> progressReportDetails = (Map<String, Object>) cpsScore.call("getProgressReportVoteDetails", "Report 1");
 
         assertEquals(7, progressReportDetails.get(TOTAL_VOTERS));
-        assertEquals(7, progressReportDetails.get(REJECT_VOTERS));
+
+        Map<String, Object> milestoneReportDetailes = (Map<String, Object>) cpsScore.call("getMilestonesReport", "Proposal 1", 1);
+
+        assertEquals(7, milestoneReportDetailes.get(REJECT_VOTERS));
 
         contextMock.when(caller()).thenReturn(owner.getAddress());
         updateNextBlock();
@@ -1380,9 +1415,9 @@ public class CPSScoreTest extends TestBase{
                 bnUSD, BigInteger.valueOf(1000).multiply(MULTIPLIER)
         );
 
-        doReturn(totalFunds).when(scoreSpy).callScore(eq(Map.class), eq(cpfTreasury), eq("get_total_funds"));
+        doReturn(totalFunds).when(scoreSpy).callScore(eq(Map.class), eq(cpfTreasury), eq("getTotalFunds"));
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("transfer_proposal_fund_to_cps_treasury"),
-                eq("Proposal 1"), eq(2), eq(testingAccount.getAddress()), eq(owner.getAddress()),
+                eq("Proposal 1"), eq(2),eq(2), eq(testingAccount.getAddress()), eq(owner.getAddress()),
                 eq(bnUSD), eq(BigInteger.valueOf(100).multiply(MULTIPLIER)));
 
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("reset_swap_state"));
@@ -1403,6 +1438,7 @@ public class CPSScoreTest extends TestBase{
         progressReport.budget_adjustment = false;
         progressReport.additional_budget = BigInteger.valueOf(0);
         progressReport.additional_month = 0;
+        progressReport.milestoneCompleted = new int[]{1};
 //        progressReport.percentage_completed = 50;
 
         cpsScore.invoke(owner, "submitProgressReport", progressReport);
@@ -1412,24 +1448,27 @@ public class CPSScoreTest extends TestBase{
         getPeriodStatusMethod();
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("swap_tokens"), eq(8));
         doNothing().when(scoreSpy).callScore(eq(cpsTreasury), eq("disqualify_project"), eq("Proposal 1"));
-        cpsScore.invoke(owner, "voteProgressReport", "Proposal 1", "Report 2", REJECT, "reason", APPROVE, false);
+        cpsScore.invoke(owner, "voteProgressReport",  "Report 2", "reason", milestoneVoteAttributesList ,APPROVE,false);
         contextMock.when(caller()).thenReturn(testingAccount.getAddress());
-        cpsScore.invoke(testingAccount, "voteProgressReport", "Proposal 1", "Report 2", REJECT, "reason", APPROVE, false);
+        cpsScore.invoke(testingAccount, "voteProgressReport",  "Report 2", "reason", milestoneVoteAttributesList ,APPROVE,false);
         contextMock.when(caller()).thenReturn(testingAccount1.getAddress());
-        cpsScore.invoke(testingAccount1, "voteProgressReport", "Proposal 1", "Report 2", REJECT, "reason", APPROVE, false);
+        cpsScore.invoke(testingAccount1, "voteProgressReport",  "Report 2", "reason", milestoneVoteAttributesList ,APPROVE,false);
         contextMock.when(caller()).thenReturn(testingAccount2.getAddress());
-        cpsScore.invoke(testingAccount2, "voteProgressReport", "Proposal 1", "Report 2", REJECT, "reason", APPROVE, false);
+        cpsScore.invoke(testingAccount2, "voteProgressReport",  "Report 2", "reason", milestoneVoteAttributesList ,APPROVE,false);
         contextMock.when(caller()).thenReturn(testingAccount3.getAddress());
-        cpsScore.invoke(testingAccount3, "voteProgressReport", "Proposal 1", "Report 2", REJECT, "reason", APPROVE, false);
+        cpsScore.invoke(testingAccount3, "voteProgressReport",  "Report 2", "reason", milestoneVoteAttributesList ,APPROVE,false);
         contextMock.when(caller()).thenReturn(testingAccount4.getAddress());
-        cpsScore.invoke(testingAccount4, "voteProgressReport", "Proposal 1", "Report 2", REJECT, "reason", APPROVE, false);
+        cpsScore.invoke(testingAccount4, "voteProgressReport",  "Report 2", "reason", milestoneVoteAttributesList ,APPROVE,false);
         contextMock.when(caller()).thenReturn(testingAccount5.getAddress());
-        cpsScore.invoke(testingAccount5, "voteProgressReport", "Proposal 1", "Report 2", REJECT, "reason", APPROVE, false);
+        cpsScore.invoke(testingAccount5, "voteProgressReport",  "Report 2", "reason", milestoneVoteAttributesList ,APPROVE,false);
 
-        progressReportDetails = (Map<String, Object>) cpsScore.call("getProgressReportsByHash", "Report 1");
+        progressReportDetails = (Map<String, Object>) cpsScore.call("getProgressReportVoteDetails", "Report 1");
 
         assertEquals(7, progressReportDetails.get(TOTAL_VOTERS));
-        assertEquals(7, progressReportDetails.get(REJECT_VOTERS));
+
+        milestoneReportDetailes = (Map<String, Object>) cpsScore.call("getMilestonesReport", "Proposal 1", 1);
+
+        assertEquals(7, milestoneReportDetailes.get(REJECT_VOTERS));
 
         contextMock.when(caller()).thenReturn(owner.getAddress());
         updateNextBlock();
@@ -1441,20 +1480,20 @@ public class CPSScoreTest extends TestBase{
 
         doReturn(totalFunds).when(scoreSpy).callScore(eq(Map.class), eq(cpfTreasury), eq("get_total_funds"));
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("transfer_proposal_fund_to_cps_treasury"),
-                eq("Proposal 1"), eq(2), eq(testingAccount.getAddress()), eq(owner.getAddress()),
+                eq("Proposal 1"), eq(2), eq(2),eq(testingAccount.getAddress()), eq(owner.getAddress()),
                 eq(bnUSD), eq(BigInteger.valueOf(100).multiply(MULTIPLIER)));
 
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("reset_swap_state"));
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("update_proposal_fund"), eq("Proposal 1"), eq(bnUSD), eq(BigInteger.valueOf(10).multiply(MULTIPLIER)), eq(1));
-        doNothing().when(scoreSpy).callScore(eq(cpsTreasury), eq("send_installment_to_contributor"), eq("Proposal 1"));
-        doNothing().when(scoreSpy).callScore(eq(cpsTreasury), eq("send_reward_to_sponsor"), eq("Proposal 1"));
+        doNothing().when(scoreSpy).callScore(eq(cpsTreasury), eq("send_installment_to_contributor"), eq("Proposal 1"),eq(1));
+        doNothing().when(scoreSpy).callScore(eq(cpsTreasury), eq("send_reward_to_sponsor"), eq("Proposal 1"),eq(1));
         doNothing().when(scoreSpy).callScore(eq(BigInteger.ZERO), eq(SYSTEM_ADDRESS), eq("burn"));
         updatePeriods();
 
         Map<String, Object> proposalDetails = (Map<String, Object>) cpsScore.call("getProposalDetailsByHash", "Proposal 1");
         assertEquals(DISQUALIFIED, proposalDetails.get("status"));
 
-        Map<String, Map<String, Map<String, BigInteger>>> projectAmounts = (Map<String, Map<String, Map<String, BigInteger>>>) cpsScore.call("get_project_amounts");
+        Map<String, Map<String, Map<String, BigInteger>>> projectAmounts = (Map<String, Map<String, Map<String, BigInteger>>>) cpsScore.call("getProjectAmounts");
         System.out.println("Project Amount: " + projectAmounts);
         Map<String, Object> amount = Map.of(AMOUNT, Map.of(Constants.ICX, BigInteger.ZERO,
                         bnUSD, BigInteger.valueOf(100).multiply(MULTIPLIER)),
