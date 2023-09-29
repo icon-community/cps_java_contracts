@@ -9,6 +9,9 @@ public class Constants {
     public static final String TAG = "CPF_TREASURY";
     public static final String ICX = "ICX";
     public static final String bnUSD = "bnUSD";
+    public static final String METHOD = "method";
+    public static final String PARAMS = "params";
+    public static final String TRANSFER = "transfer";
 
     public static final String PROPOSAL_BUDGETS = "_proposals_budgets";
     public static final String PROPOSALS_KEYS = "_proposals_keys";
@@ -27,6 +30,7 @@ public class Constants {
 
     public static final String SWAP_STATE = "swap_state";
     public static final String SWAP_COUNT = "swap_count";
+    public static final String SWAP_LIMIT_AMOUNT = "swap_limit_amount";
     public static final String ORACLE_PERCENTAGE_DIFF = "oracle_percentage_diff";
     public static final String SWAP_FLAG = "swap_flag";
     public static final Address SYSTEM_ADDRESS = Address.fromString("cx0000000000000000000000000000000000000000");

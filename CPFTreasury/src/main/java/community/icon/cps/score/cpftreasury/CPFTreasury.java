@@ -36,6 +36,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     private final VarDB<Integer> oraclePerDiff = Context.newVarDB(ORACLE_PERCENTAGE_DIFF, Integer.class);
 
     private final VarDB<Boolean> swapFlag = Context.newVarDB(SWAP_FLAG, Boolean.class);
+    private final VarDB<BigInteger> swapLimitAmount = Context.newVarDB(SWAP_LIMIT_AMOUNT, BigInteger.class);
 
     public CPFTreasury() {
         if (treasuryFund.get() == null) {
@@ -44,9 +45,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
             swapState.set(SwapReset);
             swapFlag.set(false);
         }
-        oraclePerDiff.set(5);
-        oracleAddress.set(Address.fromString("cxe647e0af68a4661566f5e9861ad4ac854de808a2"));
-
+        oraclePerDiff.set(3);
     }
 
     private boolean proposalExists(String ipfsKey) {
@@ -144,7 +143,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         proposalBudgets.set(_ipfs_key, totalTransfer);
 
         JsonObject depositProposal = new JsonObject();
-        depositProposal.add("method", "deposit_proposal_fund");
+        depositProposal.add(METHOD, "deposit_proposal_fund");
         JsonObject params = new JsonObject();
         params.add("ipfs_hash", _ipfs_key);
         params.add("project_duration", _total_installment_count);
@@ -153,9 +152,9 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         params.add("total_budget", _total_budget.toString(16));
         params.add("sponsor_reward", sponsorReward.toString(16));
         params.add("token", token_flag);
-        depositProposal.add("params", params);
+        depositProposal.add(PARAMS, params);
 
-        Context.call(balancedDollar, "transfer", cpsTreasuryScore.get(), totalTransfer, depositProposal.toString().getBytes());
+        Context.call(balancedDollar, TRANSFER, cpsTreasuryScore.get(), totalTransfer, depositProposal.toString().getBytes());
         ProposalFundTransferred(_ipfs_key, "Successfully transferred " + totalTransfer + " " + token_flag + " to CPS Treasury " + cpsTreasuryScore.get());
     }
 
@@ -181,15 +180,15 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         Context.require(totalTransfer.compareTo(bnUSDFund) <= 0, TAG + ": Not enough " + totalTransfer + " BNUSD on treasury");
 
         JsonObject budgetAdjustmentData = new JsonObject();
-        budgetAdjustmentData.add("method", "budget_adjustment");
+        budgetAdjustmentData.add(METHOD, "budget_adjustment");
         JsonObject params = new JsonObject();
         params.add("_ipfs_key", _ipfs_key);
         params.add("_added_budget", _added_budget.toString(16));
         params.add("_added_sponsor_reward", sponsorReward.toString(16));
         params.add("_added_installment_count", _total_installment_count);
-        budgetAdjustmentData.add("params", params);
+        budgetAdjustmentData.add(PARAMS, params);
 
-        Context.call(balancedDollar.get(), "transfer", cpsTreasuryScore.get(), totalTransfer, budgetAdjustmentData.toString().getBytes());
+        Context.call(balancedDollar.get(), TRANSFER, cpsTreasuryScore.get(), totalTransfer, budgetAdjustmentData.toString().getBytes());
         ProposalFundTransferred(_ipfs_key, "Successfully transferred " + totalTransfer + " " + bnUSD + " to CPS Treasury");
     }
 
@@ -228,17 +227,17 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     }
 
     @External(readonly = true)
-    public int getPerDiff() {
+    public int getSlippagePercentage() {
         return oraclePerDiff.getOrDefault(0);
     }
 
     private void swapTokens(Address _from, Address _to, BigInteger _amount) {
         JsonObject swapData = new JsonObject();
-        swapData.add("method", "_swap");
+        swapData.add(METHOD, "_swap");
         JsonObject params = new JsonObject();
         params.add("toToken", _to.toString());
-        swapData.add("params", params);
-        Context.call(_from, "transfer", dexScore.get(), _amount, swapData.toString().getBytes());
+        swapData.add(PARAMS, params);
+        Context.call(_from, TRANSFER, dexScore.get(), _amount, swapData.toString().getBytes());
     }
 
     private void swapIcxBnusd(BigInteger amount, BigInteger _minReceive) {
@@ -247,20 +246,25 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
             BigInteger icxPrice = getOraclePrice();
             int diffValue = 100 - oraclePerDiff.getOrDefault(2);
             BigInteger minReceive = icxPrice.multiply(BigInteger.valueOf(diffValue)).divide(BigInteger.valueOf(100));
-            if (_minReceive.equals(BigInteger.ZERO)) {
-                _minReceive = minReceive;
-            } else if (_minReceive.compareTo(minReceive) < 0) {
+            if (_minReceive.equals(BigInteger.ZERO) || _minReceive.compareTo(minReceive) < 0) {
                 _minReceive = minReceive;
             }
 
-            Context.call(amount, routerScore.get(), "route", path, _minReceive);
+            try {
+                BigInteger swapLimitAmount = getSwapLimitAmount();
+                if (swapLimitAmount.compareTo(BigInteger.ZERO) > 0 && amount.compareTo(swapLimitAmount) > 0) {
+                    amount = swapLimitAmount;
+                }
+                Context.call(amount, routerScore.get(), "route", path, _minReceive);
+            } catch (Exception e) {
+                Context.println("Ignoring Errors from Router. Error Message: " +  e.getMessage());
+            }
         }
     }
 
     @Override
     @External
     public void swapICXToBnUSD(BigInteger amount, @Optional BigInteger _minReceive) {
-        validateAdmins();
         if (!getSwapFlag()) {
             Context.revert(TAG + "SwapTurnedOff.");
         }
@@ -278,6 +282,21 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         return priceData.get("rate");
 
     }
+
+    @External
+    public void setSwapLimitAmount(BigInteger _value) {
+        validateAdmins();
+        Context.require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Swap limit amount should be greater than 0");
+        swapLimitAmount.set(_value);
+
+    }
+
+    @External(readonly = true)
+    public BigInteger getSwapLimitAmount() {
+        return swapLimitAmount.getOrDefault(BigInteger.ZERO);
+
+    }
+
 
     @Override
     @External
@@ -382,8 +401,8 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         if (caller.equals(sICX)) {
             if (_from.equals(dexScore.get())) {
                 JsonObject swapICX = new JsonObject();
-                swapICX.add("method", "_swap_icx");
-                Context.call(caller, "transfer", dexScore.get(), _value, swapICX.toString().getBytes());
+                swapICX.add(METHOD, "_swap_icx");
+                Context.call(caller, TRANSFER, dexScore.get(), _value, swapICX.toString().getBytes());
             } else {
                 Context.revert(TAG + ": sICX can be approved only from Balanced DEX.");
             }
@@ -396,20 +415,20 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
             JsonObject transferData = Json.parse(unpacked_data).asObject();
 
             if (_from.equals(cpsScore.get())) {
-                if (transferData.get("method").asString().equals("return_fund_amount")) {
-                    Address _sponsor_address = Address.fromString(transferData.get("params").asObject().get("sponsor_address").asString());
+                if (transferData.get(METHOD).asString().equals("return_fund_amount")) {
+                    Address _sponsor_address = Address.fromString(transferData.get(PARAMS).asObject().get("sponsor_address").asString());
                     returnFundAmount(_sponsor_address, _value);
-                } else if (transferData.get("method").asString().equals("burn_amount")) {
+                } else if (transferData.get(METHOD).asString().equals("burn_amount")) {
                     swapTokens(caller, sICX, _value);
                 } else {
-                    Context.revert(TAG + ": Not supported method " + transferData.get("method").asString());
+                    Context.revert(TAG + ": Not supported method " + transferData.get(METHOD).asString());
                 }
             } else if (_from.equals(cpsTreasuryScore.get())) {
-                if (transferData.get("method").asString().equals("disqualify_project")) {
-                    String ipfs_key = transferData.get("params").asObject().get("ipfs_key").asString();
+                if (transferData.get(METHOD).asString().equals("disqualify_project")) {
+                    String ipfs_key = transferData.get(PARAMS).asObject().get("ipfs_key").asString();
                     disqualifyProposalFund(ipfs_key, _value);
                 } else {
-                    Context.revert(TAG + ": Not supported method " + transferData.get("method").asString());
+                    Context.revert(TAG + ": Not supported method " + transferData.get(METHOD).asString());
                 }
             } else {
                 burnExtraFund();
