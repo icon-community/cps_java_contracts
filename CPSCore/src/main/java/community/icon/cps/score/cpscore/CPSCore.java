@@ -1630,8 +1630,8 @@ public class CPSCore implements CPSCoreInterface {
     }
 
     @External(readonly = true)
-    public Map<String, Object> getProgressReportBudgetAdjustmentDetails(String progressKey) {
-        return getBudgetAdjustmentVoteResultsFromProgressReportDB(progressReportPrefix(progressKey));
+    public Map<String, Object> getBudgetAdjustmentDetails(String progressKey) {
+        return getBudgetAdjustmentDetailsFromDB(progressReportPrefix(progressKey));
     }
 
     @Override
