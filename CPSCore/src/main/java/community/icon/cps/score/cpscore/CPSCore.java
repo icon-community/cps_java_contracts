@@ -65,7 +65,9 @@ public class CPSCore implements CPSCoreInterface {
 
     public CPSCore(@Optional BigInteger bondValue) { // TODO
         PeriodController periodController = new PeriodController();
-        sponsorBondPercentage.set(bondValue);
+        if (sponsorBondPercentage.get() == null){
+            sponsorBondPercentage.set(bondValue);
+        }
     }
 
     @Override
@@ -729,7 +731,6 @@ public class CPSCore implements CPSCoreInterface {
         } else {
             Context.require(votersIndexDb.getOrDefault(CHANGE_VOTE, 0) == 0,
                     TAG + ": Vote change can be done only once.");
-            votersIndexDb.set(CHANGE_VOTE, VOTED);
             int index = votersIndexDb.getOrDefault(INDEX, 0);
             int voteIndex = votersIndexDb.getOrDefault(VOTE, 0);
             ProposalDataDb.votersReasons.at(proposalPrefix).set(index - 1, voteReason);
@@ -749,6 +750,7 @@ public class CPSCore implements CPSCoreInterface {
                 ArrayDBUtils.removeArrayItem(abstainVoters.at(proposalPrefix), caller);
                 ProposalDataDb.abstainedVotes.at(proposalPrefix).set(abstainedVotes.subtract(voterStake));
             }
+            votersIndexDb.set(CHANGE_VOTE, VOTED);
             approvedVotes = ProposalDataDb.approvedVotes.at(proposalPrefix).getOrDefault(BigInteger.ZERO);
             rejectedVotes = ProposalDataDb.rejectedVotes.at(proposalPrefix).getOrDefault(BigInteger.ZERO);
             abstainedVotes = ProposalDataDb.abstainedVotes.at(proposalPrefix).getOrDefault(BigInteger.ZERO);
@@ -912,21 +914,24 @@ public class CPSCore implements CPSCoreInterface {
             ProgressReportDataDb.totalVotes.at(progressReportPrefix).set(this.totalDelegationSnaptshot.getOrDefault(BigInteger.ZERO));
         }
 
+        DictDB<Address,Integer> voteChanged = ProgressReportDataDb.voteChange.at(progressReportPrefix);
+        voteChanged.set(caller,VOTED);
         for (MilestoneVoteAttributes milestoneVote : votes) {
             String milestonePrefix = mileStonePrefix(proposalKey,milestoneVote.id);
 
             Map<String, Object> milestoneDetails = getDataFromMilestoneDB(milestonePrefix);
             BigInteger approvedVotes = (BigInteger) milestoneDetails.get(APPROVED_VOTES);
             BigInteger rejectedVotes = (BigInteger) milestoneDetails.get(REJECTED_VOTES);
-            DictDB<String, Integer> votersIndexDb = ProgressReportDataDb.votersListIndices.at(progressReportPrefix).at(caller);
+            // TODO : the vote index db will be on the basis of milestone not progress report
+
+            DictDB<String, Integer> votersIndexDb = MilestoneDb.votersListIndices.at(milestonePrefix).at(caller);
             if (!voteChange) {
-                ProgressReportDataDb.votersList.at(progressReportPrefix).add(caller);
-                votersIndexDb.set(INDEX, ProgressReportDataDb.votersList.at(progressReportPrefix).size());
+                MilestoneDb.votersList.at(progressReportPrefix).add(caller);
+                votersIndexDb.set(INDEX, MilestoneDb.votersList.at(progressReportPrefix).size());
                 ProgressReportDataDb.votersReasons.at(progressReportPrefix).add(voteReason);
             } else {
                 Context.require(votersIndexDb.getOrDefault(CHANGE_VOTE, 0) == 0,
                         TAG + ": Progress Report Vote change can be done only once."); // TODO:change votes-> APPROVE AND APPROVE
-                votersIndexDb.set(CHANGE_VOTE, VOTED);
                 int index = votersIndexDb.getOrDefault(INDEX, 0);
                 int voteIndex = votersIndexDb.getOrDefault(VOTE, 0);
                 ProgressReportDataDb.votersReasons.at(progressReportPrefix).set(index - 1, voteReason);
@@ -1034,7 +1039,7 @@ public class CPSCore implements CPSCoreInterface {
             return ProposalDataDb.votersListIndex.at(proposalPrefix).at(address).getOrDefault(CHANGE_VOTE, NOT_VOTED);
         } else if (proposalType.equals(PROGRESS_REPORTS)) {
             String progressReportPrefix = progressReportPrefix(ipfsHash);
-            return ProgressReportDataDb.votersListIndices.at(progressReportPrefix).at(address).getOrDefault(CHANGE_VOTE, NOT_VOTED);
+            return ProgressReportDataDb.voteChange.at(progressReportPrefix).getOrDefault(address,NOT_VOTED);
         } else {
             return 0;
         }
