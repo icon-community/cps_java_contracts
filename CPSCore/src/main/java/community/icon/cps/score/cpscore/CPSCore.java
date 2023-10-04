@@ -736,13 +736,13 @@ public class CPSCore implements CPSCoreInterface {
             ProposalDataDb.votersReasons.at(proposalPrefix).set(index - 1, voteReason);
             if (voteIndex == APPROVE_) {
                 if (vote.equals(APPROVE)){
-                    Context.revert("Cannot cast same vote. Change your vote" );
+                    Context.revert(TAG + ":: Cannot cast same vote. Change your vote" );
                 }
                 ArrayDBUtils.removeArrayItem(ProposalDataDb.approveVoters.at(proposalPrefix), caller);
                 ProposalDataDb.approvedVotes.at(proposalPrefix).set(approvedVotes.subtract(voterStake));
             } else if (voteIndex == REJECT_) {
                 if (vote.equals(REJECT)){
-                    Context.revert("Cannot cast same vote. Change your vote" );
+                    Context.revert(TAG +":: Cannot cast same vote. Change your vote" );
                 }
                 ArrayDBUtils.removeArrayItem(ProposalDataDb.rejectVoters.at(proposalPrefix), caller);
                 ProposalDataDb.rejectedVotes.at(proposalPrefix).set(rejectedVotes.subtract(voterStake));
