@@ -1260,11 +1260,13 @@ public class CPSCore implements CPSCoreInterface {
                     int _total_voters = ProgressReportDataDb.totalVoters.at(progressPrefix).getOrDefault(0);
 
                     if (_total_voters == 0 || _total_votes.equals(BigInteger.ZERO) || _main_preps_list.size() < MINIMUM_PREPS) {
+                        updateProgressReportStatus(_reports, PROGRESS_REPORT_REJECTED);
                         updateMilestoneStatus(milestonePrefix, MILESTONE_REPORT_REJECTED,_reports);
                     } else {
                         double votersRatio = (double) _approve_voters / _total_voters;
                         double votesRatio = _approved_votes.doubleValue() / _total_votes.doubleValue();
                         if (votersRatio >= MAJORITY && votesRatio >= MAJORITY) {
+                            updateProgressReportStatus(_reports, APPROVED);
                             updateMilestoneStatus(milestonePrefix, MILESTONE_REPORT_COMPLETED,_reports);
                             _approved_reports_count +=1 ;
                             milestonePassed +=1;
@@ -1283,6 +1285,7 @@ public class CPSCore implements CPSCoreInterface {
                             }
 
                             else if (_proposal_status.equals(PAUSED)) {
+                                updateProgressReportStatus(_reports, PROGRESS_REPORT_REJECTED);
                                 updateProposalStatus(_ipfs_hash, ACTIVE);
                             }
 
