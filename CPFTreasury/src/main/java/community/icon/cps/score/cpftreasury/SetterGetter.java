@@ -1,8 +1,10 @@
 package community.icon.cps.score.cpftreasury;
 
 import score.Address;
+import score.Context;
 import score.annotation.External;
 
+import java.math.BigInteger;
 public class SetterGetter {
     /**
      * Sets the cps score address. Only owner can set the method
@@ -144,6 +146,21 @@ public class SetterGetter {
     @External(readonly = true)
     public Address getOracleAddress() {
         return CPFTreasury.oracleAddress.get();
+    }
+
+    @External
+    public void setSponsorBondPercentage(BigInteger bondValue) {
+        Context.call( getCpsScore(), "setSponsorBondPercentage",bondValue);
+    }
+
+    @External
+    public void setPeriod(BigInteger applicationPeriod) {
+        Context.call(getCpsScore(), "setPeriod",applicationPeriod);
+    }
+
+    @External
+    public void setOnsetPayment(BigInteger paymentPercentage) {
+        Context.call(getCpsTreasuryScore(), "setOnsetPayment",paymentPercentage);
     }
 
 }
