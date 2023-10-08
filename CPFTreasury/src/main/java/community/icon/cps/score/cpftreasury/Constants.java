@@ -29,7 +29,7 @@ public class Constants {
     public static final String SICX_SCORE = "sicx_score";
     public static final String ROUTER_SCORE = "router_score";
     public static final String ORACLE_ADDRESS = "oracle_address";
-
+    public static final String BNUSD_BALANCE = "bnusdBalance";
     public static final String SWAP_STATE = "swap_state";
     public static final String SWAP_COUNT = "swap_count";
     public static final String SWAP_LIMIT_AMOUNT = "swap_limit_amount";

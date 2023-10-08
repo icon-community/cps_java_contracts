@@ -115,13 +115,18 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         return getTotalFundBNUSD().get(AVAILABLE_BALANCE);
     }
 
+    @External(readonly = true)
+    public BigInteger getEmergencyFund() {
+        return getTotalFundBNUSD().get(EMERGENCY_FUND);
+    }
+
 
     private Map<String, BigInteger> getTotalFundBNUSD() {
         BigInteger bnusdBalance = (BigInteger) Context.call(balancedDollar.get(), "balanceOf", Context.getAddress());
         BigInteger emergencyFund = this.emergencyFund.getOrDefault(BigInteger.ZERO);
         BigInteger availableBalance = bnusdBalance.subtract(emergencyFund);
-        return Map.of("bnusdBalance", bnusdBalance,
-                "emergencyFund", emergencyFund,
+        return Map.of(BNUSD_BALANCE, bnusdBalance,
+                EMERGENCY_FUND, emergencyFund,
                 AVAILABLE_BALANCE, availableBalance);
     }
 
@@ -141,71 +146,71 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
 
     @Override
     @External
-    public void transfer_proposal_fund_to_cps_treasury(String _ipfs_key, int project_duration,int _total_installment_count,
-                                                       Address _sponsor_address, Address _contributor_address,
-                                                       String token_flag, BigInteger _total_budget) {
+    public void transferProposalFundToCpsTreasury(String ipfsKey, int projectDuration, int totalInstallmentCount,
+                                                  Address sponsorAddress, Address contributorAddress,
+                                                  String tokenFlag, BigInteger totalBudget) {
         validateCpsScore();
-        Context.require(!proposalExists(_ipfs_key), TAG + ": Project already exists. Invalid IPFS Hash");
-        Context.require(token_flag.equals(bnUSD), TAG + ": " + token_flag + " is not supported. Only " + bnUSD + " token available.");
-        BigInteger sponsorReward = _total_budget.multiply(BigInteger.TWO).divide(BigInteger.valueOf(100));
-        BigInteger totalTransfer = _total_budget.add(sponsorReward);
+        Context.require(!proposalExists(ipfsKey), TAG + ": Project already exists. Invalid IPFS Hash");
+        Context.require(tokenFlag.equals(bnUSD), TAG + ": " + tokenFlag + " is not supported. Only " + bnUSD + " token available.");
+        BigInteger sponsorReward = totalBudget.multiply(BigInteger.TWO).divide(BigInteger.valueOf(100));
+        BigInteger totalTransfer = totalBudget.add(sponsorReward);
 
         Address balancedDollar = CPFTreasury.balancedDollar.get();
         BigInteger bnUSDBalance = Context.call(BigInteger.class, balancedDollar, "balanceOf", Context.getAddress());
         Context.require(totalTransfer.compareTo(bnUSDBalance) < 0, TAG + ": Not enough fund " + bnUSDBalance + " token available");
 
-        proposalsKeys.add(_ipfs_key);
-        proposalBudgets.set(_ipfs_key, totalTransfer);
+        proposalsKeys.add(ipfsKey);
+        proposalBudgets.set(ipfsKey, totalTransfer);
 
         JsonObject depositProposal = new JsonObject();
-        depositProposal.add(METHOD, "deposit_proposal_fund");
+        depositProposal.add(METHOD, "depositProposalFund");
         JsonObject params = new JsonObject();
-        params.add("ipfs_hash", _ipfs_key);
-        params.add("project_duration", project_duration);
-        params.add("milestone_count", _total_installment_count);
-        params.add("sponsor_address", _sponsor_address.toString());
-        params.add("contributor_address", _contributor_address.toString());
-        params.add("total_budget", _total_budget.toString(16));
+        params.add("ipfs_hash", ipfsKey);
+        params.add("project_duration", projectDuration);
+        params.add("milestone_count", totalInstallmentCount);
+        params.add("sponsor_address", sponsorAddress.toString());
+        params.add("contributor_address", contributorAddress.toString());
+        params.add("total_budget", totalBudget.toString(16));
         params.add("sponsor_reward", sponsorReward.toString(16));
-        params.add("token", token_flag);
+        params.add("token", tokenFlag);
         depositProposal.add(PARAMS, params);
 
         Context.call(balancedDollar, TRANSFER, cpsTreasuryScore.get(), totalTransfer, depositProposal.toString().getBytes());
-        ProposalFundTransferred(_ipfs_key, "Successfully transferred " + totalTransfer + " " + token_flag + " to CPS Treasury " + cpsTreasuryScore.get());
+        ProposalFundTransferred(ipfsKey, "Successfully transferred " + totalTransfer + " " + tokenFlag + " to CPS Treasury " + cpsTreasuryScore.get());
     }
 
     @Override
     @External
-    public void update_proposal_fund(String _ipfs_key, @Optional String _flag, @Optional BigInteger _added_budget,
-                                     @Optional int _total_installment_count) {
+    public void updateProposalFund(String ipfsKey, @Optional String flag, @Optional BigInteger addedBudget,
+                                   @Optional int totalInstallmentCount) {
         validateCpsScore();
-        Context.require(proposalExists(_ipfs_key), TAG + ": IPFS hash does not exist.");
-        Context.require(_flag != null && _flag.equals(bnUSD), TAG + ": Unsupported token. " + _flag);
+        Context.require(proposalExists(ipfsKey), TAG + ": IPFS hash does not exist.");
+        Context.require(flag != null && flag.equals(bnUSD), TAG + ": Unsupported token. " + flag);
 
-        if (_added_budget == null) {
-            _added_budget = BigInteger.ZERO;
+        if (addedBudget == null) {
+            addedBudget = BigInteger.ZERO;
         }
 
 
-        BigInteger sponsorReward = _added_budget.multiply(BigInteger.TWO).divide(BigInteger.valueOf(100));
-        BigInteger totalTransfer = _added_budget.add(sponsorReward);
+        BigInteger sponsorReward = addedBudget.multiply(BigInteger.TWO).divide(BigInteger.valueOf(100));
+        BigInteger totalTransfer = addedBudget.add(sponsorReward);
 
-        BigInteger proposalBudget = proposalBudgets.getOrDefault(_ipfs_key, BigInteger.ZERO);
-        proposalBudgets.set(_ipfs_key, proposalBudget.add(totalTransfer));
+        BigInteger proposalBudget = proposalBudgets.getOrDefault(ipfsKey, BigInteger.ZERO);
+        proposalBudgets.set(ipfsKey, proposalBudget.add(totalTransfer));
         BigInteger bnUSDFund = getTotalFunds().get(bnUSD);
         Context.require(totalTransfer.compareTo(bnUSDFund) <= 0, TAG + ": Not enough " + totalTransfer + " BNUSD on treasury");
 
         JsonObject budgetAdjustmentData = new JsonObject();
-        budgetAdjustmentData.add(METHOD, "budget_adjustment");
+        budgetAdjustmentData.add(METHOD, "budgetAdjustment");
         JsonObject params = new JsonObject();
-        params.add("_ipfs_key", _ipfs_key);
-        params.add("_added_budget", _added_budget.toString(16));
+        params.add("_ipfs_key", ipfsKey);
+        params.add("_added_budget", addedBudget.toString(16));
         params.add("_added_sponsor_reward", sponsorReward.toString(16));
-        params.add("_added_installment_count", _total_installment_count);
+        params.add("_added_installment_count", totalInstallmentCount);
         budgetAdjustmentData.add(PARAMS, params);
 
         Context.call(balancedDollar.get(), TRANSFER, cpsTreasuryScore.get(), totalTransfer, budgetAdjustmentData.toString().getBytes());
-        ProposalFundTransferred(_ipfs_key, "Successfully transferred " + totalTransfer + " " + bnUSD + " to CPS Treasury");
+        ProposalFundTransferred(ipfsKey, "Successfully transferred " + totalTransfer + " " + bnUSD + " to CPS Treasury");
     }
 
     private void disqualifyProposalFund(String ipfsKey, BigInteger value) {
@@ -337,25 +342,25 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
 
     @Override
     @External
-    public void swap_tokens(int _count) {
+    public void swapTokens(int count) {
         validateCpsScore();
         BigInteger sicxICXPrice = (BigInteger) Context.call(dexScore.get(), "getPrice", sICXICXPoolID);
         BigInteger sicxBnusdPrice = (BigInteger) Context.call(dexScore.get(), "getPrice", sICXBNUSDPoolID);
         BigInteger icxbnUSDPrice = sicxBnusdPrice.multiply(EXA).divide(sicxICXPrice);
         BigInteger bnUSDRemainingToSwap = getRemainingSwapAmount().get("remainingToSwap");
-        if (bnUSDRemainingToSwap.compareTo(BigInteger.TEN.multiply(EXA)) < 0 || _count == 0) {
+        if (bnUSDRemainingToSwap.compareTo(BigInteger.TEN.multiply(EXA)) < 0 || count == 0) {
             swapState.set(SwapCompleted);
             swapCount.set(SwapReset);
         } else {
             int swapState = this.swapState.getOrDefault(0);
             if (swapState == SwapContinue) {
                 int swapCountValue = swapCount.getOrDefault(0);
-                int count = _count - swapCountValue;
-                if (count == 0) {
+                int _count = count - swapCountValue;
+                if (_count == 0) {
                     this.swapState.set(SwapCompleted);
                     swapCount.set(SwapReset);
                 } else {
-                    BigInteger remainingICXToSwap = bnUSDRemainingToSwap.multiply(EXA).divide(icxbnUSDPrice.multiply(BigInteger.valueOf(count)));
+                    BigInteger remainingICXToSwap = bnUSDRemainingToSwap.multiply(EXA).divide(icxbnUSDPrice.multiply(BigInteger.valueOf(_count)));
                     BigInteger icxBalance = Context.getBalance(Context.getAddress());
                     swapCount.set(swapCountValue + 1);
                     if (remainingICXToSwap.compareTo(icxBalance) > 0) {
@@ -378,7 +383,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
 
     @Override
     @External
-    public void reset_swap_state() {
+    public void resetSwapState() {
         Address cpsScoreAddress = cpsScore.get();
         Address caller = Context.getCaller();
 
@@ -389,9 +394,9 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     }
 
     @External
-    public void setOraclePercentageDifference(int _value) {
+    public void setOraclePercentageDifference(int value) {
         validateAdmins();
-        oraclePerDiff.set(_value);
+        oraclePerDiff.set(value);
     }
 
     @Override
@@ -452,16 +457,16 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
             JsonObject transferData = Json.parse(unpacked_data).asObject();
 
             if (_from.equals(cpsScore.get())) {
-                if (transferData.get(METHOD).asString().equals("return_fund_amount")) {
+                if (transferData.get(METHOD).asString().equals("returnFundAmount")) {
                     Address _sponsor_address = Address.fromString(transferData.get(PARAMS).asObject().get("sponsor_address").asString());
                     returnFundAmount(_sponsor_address, _value);
-                } else if (transferData.get(METHOD).asString().equals("burn_amount")) {
+                } else if (transferData.get(METHOD).asString().equals("burnAmount")) {
                     swapTokens(caller, sICX, _value);
                 } else {
                     Context.revert(TAG + ": Not supported method " + transferData.get(METHOD).asString());
                 }
             } else if (_from.equals(cpsTreasuryScore.get())) {
-                if (transferData.get(METHOD).asString().equals("disqualify_project")) {
+                if (transferData.get(METHOD).asString().equals("disqualifyProject")) {
                     String ipfs_key = transferData.get(PARAMS).asObject().get("ipfs_key").asString();
                     disqualifyProposalFund(ipfs_key, _value);
                 } else {
