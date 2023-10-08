@@ -39,6 +39,12 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
     private static final String CONTRIBUTOR_PROJECTS = "contributor_projects";
     private static final String SPONSOR_PROJECTS = "sponsor_projects";
     public static final String ONSET_PAYMENT = "onset_payment";
+    public static final String DATA = "data";
+    public static final String PROJECT_COUNT = "project_count";
+    public static final String TOTAL_AMOUNT = "total_amount";
+    public static final String WITHDRAWN_ICX = "withdraw_amount_icx";
+    public static final String WITHDRAWN_BNUSD = "withdraw_amount_bnUSD";
+    public static final String TOTAL_SPONSOR_BOND = "total_sponsor_bond";
 
     private final ArrayDB<String> proposalsKeys = Context.newArrayDB(PROPOSALS_KEYS, String.class);
     private final DictDB<String, Integer> proposalsKeyListIndex = Context.newDictDB(PROPOSALS_KEY_LIST_INDEX, Integer.class);
@@ -207,11 +213,11 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
         }
         DictDB<String, BigInteger> installmentRecord = installmentFundRecord.at(walletAddress.toString());
         return Map.of(
-                "data", projectDetails,
-                "project_count", projectDetails.size(),
-                "total_amount", Map.of("ICX", totalAmountToBePaidICX, "bnUSD", totalAmountToBePaidbnUSD),
-                "withdraw_amount_icx", installmentRecord.getOrDefault(consts.ICX, BigInteger.ZERO),
-                "withdraw_amount_bnUSD", installmentRecord.getOrDefault(consts.bnUSD, BigInteger.ZERO));
+                DATA, projectDetails,
+                PROJECT_COUNT, projectDetails.size(),
+                TOTAL_AMOUNT, Map.of("ICX", totalAmountToBePaidICX, "bnUSD", totalAmountToBePaidbnUSD),
+                WITHDRAWN_ICX, installmentRecord.getOrDefault(consts.ICX, BigInteger.ZERO),
+                WITHDRAWN_BNUSD, installmentRecord.getOrDefault(consts.bnUSD, BigInteger.ZERO));
     }
 
     @Override
@@ -284,12 +290,12 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
         }
         DictDB<String, BigInteger> installmentRecord = installmentFundRecord.at(walletAddress.toString());
         return Map.of(
-                "data", projectDetails,
-                "project_count", projectDetails.size(),
-                "total_amount", Map.of("ICX", totalAmountToBePaidICX, "bnUSD", totalAmountToBePaidbnUSD),
-                "withdraw_amount_icx", installmentRecord.getOrDefault(consts.ICX, BigInteger.ZERO),
-                "withdraw_amount_bnUSD", installmentRecord.getOrDefault(consts.bnUSD, BigInteger.ZERO),
-                "total_sponsor_bond", Map.of("ICX", totalSponsorBondICX, "bnUSD", totalSponsorBondbnUSD)
+                DATA, projectDetails,
+                PROJECT_COUNT, projectDetails.size(),
+                TOTAL_AMOUNT, Map.of("ICX", totalAmountToBePaidICX, "bnUSD", totalAmountToBePaidbnUSD),
+                WITHDRAWN_ICX, installmentRecord.getOrDefault(consts.ICX, BigInteger.ZERO),
+                WITHDRAWN_BNUSD, installmentRecord.getOrDefault(consts.bnUSD, BigInteger.ZERO),
+                TOTAL_SPONSOR_BOND, Map.of("ICX", totalSponsorBondICX, "bnUSD", totalSponsorBondbnUSD)
         );
     }
 
