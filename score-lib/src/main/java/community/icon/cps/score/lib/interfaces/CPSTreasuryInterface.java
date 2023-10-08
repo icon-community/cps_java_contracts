@@ -25,7 +25,6 @@ public interface CPSTreasuryInterface {
     void setCpsScore(Address score);
 
     @External(readonly = true)
-        //Todo java convention in get methods??
     Address getCpsScore();
 
     @External
@@ -54,17 +53,17 @@ public interface CPSTreasuryInterface {
 
     @External
     @Payable
-    void update_proposal_fund(String ipfs_key, BigInteger added_budget, BigInteger _added_sponsor_reward,
-                              int _added_installment_count);
+    void updateProposalFund(String ipfsKey, BigInteger addedBudget, BigInteger addedSponsorReward,
+                            int addedInstallmentCount);
 
     @External
-    void send_installment_to_contributor(String _ipfs_key,int installment_count);
+    void sendInstallmentToContributor(String ipfsKey, int installmentCount);
 
     @External
-    void send_reward_to_sponsor(String _ipfs_key,int installment_count);
+    void sendRewardToSponsor(String ipfsKey, int installmentCount);
 
     @External
-    void disqualify_project(String _ipfs_key);
+    void disqualifyProject(String ipfsKey);
 
     @External
     void claimReward();
