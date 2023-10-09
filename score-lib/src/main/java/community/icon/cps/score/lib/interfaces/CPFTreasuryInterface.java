@@ -81,7 +81,7 @@ public interface CPFTreasuryInterface {
                             @Optional int totalInstallmentCount);
 
     @External
-    void withdrawFromEmergencyFund(BigInteger value, Address address);
+    void withdrawFromEmergencyFund(BigInteger value, Address address, String purpose);
 
     @External
     void setOraclePercentageDifference(int value);

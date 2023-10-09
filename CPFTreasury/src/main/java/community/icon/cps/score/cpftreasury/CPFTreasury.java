@@ -319,7 +319,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     }
 
     @External
-    public void transferToEmergencyFund(BigInteger value) {
+    public void allocateEmergencyFund(BigInteger value) {
         validateAdmins();
         Context.require(value.compareTo(BigInteger.ZERO) > 0, TAG + ": Emergency Fund amount should be greater than 0");
         emergencyFund.set(value);
@@ -327,7 +327,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     }
 
     @External
-    public void withdrawFromEmergencyFund(BigInteger value, Address address) {
+    public void withdrawFromEmergencyFund(BigInteger value, Address address, String purpose) {
         validateAdmins();
         Context.require(value.compareTo(BigInteger.ZERO) > 0, TAG + ": Emergency Fund amount should be greater than 0");
         BigInteger emergencyFund = this.emergencyFund.getOrDefault(BigInteger.ZERO);
@@ -336,7 +336,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         Address balancedDollar = CPFTreasury.balancedDollar.get();
 
         Context.call(balancedDollar, TRANSFER, address, value, "".getBytes());
-        EmergencyFundTranserred(address, value);
+        EmergencyFundTranserred(address, value,purpose);
     }
 
 
@@ -511,6 +511,6 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     }
 
     @EventLog(indexed = 1)
-    public void EmergencyFundTranserred(Address _address, BigInteger _value) {
+    public void EmergencyFundTranserred(Address _address, BigInteger _value, String _purpose) {
     }
 }
