@@ -183,7 +183,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
             Map<String, ?> proposal_details = getDataFromProposalDB(proposalPrefix);
             if (!proposal_details.get(consts.STATUS).equals(DISQUALIFIED)) {
                 if (proposal_details.get(consts.CONTRIBUTOR_ADDRESS).equals(walletAddress)) {
-                    int totalInstallment = (int) proposal_details.get(consts.PROJECT_DURATION);
+                    int totalInstallment = (int) proposal_details.get(consts.INSTALLMENT_COUNT);
                     int totalPaidCount = totalInstallment - (int) proposal_details.get(consts.INSTALLMENT_COUNT);
 
                     if (totalPaidCount < totalInstallment) {
@@ -257,15 +257,15 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
             Map<String, ?> proposal_details = proposalData.getDataFromProposalDB(proposalPrefix);
             if (!proposal_details.get(consts.STATUS).equals(DISQUALIFIED)) {
                 if (proposal_details.get(consts.SPONSOR_ADDRESS).equals(walletAddress)) {
-                    int totalInstallment = (int) proposal_details.get(consts.PROJECT_DURATION);
+                    int totalInstallment = (int) proposal_details.get(consts.INSTALLMENT_COUNT);
                     int totalPaidCount = totalInstallment - (int) proposal_details.get(consts.SPONSOR_REWARD_COUNT);
                     if (totalPaidCount < totalInstallment) {
                         String flag = (String) proposal_details.get(consts.TOKEN);
                         BigInteger totalBudget = (BigInteger) proposal_details.get(consts.SPONSOR_REWARD);
-                        BigInteger totalPaidAmount = (BigInteger) proposal_details.get(consts.WITHDRAW_AMOUNT);
+                        BigInteger totalPaidAmount = (BigInteger) proposal_details.get(consts.SPONSOR_WITHDRAW_AMOUNT);
                         BigInteger depositedSponsorBond = ((BigInteger) proposal_details.get(consts.TOTAL_BUDGET)).divide(BigInteger.TEN);
                         BigInteger remaingAmount = totalBudget.subtract(totalPaidAmount);
-                        // TODO: won't work for second
+
                         Map<String, ?> project_details = Map.of(
                                 consts.IPFS_HASH, _ipfs_key,
                                 consts.TOKEN, flag,
@@ -273,7 +273,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
                                 consts.TOTAL_INSTALLMENT_PAID, totalPaidAmount,
                                 consts.TOTAL_INSTALLMENT_COUNT, totalInstallment,
                                 consts.TOTAL_TIMES_INSTALLMENT_PAID, totalPaidCount,
-                                consts.INSTALLMENT_AMOUNT, remaingAmount.divide(BigInteger.valueOf(totalInstallment)),
+                                consts.INSTALLMENT_AMOUNT, remaingAmount.divide(BigInteger.valueOf(totalInstallment-totalPaidCount)),
                                 consts.SPONSOR_BOND_AMOUNT, depositedSponsorBond);
 
                         projectDetails.add(project_details);
@@ -441,8 +441,8 @@ private void onsetPaymentContributor(String _ipfs_key){
         setSponsorWithdrawAmount(prefix,sponsorWithdrawAmount.add(onsetAmount));
 
         DictDB<String, BigInteger> installmentFunds = installmentFundRecord.at(sponsorAddress.toString());
-        installmentFunds.set(flag, installmentFunds.getOrDefault(flag, BigInteger.ZERO).add(onsetAmount));
-        installmentFunds = installmentFundRecord.at(sponsorAddress.toString());
+        BigInteger installmentFundAmount = installmentFunds.getOrDefault(flag,BigInteger.ZERO);
+        installmentFunds.set(flag, installmentFundAmount.add(onsetAmount));
 
 
         InitialPaymentSent(sponsorAddress, "initial amount of " + onSetPaymentPercentage +
