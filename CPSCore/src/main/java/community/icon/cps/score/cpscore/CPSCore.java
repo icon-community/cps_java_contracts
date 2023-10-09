@@ -1232,8 +1232,6 @@ public class CPSCore implements CPSCoreInterface {
 
             boolean _budget_adjustment = (boolean) _report_result.get(BUDGET_ADJUSTMENT);
 
-            // checking which prep(s) did not vote the progress report
-            checkInactivePreps(ProgressReportDataDb.votersList.at(progressPrefix));// TODO: fix this, voterList to be where
 
 //          If a progress report have any budget_adjustment, then it checks the budget adjustment first
             if (_budget_adjustment && getBudgetAdjustmentFeature()) {
@@ -1538,9 +1536,10 @@ public class CPSCore implements CPSCoreInterface {
     private void updateMilestoneStatus(String milestonePrefix, int milestoneStatus, String progressHash ){
 
         MilestoneDb.status.at(milestonePrefix).set(milestoneStatus);
-        MilestoneDb.progressReportHash.at(milestonePrefix).set(progressHash);
+//        MilestoneDb.progressReportHash.at(milestonePrefix).set(progressHash);
 
-        // TODO: better name here
+        // TODO: better name here -> is this even required
+        // fetch data from pogrss hash? // NOT SO REQUIRED
         ArrayDB<String> progressTOm = this.progressReportToMilestone.at(progressHash);
         if(!ArrayDBUtils.containsInArrayDb(milestonePrefix,progressTOm)) {
             this.progressReportToMilestone.at(progressHash).add(milestonePrefix);
@@ -1668,9 +1667,18 @@ public class CPSCore implements CPSCoreInterface {
             String progressReportKey = progressReportKeys.get(i);
             Map<String, Object> progressReportDetails = this.getProgressReportDetails(progressReportKey);
             String progressStatus = (String) progressReportDetails.get(STATUS);
+            String ipfsHash = (String) progressReportDetails.get(IPFS_HASH);
+            int milestoneCount = getMilestoneCount(ipfsHash);
 
-            if (progressStatus.equals(status)) {
+
+            if (progressStatus.equals(status) && milestoneCount == 0) {
                 progressReportList.add(progressReportDetails);
+                progressReportList.add(getProgressReportVoteDetails(progressReportKey));
+            } else if (progressStatus.equals(status) && milestoneCount > 0) {
+
+                Map<String, Object> progressReportWithMilestone = getMilestoneReport(progressReportKey,ipfsHash);
+                progressReportList.add(progressReportDetails);
+                progressReportList.add(progressReportWithMilestone);
             }
         }
         return Map.of(DATA, progressReportList, COUNT, count);
@@ -1684,12 +1692,57 @@ public class CPSCore implements CPSCoreInterface {
      :rtype : dict
      ***/
     @Override
-    @External(readonly = true)
+    @External(readonly = true)// include the votes and total voters here?
     public Map<String, Object> getProgressReportsByHash(String reportKey) {
         if (progressKeyExists(reportKey)) {
-            return getProgressReportDetails(reportKey);
+            return getProgressReportByHash_Proxy(reportKey);
         }
         return Map.of();
+    }
+
+    private Map<String,Object> getMilestoneReport(String reportKey, String ipfsHash){
+        Map<String,Object> milestoneReport =  new HashMap<>();
+        ArrayDB<Integer> mileSubmitted = milestoneSubmitted.at(progressReportPrefix(reportKey));
+        for (int i = 0; i < mileSubmitted.size(); i++) {
+            int count = mileSubmitted.get(i);
+            milestoneReport.put("milestone_"+count,getMilestonesReport(ipfsHash,count));
+        }
+        return milestoneReport;
+    }
+
+    @External(readonly = true)
+    public Map<String, Object> getProgressReportByHash_Proxy(String reportKey){
+        if (progressKeyExists(reportKey)) {
+            Map<String,Object> finalDetail = new HashMap<>();
+            Map<String,Object> progressReportDetails = getProgressReportDetails(reportKey);
+            finalDetail.putAll(progressReportDetails);
+            String ipfsHash = (String) progressReportDetails.get(IPFS_HASH);
+            int milestoneCount = getMilestoneCount(ipfsHash);
+
+            if (milestoneCount > 0){
+                Map<String,Object> milestoneReport =  getMilestoneReport(reportKey,ipfsHash);
+
+                finalDetail.put("milestoneReport",milestoneReport);
+            }
+            else {
+                finalDetail.putAll(getVoteResultsFromProgressReportDB(reportKey));
+            }
+
+            return finalDetail;
+        }
+        return Map.of();
+    }
+
+//
+//
+//    @External(readonly = true)
+//    public Map<String, Object> getDummyData(String reportKey){
+//
+//        String prefix = progressReportPrefix(reportKey);
+//        Context.println("here");
+//        return getDataFromProgressReportDB(prefix);
+//
+//    }
 
 
     }
