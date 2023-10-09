@@ -358,6 +358,10 @@ public class CPSCore implements CPSCoreInterface {
         return (BigInteger) getPRepInfo(address).get("power");
     }
 
+    private BigInteger getDelegation(Address address){
+        return delegationSnapshot.get(address);
+    }
+
     private void setPreps() {
         PReps pReps = new PReps();
         ArrayDBUtils.clearArrayDb(pReps.validPreps);
@@ -711,7 +715,7 @@ public class CPSCore implements CPSCoreInterface {
         }
         Context.require(status.equals(PENDING), TAG + ": Proposal must be done in Voting state.");
 
-        BigInteger voterStake = delegationSnapshot.get(caller);
+        BigInteger voterStake = getDelegation(caller); // TODO
         BigInteger totalVotes = (BigInteger) proposalDetails.get(TOTAL_VOTES);
         BigInteger approvedVotes = (BigInteger) proposalDetails.get(APPROVED_VOTES);
         BigInteger rejectedVotes = (BigInteger) proposalDetails.get(REJECTED_VOTES);
@@ -813,12 +817,11 @@ public class CPSCore implements CPSCoreInterface {
         }
         addDataToProgressReportDB(progressReport, reportHashPrefix);
         int proposalMilestoneCount = ProposalDataDb.getMilestoneCount(ipfsHashPrefix);
+        int approvedReports = ProposalDataDb.approvedReports.at(ipfsHashPrefix).getOrDefault(0);
         if (proposalMilestoneCount !=0 ) {
             int[] milestones = progressReport.milestoneCompleted;
-
-//      TODO: check that submitted milestones are in proposal db
-            Context.require(milestones.length <= proposalMilestoneCount,
-                    TAG + " Submitted milestone is greater than recorded on proposal.");
+            Context.require(milestones.length+ approvedReports <= proposalMilestoneCount,
+                    TAG + ":: Submitted milestone is greater than recorded on proposal.");
 
             for (int milestone : milestones) {
 
@@ -881,12 +884,11 @@ public class CPSCore implements CPSCoreInterface {
         Context.require(ArrayDBUtils.containsInArrayDb(caller, pReps.validPreps),
                 TAG + ": Voting can only be done by registered P-Reps.");
         String progressReportPrefix = progressReportPrefix(reportKey);
+        ArrayDB<Integer> submittedMilestones = milestoneSubmitted.at(progressReportPrefix);// CAN TAKE FROM READONLY METHOD
         for (MilestoneVoteAttributes milestoneVote : votes) {
             Context.require(List.of(APPROVE, REJECT).contains(milestoneVote.vote),
                     TAG + ": Vote should be either _approve or _reject");
-            ArrayDB<Integer> submittedMilestones = milestoneSubmitted.at(progressReportPrefix);// CAN TAKE FROM READONLY METHOD
-
-            if (!ArrayDBUtils.containsInArrayDb(milestoneVote.id,submittedMilestones)){
+            if (!ArrayDBUtils.containsInArrayDb(milestoneVote.id,submittedMilestones) ){
                 Context.revert(TAG + ": Voting can only be done for milestone submitted in this reportKey");
             }
         }
@@ -897,15 +899,9 @@ public class CPSCore implements CPSCoreInterface {
             Context.revert(TAG + ": Voting can be only be done in waiting progress reports.");
         }
 
-        BigInteger voterStake = delegationSnapshot.get(caller); // TODO : why voter stake is added
+        BigInteger voterStake = getDelegation(caller); // TODO : why voter stake is added
         String proposalKey = ProgressReportDataDb.ipfsHash.at(progressReportPrefix).get();
 
-        ArrayDB<Address> voterList = ProgressReportDataDb.votersList.at(progressReportPrefix);
-        if (!voteChange) {
-            if (ArrayDBUtils.containsInArrayDb(caller, voterList)) {
-                Context.revert(TAG + ": Already Voted");
-            }
-        }
         BigInteger totalVotes = ProgressReportDataDb.totalVotes.at(progressReportPrefix).getOrDefault(BigInteger.ZERO);
         Integer totalVoter = ProgressReportDataDb.totalVoters.at(progressReportPrefix).getOrDefault(0);
 
@@ -915,9 +911,22 @@ public class CPSCore implements CPSCoreInterface {
         }
 
         DictDB<Address,Integer> voteChanged = ProgressReportDataDb.voteChange.at(progressReportPrefix);
-        voteChanged.set(caller,VOTED);
+
+        Integer callersVote = voteChanged.getOrDefault(caller,NOT_VOTED);
+        if (callersVote == 1){
+            Context.revert("already voted doot try again");
+        }
+        if (voteChange){
+            voteChanged.set(caller,VOTED);
+        }
         for (MilestoneVoteAttributes milestoneVote : votes) {
             String milestonePrefix = mileStonePrefix(proposalKey,milestoneVote.id);
+            ArrayDB<Address> voterList = MilestoneDb.votersList.at(milestonePrefix);
+            if (!voteChange) {
+                if (ArrayDBUtils.containsInArrayDb(caller, voterList)) {
+                    Context.revert(TAG + ": Already Voted");
+                }
+            }
 
             Map<String, Object> milestoneDetails = getDataFromMilestoneDB(milestonePrefix);
             BigInteger approvedVotes = (BigInteger) milestoneDetails.get(APPROVED_VOTES);
@@ -926,8 +935,8 @@ public class CPSCore implements CPSCoreInterface {
 
             DictDB<String, Integer> votersIndexDb = MilestoneDb.votersListIndices.at(milestonePrefix).at(caller);
             if (!voteChange) {
-                MilestoneDb.votersList.at(progressReportPrefix).add(caller);
-                votersIndexDb.set(INDEX, MilestoneDb.votersList.at(progressReportPrefix).size());
+                MilestoneDb.votersList.at(milestonePrefix).add(caller);
+                votersIndexDb.set(INDEX, MilestoneDb.votersList.at(milestonePrefix).size());
                 ProgressReportDataDb.votersReasons.at(progressReportPrefix).add(voteReason);
             } else {
                 Context.require(votersIndexDb.getOrDefault(CHANGE_VOTE, 0) == 0,
@@ -956,7 +965,6 @@ public class CPSCore implements CPSCoreInterface {
             }
             approvedVotes = MilestoneDb.approvedVotes.at(milestonePrefix).getOrDefault(BigInteger.ZERO);
             rejectedVotes = MilestoneDb.rejectedVotes.at(milestonePrefix).getOrDefault(BigInteger.ZERO);
-            // TODO: URGENCY on voting again the the approved vote and total vote is adding up
             if (milestoneVote.vote.equals(APPROVE)) {
                 // TODO : find more efficient way to do this
                 if (ArrayDBUtils.containsInArrayDb(caller,MilestoneDb.approveVoters.at(milestonePrefix))){
@@ -975,13 +983,12 @@ public class CPSCore implements CPSCoreInterface {
                 MilestoneDb.rejectedVotes.at(milestonePrefix).set(rejectedVotes.add(voterStake));
 
             }
-            // is this required while voiting?
-            MilestoneDb.progressReportHash.at(milestonePrefix).set(progressReportPrefix);
+//            MilestoneDb.progressReportHash.at(milestonePrefix).set(progressReportPrefix);
             if (budgetAdjustment && getBudgetAdjustmentFeature()) {
                 budgetAdjustment(reportKey,budgetAdjustmentVote,voteChange);
 
             }
-            VotedSuccessfully(caller, "Proposal Vote for " + progressReportDetails.get(PROGRESS_REPORT_TITLE) + " Successful.");
+            VotedSuccessfully(caller, "Progress Report Vote for " + progressReportDetails.get(PROGRESS_REPORT_TITLE) + " Successful.");
             swapBNUsdToken();
         }
     }
@@ -989,7 +996,7 @@ public class CPSCore implements CPSCoreInterface {
     private void budgetAdjustment(String reportKey, String budgetAdjustmentVote,boolean voteChange){
         String progressReportPrefix = progressReportPrefix(reportKey);
         Address caller = Context.getCaller();
-        BigInteger voterStake = delegationSnapshot.get(caller);
+        BigInteger voterStake = getDelegation(caller);
         if (ArrayDBUtils.containsInArrayDb(reportKey, budgetApprovalsList)) {
             BigInteger budgetApprovedVotes = ProgressReportDataDb.budgetApprovedVotes.at(progressReportPrefix).getOrDefault(BigInteger.ZERO);
             BigInteger budgetRejectedVotes = ProgressReportDataDb.budgetRejectedVotes.at(progressReportPrefix).getOrDefault(BigInteger.ZERO);
@@ -1250,6 +1257,8 @@ public class CPSCore implements CPSCoreInterface {
 
                 Map<String, Object> _milestone_details = getDataFromMilestoneDB(milestonePrefix);
 
+                // checking which prep(s) did not vote the progress report
+                checkInactivePreps(MilestoneDb.votersList.at(milestonePrefix));// TODO: fix this, voterList to be where
 
 
                 int milestoneStatus = (int)_milestone_details.get(STATUS);
