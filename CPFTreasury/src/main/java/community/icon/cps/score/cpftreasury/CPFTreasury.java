@@ -134,8 +134,8 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     @External(readonly = true)
     public Map<String, BigInteger> getRemainingSwapAmount() {
         BigInteger maxCap = treasuryFundbnUSD.get();
-        return Map.of("maxCap", maxCap,
-                "remainingToSwap", maxCap.subtract(getBNUSDAvailableBalance()));
+        return Map.of(MAX_CAP, maxCap,
+                REMAINING_TO_SWAP, maxCap.subtract(getBNUSDAvailableBalance()));
     }
 
     private void returnFundAmount(Address address, BigInteger value) {
@@ -165,14 +165,14 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         JsonObject depositProposal = new JsonObject();
         depositProposal.add(METHOD, "depositProposalFund");
         JsonObject params = new JsonObject();
-        params.add("ipfs_hash", ipfsKey);
-        params.add("project_duration", projectDuration);
-        params.add("milestone_count", totalInstallmentCount);
-        params.add("sponsor_address", sponsorAddress.toString());
-        params.add("contributor_address", contributorAddress.toString());
-        params.add("total_budget", totalBudget.toString(16));
-        params.add("sponsor_reward", sponsorReward.toString(16));
-        params.add("token", tokenFlag);
+        params.add(PROJECT_IPFS_HASH, ipfsKey);
+        params.add(PROJECT_DURATION, projectDuration);
+        params.add(MILESTONE_COUNT, totalInstallmentCount);
+        params.add(SPONSOR_ADDRESS, sponsorAddress.toString());
+        params.add(CONTRIBUTOR_ADDRESS, contributorAddress.toString());
+        params.add(PROJECT_TOTAL_BUDGET, totalBudget.toString(16));
+        params.add(SPONSOR_REWARD, sponsorReward.toString(16));
+        params.add(TOKEN, tokenFlag);
         depositProposal.add(PARAMS, params);
 
         Context.call(balancedDollar, TRANSFER, cpsTreasuryScore.get(), totalTransfer, depositProposal.toString().getBytes());
@@ -347,7 +347,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         BigInteger sicxICXPrice = (BigInteger) Context.call(dexScore.get(), "getPrice", sICXICXPoolID);
         BigInteger sicxBnusdPrice = (BigInteger) Context.call(dexScore.get(), "getPrice", sICXBNUSDPoolID);
         BigInteger icxbnUSDPrice = sicxBnusdPrice.multiply(EXA).divide(sicxICXPrice);
-        BigInteger bnUSDRemainingToSwap = getRemainingSwapAmount().get("remainingToSwap");
+        BigInteger bnUSDRemainingToSwap = getRemainingSwapAmount().get(REMAINING_TO_SWAP);
         if (bnUSDRemainingToSwap.compareTo(BigInteger.TEN.multiply(EXA)) < 0 || count == 0) {
             swapState.set(SwapCompleted);
             swapCount.set(SwapReset);
@@ -378,7 +378,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     @Override
     @External(readonly = true)
     public Map<String, Integer> getSwapStateStatus() {
-        return Map.of("state", swapState.getOrDefault(0), "count", swapCount.getOrDefault(0));
+        return Map.of(STATE, swapState.getOrDefault(0), COUNT, swapCount.getOrDefault(0));
     }
 
     @Override
@@ -428,7 +428,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
             Map<String, Object> proposalDetails = Map.of(TOTAL_BUDGET, proposalBudgets.getOrDefault(proposalHash, BigInteger.ZERO).toString(), IPFS_HASH, proposalHash);
             proposalsList.add(proposalDetails);
         }
-        return Map.of("data", proposalsList, "count", count);
+        return Map.of(DATA, proposalsList, COUNT, count);
     }
 
     @Override
@@ -458,7 +458,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
 
             if (_from.equals(cpsScore.get())) {
                 if (transferData.get(METHOD).asString().equals("returnFundAmount")) {
-                    Address _sponsor_address = Address.fromString(transferData.get(PARAMS).asObject().get("sponsor_address").asString());
+                    Address _sponsor_address = Address.fromString(transferData.get(PARAMS).asObject().get(SPONSOR_ADDRESS).asString());
                     returnFundAmount(_sponsor_address, _value);
                 } else if (transferData.get(METHOD).asString().equals("burnAmount")) {
                     swapTokens(caller, sICX, _value);
