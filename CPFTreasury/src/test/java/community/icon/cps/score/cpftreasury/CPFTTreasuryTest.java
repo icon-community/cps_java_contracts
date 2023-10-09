@@ -711,7 +711,7 @@ public class CPFTTreasuryTest extends TestBase {
         BigInteger emergencyFund = BigInteger.valueOf(10).multiply(ICX);
         try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
             theMock.when(() -> Context.call(cpsScore.get(), "isAdmin", Context.getCaller())).thenReturn(true);
-            tokenScore.invoke(owner,"transferToEmergencyFund",emergencyFund);
+            tokenScore.invoke(owner,"allocateEmergencyFund",emergencyFund);
 
             theMock.when(() -> Context.call(balanceDollar.get(), "balanceOf", Context.getAddress())).thenReturn(BigInteger.valueOf(100).multiply(ICX));
             assertEquals(emergencyFund,tokenScore.call("getEmergencyFund"));
@@ -726,7 +726,7 @@ public class CPFTTreasuryTest extends TestBase {
         BigInteger withdrawAmount = BigInteger.valueOf(4).multiply(ICX);
         try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
             theMock.when(() -> Context.call(cpsScore.get(), "isAdmin", Context.getCaller())).thenReturn(true);
-            tokenScore.invoke(owner,"withdrawFromEmergencyFund",withdrawAmount,testing_account.getAddress());
+            tokenScore.invoke(owner,"withdrawFromEmergencyFund",withdrawAmount,testing_account.getAddress(), "Need fund");
 
             theMock.when(() -> Context.call(balanceDollar.get(), "balanceOf", Context.getAddress())).thenReturn(BigInteger.valueOf(100).multiply(ICX));
             assertEquals(BigInteger.valueOf(6).multiply(ICX),tokenScore.call("getEmergencyFund"));
