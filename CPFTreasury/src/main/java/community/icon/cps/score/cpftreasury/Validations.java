@@ -3,11 +3,18 @@ package community.icon.cps.score.cpftreasury;
 import score.Address;
 import score.Context;
 
+import static community.icon.cps.score.cpftreasury.Constants.SYSTEM_ADDRESS;
 import static community.icon.cps.score.cpftreasury.Constants.TAG;
 
 public class Validations {
     public static void validateAdmins() {
         Context.require((Boolean) Context.call(CPFTreasury.cpsScore.get(), "isAdmin", Context.getCaller()),
+                TAG + ": Only Admins can call this method");
+
+    }
+
+    public static void validateGovernanceContract() {
+        Context.require(Context.getCaller().equals(SYSTEM_ADDRESS),
                 TAG + ": Only Admins can call this method");
 
     }

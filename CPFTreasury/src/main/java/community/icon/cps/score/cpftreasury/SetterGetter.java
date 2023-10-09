@@ -5,6 +5,9 @@ import score.Context;
 import score.annotation.External;
 
 import java.math.BigInteger;
+
+import static community.icon.cps.score.cpftreasury.Validations.validateGovernanceContract;
+
 public class SetterGetter {
     /**
      * Sets the cps score address. Only owner can set the method
@@ -150,17 +153,19 @@ public class SetterGetter {
 
     @External
     public void setSponsorBondPercentage(BigInteger bondValue) {
-        // TODO: add extra layer of validation from owner?
+        validateGovernanceContract();
         Context.call( getCpsScore(), "setSponsorBondPercentage",bondValue);
     }
 
     @External
     public void setPeriod(BigInteger applicationPeriod) {
+        validateGovernanceContract();
         Context.call(getCpsScore(), "setPeriod",applicationPeriod);
     }
 
     @External
     public void setOnsetPayment(BigInteger paymentPercentage) {
+        validateGovernanceContract();
         Context.call(getCpsTreasuryScore(), "setOnsetPayment",paymentPercentage);
     }
 
