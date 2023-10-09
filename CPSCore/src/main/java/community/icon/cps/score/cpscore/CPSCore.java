@@ -246,7 +246,7 @@ public class CPSCore implements CPSCoreInterface {
             Address bnUSDScore = setterGetter.balancedDollar.get();
             if (token.equals(bnUSDScore)) {
                 JsonObject burnTokens = new JsonObject();
-                burnTokens.add("method", "burn_amount");
+                burnTokens.add("method", "burnAmount");
                 callScore(bnUSDScore, "transfer", setterGetter.cpfScore.get(), amount, burnTokens.toString().getBytes());
             } else {
                 Context.revert(TAG + ": Not a supported token.");
@@ -1172,7 +1172,7 @@ public class CPSCore implements CPSCoreInterface {
 
                     int activeProposalCount = status.active.size() + status.paused.size();
                     swapCount.set(activeProposalCount + activeProposalCount * pReps.validPreps.size());
-                    callScore(setterGetter.cpfScore.get(), "reset_swap_state");
+                    callScore(setterGetter.cpfScore.get(), "resetSwapState");
 
                     ArrayDBUtils.clearArrayDb(budgetApprovalsList);
                     ArrayDBUtils.clearArrayDb(activeProposals);
@@ -1303,9 +1303,9 @@ public class CPSCore implements CPSCoreInterface {
             if (milestonePassed > 0) {
 
                 // Request CPS Treasury to add some installments amount to the contributor address
-                callScore(getCpsTreasuryScore(), "send_installment_to_contributor", _ipfs_hash,milestonePassed);
+                callScore(getCpsTreasuryScore(), "sendInstallmentToContributor", _ipfs_hash,milestonePassed);
                 //Request CPS Treasury to add some sponsor reward amount to the sponsor address
-                callScore(getCpsTreasuryScore(), "send_reward_to_sponsor", _ipfs_hash,milestonePassed);
+                callScore(getCpsTreasuryScore(), "sendRewardToSponsor", _ipfs_hash,milestonePassed);
             }
             else {
                 // TODO: better name for the method
@@ -1325,7 +1325,7 @@ public class CPSCore implements CPSCoreInterface {
             updateProposalStatus(_ipfs_hash, PAUSED);
         } else if (_proposal_status.equals(PAUSED)) {
             updateProposalStatus(_ipfs_hash, DISQUALIFIED);
-            callScore(getCpsTreasuryScore(), "disqualify_project", _ipfs_hash);
+            callScore(getCpsTreasuryScore(), "disqualifyProject", _ipfs_hash);
 
             removeContributor(_contributor_address, _ipfs_hash);
             removeSponsor(_sponsor_address, _ipfs_hash);
@@ -1357,7 +1357,7 @@ public class CPSCore implements CPSCoreInterface {
                     updateProposalStatus(_ipfs_hash, PAUSED);
                 } else if (_proposal_status.equals(PAUSED)) {
                     updateProposalStatus(_ipfs_hash, DISQUALIFIED);
-                    callScore(getCpsTreasuryScore(), "disqualify_project", _ipfs_hash);
+                    callScore(getCpsTreasuryScore(), "disqualifyProject", _ipfs_hash);
 
 
                     removeContributor(_contributor_address, _ipfs_hash);
@@ -1408,7 +1408,7 @@ public class CPSCore implements CPSCoreInterface {
 
 
 //          After the budget adjustment is approved, Request new added fund to CPF
-            callScore(getCpfTreasuryScore(), "update_proposal_fund", _ipfs_hash, token_flag, _additional_budget, _additional_duration);
+            callScore(getCpfTreasuryScore(), "updateProposalFund", _ipfs_hash, token_flag, _additional_budget, _additional_duration);
         } else {
             budgetAdjustmentStatus.at(_prefix).set(REJECTED);
         }
@@ -1453,7 +1453,7 @@ public class CPSCore implements CPSCoreInterface {
                     sponsors.add(sponsorAddress);
                     sponsorProjects.at(sponsorAddress).add(proposal);
                     ProposalDataDb.sponsorDepositStatus.at(proposalPrefix).set(BOND_APPROVED);
-                    callScore(getCpfTreasuryScore(), "transfer_proposal_fund_to_cps_treasury",
+                    callScore(getCpfTreasuryScore(), "transferProposalFundToCpsTreasury",
                             proposal,projectDuration, milestoneCount, sponsorAddress, contributorAddress, flag, totalBudget);
                     distributionAmount = distributionAmount.subtract(totalBudget);
 
@@ -2072,12 +2072,12 @@ public class CPSCore implements CPSCoreInterface {
         String methodName = transferData.get("method").asString();
         JsonObject paramsName = transferData.get("params").asObject();
 
-        if (methodName.equals("sponsor_vote")) {
+        if (methodName.equals("sponsorVote")) {
             String ipfsKey = paramsName.get(IPFS_HASH).asString();
             String vote = paramsName.get(VOTE).asString();
             String voteReason = paramsName.get(VOTE_REASON).asString();
             sponsorVote(ipfsKey, vote, voteReason, from, value);
-        } else if (methodName.equals("pay_prep_penalty")) {
+        } else if (methodName.equals("payPrepPenalty")) {
             payPrepPenalty(from, value);
 
         } else {
@@ -2177,7 +2177,7 @@ public class CPSCore implements CPSCoreInterface {
         BigInteger currentBlock = BigInteger.valueOf(Context.getBlockHeight());
         if (sbh.compareTo(currentBlock) < 0) {
             swapBlockHeight.set(currentBlock.add(SWAP_BLOCK_DIFF));
-            callScore(getCpfTreasuryScore(), "swap_tokens", swapCount.getOrDefault(0));
+            callScore(getCpfTreasuryScore(), "swapTokens", swapCount.getOrDefault(0));
         }
     }
 
@@ -2209,7 +2209,7 @@ public class CPSCore implements CPSCoreInterface {
     private void disqualifyProject(Address sponsorAddress, BigInteger sponsorDepositAmount, String flag) {
         Context.require(flag.equals(bnUSD), TAG + " Not supported Token");
         JsonObject disqualifyProject = new JsonObject();
-        disqualifyProject.add("method", "burn_amount");
+        disqualifyProject.add("method", "burnAmount");
         JsonObject params = new JsonObject();
         params.add(SPONSOR_ADDRESS, sponsorAddress.toString());
         disqualifyProject.add("params", params);
