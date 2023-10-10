@@ -2271,7 +2271,7 @@ public class CPSCore implements CPSCoreInterface {
     private void disqualifyProject(Address sponsorAddress, BigInteger sponsorDepositAmount, String flag) {
         Context.require(flag.equals(bnUSD), TAG + " Not supported Token");
         JsonObject disqualifyProject = new JsonObject();
-        disqualifyProject.add("method", "burnAmount");
+        disqualifyProject.add("method", "returnFundAmount");
         JsonObject params = new JsonObject();
         params.add(SPONSOR_ADDRESS, sponsorAddress.toString());
         disqualifyProject.add("params", params);
