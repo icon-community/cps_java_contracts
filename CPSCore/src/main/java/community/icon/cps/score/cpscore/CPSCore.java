@@ -916,7 +916,7 @@ public class CPSCore implements CPSCoreInterface {
         if (callersVote == 1){
             Context.revert("already voted doot try again");
         }
-        if (voteChange){
+        if (!voteChange){
             voteChanged.set(caller,VOTED);
         }
         for (MilestoneVoteAttributes milestoneVote : votes) {
@@ -1758,7 +1758,7 @@ public class CPSCore implements CPSCoreInterface {
 
         int reportCount = reportKeys.size();
         for (int i = 0; i < reportCount; i++) {
-            Map<String, Object> progressReportDetails = this.getProgressReportDetails(reportKeys.get(i));
+            Map<String, Object> progressReportDetails = this.getProgressReportsByHash(reportKeys.get(i)); // TODO : the milestone is not being fetched
             progressReportList.add(progressReportDetails);
         }
         return Map.of(DATA, progressReportList, COUNT, reportCount);
@@ -1858,9 +1858,34 @@ public class CPSCore implements CPSCoreInterface {
                 String reportHash = status.waitingProgressReports.get(i);
                 String prefix = progressReportPrefix(reportHash);
 
-                if (!containsInArrayDb(walletAddress, ProgressReportDataDb.votersList.at(prefix))) {
-                    Map<String, Object> progressReportDetails = getProgressReportDetails(reportHash);
-                    _remaining_progress_report.add(progressReportDetails);
+                String ipfsHash = ProgressReportDataDb.ipfsHash.at(prefix).get();
+                int milestoneCount = getMilestoneCount(ipfsHash);
+
+                if (milestoneCount > 0){
+
+                    ArrayDB<Integer> milestoneSubmittedOf = milestoneSubmitted.at(prefix);
+
+                    for (int j = 0; j < milestoneSubmittedOf.size(); j++) {
+                        int milestoneID = milestoneSubmittedOf.get(j);
+                        String milestonePrefix = mileStonePrefix(ipfsHash, milestoneID);
+
+                        ArrayDB<Address> voterList = MilestoneDb.votersList.at(milestonePrefix);
+                        if (!containsInArrayDb(walletAddress, voterList)) {
+                            Map<String, Object> progressReportDetails = new HashMap<>();
+                            progressReportDetails.putAll(getMilestoneReport(reportHash,ipfsHash));
+                            progressReportDetails.putAll(getProgressReportDetails(reportHash));
+                            _remaining_progress_report.add(progressReportDetails);
+                        }
+                    }
+
+                    }
+                else {
+                    if (!containsInArrayDb(walletAddress, ProgressReportDataDb.votersList.at(prefix))) {
+                        Map<String, Object> progressReportDetails = new HashMap<>();
+                        progressReportDetails.putAll(getProgressReportDetails(reportHash));
+                        progressReportDetails.putAll(getVoteResultsFromProgressReportDB(reportHash));
+                        _remaining_progress_report.add(progressReportDetails);
+                    }
                 }
             }
             return _remaining_progress_report;
@@ -1917,23 +1942,17 @@ public class CPSCore implements CPSCoreInterface {
                 TOTAL_VOTES, ProposalDataDb.totalVotes.at(prefix).getOrDefault(BigInteger.ZERO));
     }
 
-
-    /***
-     Get vote results by progress report
-     :param reportKey : progress report ipfs key
-     :type reportKey : str
-     :return: Vote status of given reportKey
-     :rtype : dict
-     ***/
-    @Override
+    // a different method for get milestone report
     @External(readonly = true)
-    public Map<String, Object> getProgressReportResult(String reportKey) {
+    public Map<String, Object> getProgressMilestoneReport(String reportKey, int milestoneID){
         String prefix = progressReportPrefix(reportKey);
+        String ipfshHash = ProgressReportDataDb.ipfsHash.at(prefix).get();
 
+        String milestonePrefix = mileStonePrefix(ipfshHash,milestoneID);
+        ArrayDB<Address> _voters_list = MilestoneDb.votersList.at(milestonePrefix);
+        ArrayDB<Address> _approved_voters_list = MilestoneDb.approveVoters.at(milestonePrefix);
+        ArrayDB<Address> _rejected_voters_list = MilestoneDb.rejectVoters.at(milestonePrefix);
 
-        ArrayDB<Address> _voters_list = ProgressReportDataDb.votersList.at(prefix);
-        ArrayDB<Address> _approved_voters_list = ProgressReportDataDb.approveVoters.at(prefix);
-        ArrayDB<Address> _rejected_voters_list = ProgressReportDataDb.rejectVoters.at(prefix);
         List<Map<String, Object>> _vote_status = new ArrayList<>();
         String vote;
 //      Differentiating the P-Rep(s) votes according to their votes
@@ -1959,6 +1978,104 @@ public class CPSCore implements CPSCoreInterface {
 
         return Map.of(DATA, _vote_status, APPROVE_VOTERS, _approved_voters_list.size(),
                 REJECT_VOTERS, _rejected_voters_list.size(),
+                TOTAL_VOTERS, ProgressReportDataDb.totalVoters.at(prefix).getOrDefault(0),
+                APPROVED_VOTES, MilestoneDb.approvedVotes.at(milestonePrefix).getOrDefault(BigInteger.ZERO),
+                REJECTED_VOTES, MilestoneDb.rejectedVotes.at(milestonePrefix).getOrDefault(BigInteger.ZERO),
+                TOTAL_VOTES, ProgressReportDataDb.totalVotes.at(prefix).getOrDefault(BigInteger.ZERO));
+    }
+
+    @External(readonly = true)
+    public Map<String, Object> getVoteStatus(String reportKey){
+        String prefix = progressReportPrefix(reportKey);
+        String ipfsHash = ProgressReportDataDb.ipfsHash.at(prefix).get();
+        int milestoneCount = getMilestoneCount(ipfsHash);
+        List<Map<String, Object>> voteStatus = new ArrayList<>();
+        String vote;
+        if (milestoneCount>0){
+
+            ArrayDB<Integer> milestoneSubmittedOf = milestoneSubmitted.at(prefix);
+
+            for (int i = 0; i < milestoneSubmittedOf.size(); i++) {
+                int milestoneID = milestoneSubmittedOf.get(i);
+                String milestonePrefix = mileStonePrefix(ipfsHash,milestoneID);
+
+                ArrayDB<Address> voterList = MilestoneDb.votersList.at(milestonePrefix);
+                ArrayDB<Address> approvedVoterList = MilestoneDb.approveVoters.at(milestonePrefix);
+                ArrayDB<Address> rejectedVoterList = MilestoneDb.rejectVoters.at(milestonePrefix);
+
+                for (int j = 0; j < voterList.size(); j++) {
+                    Address voter = voterList.get(j);
+
+                    if (containsInArrayDb(voter, approvedVoterList)) {
+                        vote = APPROVE;
+                    } else if (containsInArrayDb(voter, rejectedVoterList)) {
+                        vote = REJECT;
+                    } else {
+                        vote = "not voted";
+                    }
+                    String reason = ProgressReportDataDb.votersReasons.at(prefix).get(i);
+                    if (reason == null) {
+                        reason = "";
+                    }
+                    Map<String, Object> voters = Map.of(ADDRESS, voter,
+                            PREP_NAME, getPrepName(voter),
+                            VOTE_REASON, reason,
+                            VOTE, vote);
+                    voteStatus.add(voters);
+                }
+            }
+        }
+        else {
+            ArrayDB<Address> voterList = ProgressReportDataDb.votersList.at(prefix);
+            ArrayDB<Address> approvedVoterList = ProgressReportDataDb.approveVoters.at(prefix);
+            ArrayDB<Address> rejectedVoterList = ProgressReportDataDb.rejectVoters.at(prefix);
+            for (int i = 0; i < voterList.size(); i++) {
+                Address voter = voterList.get(i);
+                if (containsInArrayDb(voter, approvedVoterList)) {
+                    vote = APPROVE;
+                } else if (containsInArrayDb(voter, rejectedVoterList)) {
+                    vote = REJECT;
+                } else {
+                    vote = "not voted";
+                }
+                String reason = ProgressReportDataDb.votersReasons.at(prefix).get(i);
+                if (reason == null) {
+                    reason = "";
+                }
+                Map<String, Object> _voters = Map.of(ADDRESS, voter,
+                        PREP_NAME, getPrepName(voter),
+                        VOTE_REASON, reason,
+                        VOTE, vote);
+                voteStatus.add(_voters);
+            }
+        }
+        return Map.of(DATA,voteStatus);
+    }
+
+    /***
+     Get vote results by progress report
+     :param reportKey : progress report ipfs key
+     :type reportKey : str
+     :return: Vote status of given reportKey
+     :rtype : dict
+     ***/
+    @Override
+    @External(readonly = true)
+    public Map<String, Object> getProgressReportResult(String reportKey) {
+        String prefix = progressReportPrefix(reportKey);
+        String ipfsHash = ProgressReportDataDb.ipfsHash.at(prefix).get();
+        Map<String,Object> milestoneReport = Map.of();
+        int milestoneCount = getMilestoneCount(ipfsHash);
+        if (milestoneCount>0){
+            milestoneReport =  getMilestoneReport(reportKey,ipfsHash);
+
+            return Map.of(
+                    TOTAL_VOTERS, ProgressReportDataDb.totalVoters.at(prefix).getOrDefault(0),
+                    TOTAL_VOTES, ProgressReportDataDb.totalVotes.at(prefix).getOrDefault(BigInteger.ZERO),
+                    "milestoneReport", milestoneReport);
+        }
+        return Map.of(APPROVE_VOTERS, ProgressReportDataDb.approveVoters.at(prefix).size(),
+                REJECT_VOTERS, ProgressReportDataDb.rejectVoters.at(prefix).size(),
                 TOTAL_VOTERS, ProgressReportDataDb.totalVoters.at(prefix).getOrDefault(0),
                 APPROVED_VOTES, ProgressReportDataDb.approvedVotes.at(prefix).getOrDefault(BigInteger.ZERO),
                 REJECTED_VOTES, ProgressReportDataDb.rejectedVotes.at(prefix).getOrDefault(BigInteger.ZERO),
