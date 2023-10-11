@@ -42,7 +42,7 @@ public class ProposalDataDb {
     public static final BranchDB<String, ArrayDB<String>> progressReports = Context.newBranchDB(PROGRESS_REPORTS, String.class);
     public static final BranchDB<String, VarDB<Boolean>> budgetAdjustment = Context.newBranchDB(BUDGET_ADJUSTMENT, Boolean.class);
     public static final BranchDB<String, VarDB<Boolean>> submitProgressReport = Context.newBranchDB(SUBMIT_PROGRESS_REPORT, Boolean.class);
-    private static final BranchDB<String, VarDB<Boolean>> isMilestone = Context.newBranchDB(IS_MILESTONE, Boolean.class);
+    public static final BranchDB<String, VarDB<Boolean>> isMilestone = Context.newBranchDB(IS_MILESTONE, Boolean.class);
 
     public static void addDataToProposalDB(ProposalAttributes proposalData, String prefix) {
         ipfsHash.at(prefix).set(proposalData.ipfs_hash);
