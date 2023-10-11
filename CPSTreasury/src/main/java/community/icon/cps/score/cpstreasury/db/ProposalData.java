@@ -40,7 +40,7 @@ public class ProposalData {
         ipfsHash.at(prefix).set(_proposals.ipfs_hash);
         totalBudget.at(prefix).set(_proposals.total_budget);
         sponsorReward.at(prefix).set(_proposals.sponsor_reward);
-        projectDuration.at(prefix).set(_proposals.project_duration);
+        projectDuration.at(prefix).set(_proposals.milestoneCount);
         sponsorAddress.at(prefix).set(Address.fromString(_proposals.sponsor_address));
         contributorAddress.at(prefix).set(Address.fromString(_proposals.contributor_address));
         withdrawAmount.at(prefix).set(BigInteger.ZERO);
