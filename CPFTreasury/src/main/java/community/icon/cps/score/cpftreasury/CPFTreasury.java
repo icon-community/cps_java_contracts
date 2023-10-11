@@ -146,7 +146,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
 
     @Override
     @External
-    public void transferProposalFundToCpsTreasury(String ipfsKey, int projectDuration, int totalInstallmentCount,
+    public void transferProposalFundToCpsTreasury(String ipfsKey, int projectDuration,
                                                   Address sponsorAddress, Address contributorAddress,
                                                   String tokenFlag, BigInteger totalBudget) {
         validateCpsScore();
@@ -167,7 +167,6 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         JsonObject params = new JsonObject();
         params.add(PROJECT_IPFS_HASH, ipfsKey);
         params.add(PROJECT_DURATION, projectDuration);
-        params.add(MILESTONE_COUNT, totalInstallmentCount);
         params.add(SPONSOR_ADDRESS, sponsorAddress.toString());
         params.add(CONTRIBUTOR_ADDRESS, contributorAddress.toString());
         params.add(PROJECT_TOTAL_BUDGET, totalBudget.toString(16));

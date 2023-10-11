@@ -72,7 +72,7 @@ public interface CPFTreasuryInterface {
     Map<String, BigInteger> getRemainingSwapAmount();
 
     @External
-    void transferProposalFundToCpsTreasury(String ipfsKey, int projectDuration, int totalInstallmentCount,
+    void transferProposalFundToCpsTreasury(String ipfsKey, int projectDuration,
                                            Address sponsorAddress, Address contributorAddress,
                                            String tokenFlag, BigInteger totalBudget);
 
