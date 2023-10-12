@@ -1694,6 +1694,8 @@ public class CPSCore implements CPSCoreInterface {
             if (hasMilestone){
                 List<Integer> milestoneSubmittedList = getMilestoneCountOfProgressReport(reportKey);
                 finalDetail.put("milestoneId",milestoneSubmittedList);
+            }else {
+                finalDetail.putAll(getProgressReportVoteDetails(reportKey));
             }
 
             return finalDetail;
@@ -1883,18 +1885,18 @@ public class CPSCore implements CPSCoreInterface {
 
                     ArrayDB<Integer> milestoneSubmittedOf = milestoneSubmitted.at(prefix);
 
+                    Map<String, Object> progressReportDetails = new HashMap<>();
+                    progressReportDetails.putAll(getProgressReportDetails(reportHash));
                     for (int j = 0; j < milestoneSubmittedOf.size(); j++) {
                         int milestoneID = milestoneSubmittedOf.get(j);
                         String milestonePrefix = mileStonePrefix(ipfsHash, milestoneID);
 
                         ArrayDB<Address> voterList = MilestoneDb.votersList.at(milestonePrefix);
                         if (!containsInArrayDb(walletAddress, voterList)) {
-                            Map<String, Object> progressReportDetails = new HashMap<>();
                             progressReportDetails.putAll(getMilestoneReport(reportHash,ipfsHash));
-                            progressReportDetails.putAll(getProgressReportDetails(reportHash));
-                            _remaining_progress_report.add(progressReportDetails);
                         }
                     }
+                    _remaining_progress_report.add(progressReportDetails);
 
                     }
                 else {
