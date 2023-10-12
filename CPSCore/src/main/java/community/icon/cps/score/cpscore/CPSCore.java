@@ -2602,6 +2602,43 @@ public class CPSCore implements CPSCoreInterface {
     }
 
 
+    // FOR MIGRATION
+    // THE PROJECTS WHO HAVE NOT SUBMITTED ANY PROGRESS REPORTS
+    @External
+    public void proposalChanges(String ipfsHash){
+        onlyOwner();
+        String ipfsHashPrefix = proposalPrefix(ipfsHash);
+        int projectDuration = ProposalDataDb.projectDuration.at(ipfsHashPrefix).get();
+        milestoneCount.at(ipfsHashPrefix).set(projectDuration);
+    }
+
+    // THE PROJECTS WHO HAVE PROGRESS REPORTS
+    @External
+    public void milestoneChanges(String ipfsHash, String reportHash){
+        onlyOwner();
+        String ipfsHashPrefix = proposalPrefix(ipfsHash);
+
+
+        String reportHashPrefix = progressReportPrefix(reportHash);
+
+
+        int projectDuration = ProposalDataDb.projectDuration.at(ipfsHashPrefix).get();
+        milestoneCount.at(ipfsHashPrefix).set(projectDuration);
+
+        // progressReport -> only one progress report is completed
+        int submiitedProgressReport = progressReports.at(ipfsHashPrefix).size();
+        milestoneSubmitted.at(reportHashPrefix).add(1);
+
+
+        // add to milestone db
+        String milestonePrefix = mileStonePrefix(ipfsHash,1);
+        MilestoneDb.id.at(milestonePrefix).set(1);
+        MilestoneDb.status.at(milestonePrefix).set(MILESTONE_REPORT_COMPLETED);
+        MilestoneDb.progressReportHash.at(milestonePrefix).set(reportHash);
+
+    }
+
+
     //    EventLogs
     @Override
     @EventLog(indexed = 1)
