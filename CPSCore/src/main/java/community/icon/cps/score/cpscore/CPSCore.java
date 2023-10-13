@@ -912,9 +912,8 @@ public class CPSCore implements CPSCoreInterface {
 
         DictDB<Address,Integer> voteChanged = ProgressReportDataDb.voteChange.at(progressReportPrefix);
 
-        Integer callersVote = voteChanged.getOrDefault(caller,NOT_VOTED);
-        if (callersVote == 1){
-            Context.revert("already voted doot try again");
+        if (voteChanged.getOrDefault(caller,NOT_VOTED) == 1){
+            Context.revert(TAG+ ": You have already votes for this progress report");
         }
         if (voteChange){
             voteChanged.set(caller,VOTED);
@@ -931,7 +930,6 @@ public class CPSCore implements CPSCoreInterface {
             Map<String, Object> milestoneDetails = getDataFromMilestoneDB(milestonePrefix);
             BigInteger approvedVotes = (BigInteger) milestoneDetails.get(APPROVED_VOTES);
             BigInteger rejectedVotes = (BigInteger) milestoneDetails.get(REJECTED_VOTES);
-            // TODO : the vote index db will be on the basis of milestone not progress report
 
             DictDB<String, Integer> votersIndexDb = MilestoneDb.votersListIndices.at(milestonePrefix).at(caller);
             if (!voteChange) {
@@ -940,7 +938,7 @@ public class CPSCore implements CPSCoreInterface {
                 ProgressReportDataDb.votersReasons.at(progressReportPrefix).add(voteReason);
             } else {
                 Context.require(votersIndexDb.getOrDefault(CHANGE_VOTE, 0) == 0,
-                        TAG + ": Progress Report Vote change can be done only once."); // TODO:change votes-> APPROVE AND APPROVE
+                        TAG + ": Progress Report Vote change can be done only once.");
                 int index = votersIndexDb.getOrDefault(INDEX, 0);
                 int voteIndex = votersIndexDb.getOrDefault(VOTE, 0);
                 ProgressReportDataDb.votersReasons.at(progressReportPrefix).set(index - 1, voteReason);
@@ -2038,7 +2036,7 @@ public class CPSCore implements CPSCoreInterface {
                     } else {
                         vote = "not voted";
                     }
-                    String reason = ProgressReportDataDb.votersReasons.at(prefix).get(i);
+                    String reason = ProgressReportDataDb.votersReasons.at(prefix).get(j);
                     if (reason == null) {
                         reason = "";
                     }
