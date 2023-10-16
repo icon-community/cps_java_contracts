@@ -709,7 +709,7 @@ public class CPSCore implements CPSCoreInterface {
 
         if (!voteChange) {
             if (ArrayDBUtils.containsInArrayDb(caller, voterList)) {
-                Context.revert(TAG + ": Already Voted");
+                Context.revert(TAG + ":: Already Voted");
             }
         }
         Context.require(status.equals(PENDING), TAG + ": Proposal must be done in Voting state.");
@@ -864,6 +864,21 @@ public class CPSCore implements CPSCoreInterface {
                 " --> Progress Report Submitted Successfully.");
     }
 
+    public boolean isAllElementPresent(MilestoneVoteAttributes[] vote, ArrayDB<Integer> submitted){ // TODO: bug here fix
+        boolean status = false;
+        for (int i = 0; i < submitted.size(); i++) {
+            for (MilestoneVoteAttributes v: vote) {
+                if ((v.id == submitted.get(i))){
+                    status = true;
+                }
+                else {
+                    status = false;
+                }
+            }
+        }
+        return status;
+    }
+
 
     @Override
     @External
@@ -888,7 +903,16 @@ public class CPSCore implements CPSCoreInterface {
             Context.require(List.of(APPROVE, REJECT).contains(milestoneVote.vote),
                     TAG + ": Vote should be either _approve or _reject");
             if (!ArrayDBUtils.containsInArrayDb(milestoneVote.id,submittedMilestones) ){
-                Context.revert(TAG + ": Voting can only be done for milestone submitted in this reportKey");
+                Context.revert(TAG + ": Voting can only be done for milestone submitted in this progress report");
+            }
+        }
+        if (!voteChange) {
+            if (votes.length == submittedMilestones.size()){
+                Context.require(isAllElementPresent(votes, submittedMilestones),
+                        "You should submit votes for all milestones of the progress report");
+
+            }else {
+                Context.revert(TAG + ":: You should submit votes for all milestones of the progress report");
             }
         }
         Map<String, Object> progressReportDetails = getProgressReportDetails(reportKey);
@@ -922,7 +946,7 @@ public class CPSCore implements CPSCoreInterface {
             ArrayDB<Address> voterList = MilestoneDb.votersList.at(milestonePrefix);
             if (!voteChange) {
                 if (ArrayDBUtils.containsInArrayDb(caller, voterList)) {
-                    Context.revert(TAG + ": Already Voted");
+                    Context.revert(TAG + ":: Already Voted");
                 }
             }
 
