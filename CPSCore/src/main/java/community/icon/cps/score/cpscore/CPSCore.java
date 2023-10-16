@@ -864,19 +864,20 @@ public class CPSCore implements CPSCoreInterface {
                 " --> Progress Report Submitted Successfully.");
     }
 
-    public boolean isAllElementPresent(MilestoneVoteAttributes[] vote, ArrayDB<Integer> submitted){ // TODO: bug here fix
-        boolean status = false;
+    public boolean isAllElementPresent(MilestoneVoteAttributes[] vote, ArrayDB<Integer> submitted){
         for (int i = 0; i < submitted.size(); i++) {
-            for (MilestoneVoteAttributes v: vote) {
-                if ((v.id == submitted.get(i))){
-                    status = true;
-                }
-                else {
-                    status = false;
+            boolean found = false;
+            for (MilestoneVoteAttributes v : vote) {
+                if (v.id == submitted.get(i)) {
+                    found = true;
+                    break;
                 }
             }
+            if (!found) {
+                return false;
+            }
         }
-        return status;
+        return true;
     }
 
 
