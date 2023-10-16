@@ -494,6 +494,11 @@ public class CPSScoreTest extends TestBase{
         assertEquals(0, proposalDetails.get("reject_voters"));
         assertEquals(BigInteger.valueOf(1000), proposalDetails.get("total_votes"));
 
+        // changing vote with same vote
+        Executable alreadyVoted = () -> cpsScore.invoke(owner, "voteProposal", "Proposal 1", APPROVE, "reason", true);
+        expectErrorMessage(alreadyVoted,"Reverted(0): CPS Score:: Cannot cast same vote. Change your vote");
+
+
         cpsScore.invoke(owner, "voteProposal", "Proposal 1", REJECT, "reason", true);
 
         proposalDetails = getProposalDetailsByHash("Proposal 1");
@@ -508,6 +513,15 @@ public class CPSScoreTest extends TestBase{
 
         Map<String, Object> voteResult = (Map<String, Object>) cpsScore.call("getVoteResult", "Proposal 1");
         System.out.println(voteResult);
+    }
+
+    @Test
+    @DisplayName("trying to vote on already vote proposal")
+    void voteOnProposalException(){
+        voteProposal();
+        contextMock.when(caller()).thenReturn(owner.getAddress());
+        Executable alreadyVoted = () -> cpsScore.invoke(owner, "voteProposal", "Proposal 1", REJECT, "reason", false);
+        expectErrorMessage(alreadyVoted,"Reverted(0): CPS Score:: Already Voted");
     }
 
     @Test
@@ -530,11 +544,11 @@ public class CPSScoreTest extends TestBase{
         assertEquals(BigInteger.valueOf(1000), proposalDetails.get("total_votes"));
 
 
-        cpsScore.invoke(owner, "voteProposal", "Proposal 1", APPROVE, "reason", true);
+        cpsScore.invoke(owner, "voteProposal", "Proposal 1", ABSTAIN, "reason", true);
         proposalDetails = getProposalDetailsByHash("Proposal 1");
 
-        assertEquals(BigInteger.valueOf(1000), proposalDetails.get("approved_votes"));
-        assertEquals(1, proposalDetails.get("approve_voters"));
+        assertEquals(BigInteger.valueOf(1000), proposalDetails.get("abstained_votes"));
+        assertEquals(1, proposalDetails.get("abstain_voters"));
         assertEquals(BigInteger.ZERO, proposalDetails.get("rejected_votes"));
         assertEquals(0, proposalDetails.get("reject_voters"));
         assertEquals(BigInteger.valueOf(1000), proposalDetails.get("total_votes"));
@@ -846,6 +860,64 @@ public class CPSScoreTest extends TestBase{
     }
 
     @Test
+    void voteProgressReportExceptions(){
+        submitProgressReport();
+        updateNextBlock();
+        cpsScore.invoke(owner, "updatePeriod");
+        getPeriodStatusMethod();
+        CPSCoreInterface.MilestoneVoteAttributes milestoneVoteAttributes= new CPSCoreInterface.MilestoneVoteAttributes();
+        milestoneVoteAttributes.vote = APPROVE;
+        milestoneVoteAttributes.id = 1;
+
+        CPSCoreInterface.MilestoneVoteAttributes milestoneVoteAttributes2= new CPSCoreInterface.MilestoneVoteAttributes();
+        milestoneVoteAttributes2.vote = APPROVE;
+        milestoneVoteAttributes2.id = 3;
+
+        CPSCoreInterface.MilestoneVoteAttributes[] milestoneVoteAttributesList = new CPSCoreInterface.MilestoneVoteAttributes[]{
+                milestoneVoteAttributes,milestoneVoteAttributes2};
+        doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("swapTokens"), eq(8));
+        Executable call = () ->cpsScore.invoke(owner, "voteProgressReport",  "Report 1", "reason",
+                milestoneVoteAttributesList ,"_reject",false);
+        expectErrorMessage(call,"Reverted(0): CPS Score: Voting can only be done for milestone " +
+                "submitted in this progress report");
+
+    }
+
+    @Test
+    void voteProgressReportException(){
+        submitProgressReport();
+        updateNextBlock();
+        cpsScore.invoke(owner, "updatePeriod");
+        getPeriodStatusMethod();
+        CPSCoreInterface.MilestoneVoteAttributes milestoneVoteAttributes= new CPSCoreInterface.MilestoneVoteAttributes();
+        milestoneVoteAttributes.vote = APPROVE;
+        milestoneVoteAttributes.id = 1;
+
+        CPSCoreInterface.MilestoneVoteAttributes[] milestoneVoteAttributesList = new CPSCoreInterface.MilestoneVoteAttributes[]{
+                milestoneVoteAttributes};
+        doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("swapTokens"), eq(8));
+        Executable call = () ->cpsScore.invoke(owner, "voteProgressReport",  "Report 1", "reason",
+                milestoneVoteAttributesList ,"_reject",false);
+        expectErrorMessage(call,"Reverted(0): CPS Score:: You should submit votes for all milestones of the progress report");
+
+        milestoneVoteAttributes= new CPSCoreInterface.MilestoneVoteAttributes();
+        milestoneVoteAttributes.vote = APPROVE;
+        milestoneVoteAttributes.id = 1;
+
+        CPSCoreInterface.MilestoneVoteAttributes milestoneVoteAttributes2= new CPSCoreInterface.MilestoneVoteAttributes();
+        milestoneVoteAttributes2.vote = APPROVE;
+        milestoneVoteAttributes2.id = 1;
+
+        CPSCoreInterface.MilestoneVoteAttributes[] milestoneVoteAttributesList2 = new CPSCoreInterface.MilestoneVoteAttributes[]{
+                milestoneVoteAttributes,milestoneVoteAttributes2};
+        doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("swapTokens"), eq(8));
+        Executable call2 = () ->cpsScore.invoke(owner, "voteProgressReport",  "Report 1", "reason",
+                milestoneVoteAttributesList2 ,"_reject",false);
+        expectErrorMessage(call2,"Reverted(0): You should submit votes for all milestones of the progress report");
+
+    }
+
+    @Test
     void voteProgressReport(){
         submitProgressReport();
         updateNextBlock();
@@ -892,6 +964,27 @@ public class CPSScoreTest extends TestBase{
     }
 
     @Test
+    void voteProgressReportAgain(){
+        voteProgressReport();
+        getPeriodStatusMethod();
+        CPSCoreInterface.MilestoneVoteAttributes milestoneVoteAttributes= new CPSCoreInterface.MilestoneVoteAttributes();
+        milestoneVoteAttributes.vote = APPROVE;
+        milestoneVoteAttributes.id = 1;
+
+        CPSCoreInterface.MilestoneVoteAttributes milestoneVoteAttributes2= new CPSCoreInterface.MilestoneVoteAttributes();
+        milestoneVoteAttributes2.vote = APPROVE;
+        milestoneVoteAttributes2.id = 2;
+
+        CPSCoreInterface.MilestoneVoteAttributes[] milestoneVoteAttributesList = new CPSCoreInterface.MilestoneVoteAttributes[]{
+                milestoneVoteAttributes,milestoneVoteAttributes2};
+        doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("swapTokens"), eq(8));
+        Executable call = () ->cpsScore.invoke(owner, "voteProgressReport",  "Report 1", "reason",
+                milestoneVoteAttributesList ,"_reject",false);
+        expectErrorMessage(call,"Reverted(0): CPS Score:: Already Voted" );
+
+    }
+
+    @Test
     void voteProgressReportVoteChangeFromApproveToReject(){
         submitProgressReport();
         updateNextBlock();
@@ -903,8 +996,12 @@ public class CPSScoreTest extends TestBase{
         milestoneVoteAttributes.vote = APPROVE;
         milestoneVoteAttributes.id = 1;
 
+        CPSCoreInterface.MilestoneVoteAttributes milestoneVoteAttributes2= new CPSCoreInterface.MilestoneVoteAttributes();
+        milestoneVoteAttributes2.vote = APPROVE;
+        milestoneVoteAttributes2.id = 2;
+
         CPSCoreInterface.MilestoneVoteAttributes[] milestoneVoteAttributesList = new CPSCoreInterface.MilestoneVoteAttributes[]{
-                milestoneVoteAttributes};
+                milestoneVoteAttributes,milestoneVoteAttributes2};
 
         cpsScore.invoke(owner, "voteProgressReport",  "Report 1", "reason", milestoneVoteAttributesList ,"_reject",false);
 
