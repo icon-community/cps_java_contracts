@@ -487,7 +487,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     public void migrateOldHashToNewHash(String oldHash, String newHash){
         validateCpsScore();
         int size = proposalsKeys.size();
-        for (int i = 0; i < size - 1; i++) {
+        for (int i = 0; i < size; i++) {
             if (proposalsKeys.get(i).equals(oldHash)) {
                 proposalsKeys.set(i, newHash);
             }

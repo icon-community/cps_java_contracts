@@ -2613,6 +2613,7 @@ public class CPSCore implements CPSCoreInterface {
         String newHash = newProposal.ipfs_hash;
         Context.require(proposalKeyExists(oldHash), TAG + ": Proposal key should exist on proposal db.");
         Context.require(!proposalKeyExists(newHash), TAG + ": Proposal key already exists.");
+
         Address caller = Context.getCaller();
         Context.require(!caller.isContract(), TAG + ": Contract Address not supported.");
 
@@ -2696,14 +2697,14 @@ public class CPSCore implements CPSCoreInterface {
 
         ArrayDB<String> progReports = ProposalDataDb.progressReports.at(oldIpfsHashPrefix);
         List<String> progressReportsList = ArrayDBUtils.arrayDBtoList(progReports);
-        for (int i = 0; i < progressReportsList.size() - 1; i++) {
+        for (int i = 0; i < progressReportsList.size(); i++) {
             String report = progressReportsList.get(i);
             String progressHashPrefix = progressReportPrefix(report);
             ProgressReportDataDb.ipfsHash.at(progressHashPrefix).set(newHash);
 
             // add to milestone db
             String milestonePrefix = mileStonePrefix(newHash,milestones[i]);
-            MilestoneDb.id.at(milestonePrefix).set(i);
+            MilestoneDb.id.at(milestonePrefix).set(milestones[i]);
             MilestoneDb.status.at(milestonePrefix).set(MILESTONE_REPORT_COMPLETED);
             MilestoneDb.progressReportHash.at(milestonePrefix).set(report);
 
@@ -2730,7 +2731,7 @@ public class CPSCore implements CPSCoreInterface {
                 MilestoneDb.votersList.at(milestonePrefix).add(voter);
             }
 
-            BranchDB<Address, DictDB<String, Integer>> votersListIndex = ProgressReportDataDb.votersListIndices.at(oldIpfsHashPrefix);
+            BranchDB<Address, DictDB<String, Integer>> votersListIndex = ProgressReportDataDb.votersListIndices.at(progressHashPrefix);
             List<Address> preps = arrayDBtoList(votersList);
             for (Address prep : preps) {
                 DictDB<String, Integer> votersVote = votersListIndex.at(prep);
@@ -2740,7 +2741,7 @@ public class CPSCore implements CPSCoreInterface {
 
                 MilestoneDb.votersListIndices.at(milestonePrefix).at(prep).set(VOTE, voteData);
                 MilestoneDb.votersListIndices.at(milestonePrefix).at(prep).set(INDEX, indexData);
-                MilestoneDb.votersListIndices.at(milestonePrefix).at(prep).set(CHANGE_VOTE, changeVoteData);
+                MilestoneDb.votersListIndices.at(milestonePrefix).at(prep).set(CHANGE_VOTE, changeVoteData); // TODO: Update to progressReportDB
             }
 
             ProposalDataDb.progressReports.at(newIpfsHashPrefix).add(report);
@@ -2775,6 +2776,7 @@ public class CPSCore implements CPSCoreInterface {
         ProposalSubmitted(caller, "Successfully submitted a Proposal.");
     }
 
+    @External
     public void updateProposalKeyIndex(String oldHash, String newHash) {
         validateAdmins();
         String oldIpfsHashPrefix = proposalPrefix(oldHash);
@@ -2794,7 +2796,6 @@ public class CPSCore implements CPSCoreInterface {
 
         callScore(getCpfTreasuryScore(), "migrateOldHashToNewHash", oldHash,newHash);
         callScore(getCpsTreasuryScore(), "updateNewProjects", oldHash, newHash);
-
     }
 
 
