@@ -107,6 +107,17 @@ public final class ArrayDBUtils {
         return false;
     }
 
+    public static <T> void replaceArrayItem(ArrayDB<T> array_db, Object target, Object newTarget) {
+        int size = array_db.size();
+
+        for (int i = 0; i < size - 1; i++) {
+            if (array_db.get(i).equals(target)) {
+                array_db.set(i, (T) newTarget);
+                return;
+            }
+        }
+    }
+
 }
 
 

@@ -1,14 +1,11 @@
 package community.icon.cps.score.cpstreasury;
 
-import community.icon.cps.score.cpstreasury.db.ProposalData;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
-import score.Address;
-import score.ArrayDB;
-import score.BranchDB;
-import score.Context;
-import score.DictDB;
-import score.VarDB;
+import community.icon.cps.score.cpstreasury.db.ProposalData;
+import community.icon.cps.score.cpstreasury.utils.consts;
+import community.icon.cps.score.lib.interfaces.CPSTreasuryInterface;
+import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Payable;
@@ -18,9 +15,7 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-import community.icon.cps.score.lib.interfaces.CPSTreasuryInterface;
-
-import community.icon.cps.score.cpstreasury.utils.consts;
+import static community.icon.cps.score.cpstreasury.utils.ArrayDBUtils.replaceArrayItem;
 
 public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
     private static final String TAG = "CPS_TREASURY";
@@ -542,26 +537,26 @@ private void onsetPaymentContributor(String _ipfs_key){
         }
     }
 
-    //    for migration into java contract
-    @Override
+    //    for migration java contract
     @External
-    public void updateSponsorAndContributorProjects() {
-        validateAdmins();
-        int startIndex = batchSize.getOrDefault(0);
-        int size = proposalsKeys.size();
-        int endIndex = startIndex + 10;
-        if (endIndex > size) {
-            endIndex = size;
-        }
-        for (int i = startIndex; i < endIndex; i++) {
-            String proposalKey = proposalsKeys.get(i);
-            String proposalPrefix = proposalPrefix(proposalKey);
-            Address contributorAddress = getContributorAddress(proposalPrefix);
-            Address sponsorAddress = getSponsorAddress(proposalPrefix);
-            contributorProjects.at(contributorAddress.toString()).add(proposalKey);
-            sponsorProjects.at(sponsorAddress.toString()).add(proposalKey);
-            batchSize.set(endIndex);
-        }
+    public void updateNewProjects(String oldHash, String newHash) {
+        validateCpsScore();
+
+        String oldProposalPrefix = proposalPrefix(oldHash);
+
+        Address contributorAddress = getContributorAddress(oldProposalPrefix);
+        Address sponsorAddress = getSponsorAddress(oldProposalPrefix);
+
+        ArrayDB<String> contributedProjects = contributorProjects.at(contributorAddress.toString());
+        replaceArrayItem(contributedProjects, oldHash, newHash);
+
+        ArrayDB<String> sponsoredProjects = sponsorProjects.at(sponsorAddress.toString());
+        replaceArrayItem(sponsoredProjects, oldHash, newHash);
+
+        replaceArrayItem(proposalsKeys, oldHash, newHash);
+        int getIndex = proposalsKeyListIndex.get(oldHash);
+        proposalsKeyListIndex.set(oldHash, null);
+        proposalsKeyListIndex.set(newHash, getIndex);
     }
 
 
@@ -603,22 +598,7 @@ private void onsetPaymentContributor(String _ipfs_key){
     public void ProposalFundWithdrawn(Address _receiver_address, String note) {
     }
 
-    /*-----------------------------------------------------------------------------------------------------------------
-    ***************************************************** to be removed in production**********************************
-     -----------------------------------------------------------------------------------------------------------------*/
 
-    @External
-    public void depositProposalFunds(ProposalData.ProposalAttributes proposals){
-        addRecord(proposals);
-    }
 
-    @External(readonly = true)
-    public String returnString(){
-        return "";
-    }
 
-//    @External
-//    public void removeArrayItems(){
-//        ArrayDBUtils.remove_array_item_address(contributorProjects);
-//    }
 }
