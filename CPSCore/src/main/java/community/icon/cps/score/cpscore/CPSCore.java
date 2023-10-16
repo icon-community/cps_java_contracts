@@ -1962,11 +1962,11 @@ public class CPSCore implements CPSCoreInterface {
 
     // a different method for get milestone report
     @External(readonly = true)
-    public Map<String, Object> getMilestoneVoteResult(String reportKey, int milestoneID){
+    public Map<String, Object> getMilestoneVoteResult(String reportKey, int milestoneId){
         String prefix = progressReportPrefix(reportKey);
         String ipfshHash = ProgressReportDataDb.ipfsHash.at(prefix).get();
 
-        String milestonePrefix = mileStonePrefix(ipfshHash,milestoneID);
+        String milestonePrefix = mileStonePrefix(ipfshHash,milestoneId);
         ArrayDB<Address> _voters_list = MilestoneDb.votersList.at(milestonePrefix);
         ArrayDB<Address> _approved_voters_list = MilestoneDb.approveVoters.at(milestonePrefix);
         ArrayDB<Address> _rejected_voters_list = MilestoneDb.rejectVoters.at(milestonePrefix);
