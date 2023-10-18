@@ -1223,6 +1223,27 @@ public class CPSCore implements CPSCoreInterface {
         ArrayDBUtils.clearArrayDb(pReps.inactivePreps);
     }
 
+
+    private void updateMilestoneDB(String milestonePrefix){ // TODO:clear array db
+        //TODO: shoudld update on the vote reason too
+//        String milestonePrefix = mileStonePrefix(ipfsHash,milestoneId);
+        MilestoneDb.approvedVotes.at(milestonePrefix).set(BigInteger.ZERO);
+        clearArrayDb(MilestoneDb.approveVoters.at(milestonePrefix));
+
+        MilestoneDb.rejectedVotes.at(milestonePrefix).set(BigInteger.ZERO);
+        clearArrayDb(MilestoneDb.rejectVoters.at(milestonePrefix));
+
+        ArrayDB<Address> voters = MilestoneDb.votersList.at(milestonePrefix);
+        for (int i = 0; i < voters.size(); i++) {
+            Address prep = voters.get(i);
+            DictDB<String,Integer> prepVote = MilestoneDb.votersListIndices.at(milestonePrefix).at(prep);
+            prepVote.set(INDEX,0);
+            prepVote.set(VOTE,0);
+        }
+        clearArrayDb(MilestoneDb.votersList.at(milestonePrefix));
+
+    }
+
     /***
      Calculate votes for the progress reports and update the status and get the Installment and Sponsor
      Reward is the progress report is accepted.
