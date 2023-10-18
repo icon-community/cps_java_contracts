@@ -53,7 +53,7 @@ public class CPSScoreTest extends TestBase{
 
     @BeforeEach
     public void setup() throws Exception {
-        cpsScore = sm.deploy(owner, CPSCore.class,BigInteger.valueOf(12));
+        cpsScore = sm.deploy(owner, CPSCore.class,BigInteger.valueOf(12),BigInteger.valueOf(20));
         CPSCore instance = (CPSCore) cpsScore.getInstance();
         scoreSpy = spy(instance);
         cpsScore.setInstance(scoreSpy);
