@@ -2737,11 +2737,11 @@ public class CPSCore implements CPSCoreInterface {
                 DictDB<String, Integer> votersVote = votersListIndex.at(prep);
                 int voteData = votersVote.get(VOTE);
                 int indexData = votersVote.get(INDEX);
-                int changeVoteData = votersVote.get(CHANGE_VOTE);
+                int changeVoteData = votersVote.getOrDefault(CHANGE_VOTE,0);
 
                 MilestoneDb.votersListIndices.at(milestonePrefix).at(prep).set(VOTE, voteData);
                 MilestoneDb.votersListIndices.at(milestonePrefix).at(prep).set(INDEX, indexData);
-                MilestoneDb.votersListIndices.at(milestonePrefix).at(prep).set(CHANGE_VOTE, changeVoteData); // TODO: Update to progressReportDB
+                voteChange.at(progressHashPrefix).set(prep,changeVoteData); // TODO: Update to progressReportDB
             }
 
             ProposalDataDb.progressReports.at(newIpfsHashPrefix).add(report);
@@ -2787,7 +2787,7 @@ public class CPSCore implements CPSCoreInterface {
             DictDB<String, Integer> votersVote = votersListIndex.at(prep);
             int voteData = votersVote.get(VOTE);
             int indexData = votersVote.get(INDEX);
-            int changeVoteData = votersVote.get(CHANGE_VOTE);
+            int changeVoteData = votersVote.getOrDefault(CHANGE_VOTE,0);
 
             ProposalDataDb.votersListIndex.at(newIpfsHashPrefix).at(prep).set(VOTE, voteData);
             ProposalDataDb.votersListIndex.at(newIpfsHashPrefix).at(prep).set(INDEX, indexData);
