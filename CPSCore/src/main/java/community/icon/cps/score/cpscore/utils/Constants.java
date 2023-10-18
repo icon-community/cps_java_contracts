@@ -102,6 +102,7 @@ public class Constants {
     public static final String VOTERS_LIST_INDEXES = "voters_list_indexes";
     public static final String BUDGET_VOTERS_LIST_INDICES = "budget_voters_list_indexes";
     public static final String MILESTONE_SUBMITTED_COUNT = "milestone_submitted_count";
+    public static final String VOTE_CHANGE = "vote_change";
 
 
     public static final String TIMESTAMP = "timestamp";

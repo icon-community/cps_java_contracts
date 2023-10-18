@@ -42,7 +42,7 @@ public class ProgressReportDataDb {
     public static final BranchDB<String, VarDB<String>> ipfsLink = Context.newBranchDB(IPFS_LINK, String.class);
     public static final BranchDB<String, BranchDB<Address, DictDB<String, Integer>>> budgetVotersListIndices = Context.newBranchDB(BUDGET_VOTERS_LIST_INDICES, Integer.class);
     public static final BranchDB<String,ArrayDB<Integer>> milestoneSubmitted = Context.newBranchDB(MILESTONE_SUBMITTED_COUNT,Integer.class);
-    public static final BranchDB<String,DictDB<Address,Integer>> voteChange = Context.newBranchDB("vote change",Integer.class);
+    public static final BranchDB<String,DictDB<Address,Integer>> voteChange = Context.newBranchDB(VOTE_CHANGE,Integer.class);
 
     public static void addDataToProgressReportDB(ProgressReportAttributes progressData, String prefix) {
         ipfsHash.at(prefix).set(progressData.ipfs_hash);
