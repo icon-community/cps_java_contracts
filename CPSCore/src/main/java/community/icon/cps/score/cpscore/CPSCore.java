@@ -1940,41 +1940,45 @@ public class CPSCore implements CPSCoreInterface {
     public Map<String, Object> getMilestoneVoteResult(String reportKey, int milestoneId){
         String prefix = progressReportPrefix(reportKey);
         String ipfshHash = ProgressReportDataDb.ipfsHash.at(prefix).get();
+        List<Integer> milestoneSubmitted = getMilestoneCountOfProgressReport(reportKey);
+        if (milestoneSubmitted.contains(milestoneId)) {
 
-        String milestonePrefix = mileStonePrefix(ipfshHash,milestoneId);
-        ArrayDB<Address> _voters_list = MilestoneDb.votersList.at(milestonePrefix);
-        ArrayDB<Address> _approved_voters_list = MilestoneDb.approveVoters.at(milestonePrefix);
-        ArrayDB<Address> _rejected_voters_list = MilestoneDb.rejectVoters.at(milestonePrefix);
+            String milestonePrefix = mileStonePrefix(ipfshHash, milestoneId);
+            ArrayDB<Address> _voters_list = MilestoneDb.votersList.at(milestonePrefix);
+            ArrayDB<Address> _approved_voters_list = MilestoneDb.approveVoters.at(milestonePrefix);
+            ArrayDB<Address> _rejected_voters_list = MilestoneDb.rejectVoters.at(milestonePrefix);
 
-        List<Map<String, Object>> _vote_status = new ArrayList<>();
-        String vote;
+            List<Map<String, Object>> _vote_status = new ArrayList<>();
+            String vote;
 //      Differentiating the P-Rep(s) votes according to their votes
-        for (int i = 0; i < _voters_list.size(); i++) {
-            Address voter = _voters_list.get(i);
-            if (containsInArrayDb(voter, _approved_voters_list)) {
-                vote = APPROVE;
-            } else if (containsInArrayDb(voter, _rejected_voters_list)) {
-                vote = REJECT;
-            } else {
-                vote = "not voted";
+            for (int i = 0; i < _voters_list.size(); i++) {
+                Address voter = _voters_list.get(i);
+                if (containsInArrayDb(voter, _approved_voters_list)) {
+                    vote = APPROVE;
+                } else if (containsInArrayDb(voter, _rejected_voters_list)) {
+                    vote = REJECT;
+                } else {
+                    vote = "not voted";
+                }
+                String reason = ProgressReportDataDb.votersReasons.at(prefix).get(i);
+                if (reason == null) {
+                    reason = "";
+                }
+                Map<String, Object> _voters = Map.of(ADDRESS, voter,
+                        PREP_NAME, getPrepName(voter),
+                        VOTE_REASON, reason,
+                        VOTE, vote);
+                _vote_status.add(_voters);
             }
-            String reason = ProgressReportDataDb.votersReasons.at(prefix).get(i);
-            if (reason == null) {
-                reason = "";
-            }
-            Map<String, Object> _voters = Map.of(ADDRESS, voter,
-                    PREP_NAME, getPrepName(voter),
-                    VOTE_REASON, reason,
-                    VOTE, vote);
-            _vote_status.add(_voters);
-        }
 
-        return Map.of(DATA, _vote_status, APPROVE_VOTERS, _approved_voters_list.size(),
-                REJECT_VOTERS, _rejected_voters_list.size(),
-                TOTAL_VOTERS, ProgressReportDataDb.totalVoters.at(prefix).getOrDefault(0),
-                APPROVED_VOTES, MilestoneDb.approvedVotes.at(milestonePrefix).getOrDefault(BigInteger.ZERO),
-                REJECTED_VOTES, MilestoneDb.rejectedVotes.at(milestonePrefix).getOrDefault(BigInteger.ZERO),
-                TOTAL_VOTES, ProgressReportDataDb.totalVotes.at(prefix).getOrDefault(BigInteger.ZERO));
+            return Map.of(DATA, _vote_status, APPROVE_VOTERS, _approved_voters_list.size(),
+                    REJECT_VOTERS, _rejected_voters_list.size(),
+                    TOTAL_VOTERS, ProgressReportDataDb.totalVoters.at(prefix).getOrDefault(0),
+                    APPROVED_VOTES, MilestoneDb.approvedVotes.at(milestonePrefix).getOrDefault(BigInteger.ZERO),
+                    REJECTED_VOTES, MilestoneDb.rejectedVotes.at(milestonePrefix).getOrDefault(BigInteger.ZERO),
+                    TOTAL_VOTES, ProgressReportDataDb.totalVotes.at(prefix).getOrDefault(BigInteger.ZERO));
+        }
+        return Map.of();
     }
 
 
