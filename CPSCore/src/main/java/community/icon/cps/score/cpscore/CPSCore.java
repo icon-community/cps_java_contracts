@@ -436,11 +436,12 @@ public class CPSCore implements CPSCoreInterface {
     @External(readonly = true)
     public List<String> sortPriorityProposals() {
         Status status = new Status();
-        String[] pendingProposals = new String[status.pending.size()];
-        for (int i = 0; i < status.pending.size(); i++) {
+        int size = status.pending.size();
+        String[] pendingProposals = new String[size];
+        for (int i = 0; i < size; i++) {
             pendingProposals[i] = status.pending.get(i);
         }
-        mergeSort(pendingProposals, 0, status.pending.size() - 1, getPriorityVoteResult());
+        mergeSort(pendingProposals, 0, size - 1, getPriorityVoteResult());
         return arrayToList(pendingProposals);
     }
 
@@ -450,7 +451,8 @@ public class CPSCore implements CPSCoreInterface {
         Map<String, Integer> priorityVoteResult = new HashMap<>();
         Status status = new Status();
 
-        for (int i = 0; i < status.pending.size(); i++) {
+        int size = status.pending.size();
+        for (int i = 0; i < size; i++) {
             String prop = status.pending.get(i);
             priorityVoteResult.put(prop, proposalRank.getOrDefault(prop, 0));
 
@@ -616,7 +618,7 @@ public class CPSCore implements CPSCoreInterface {
                 REMAINING_TIME, remainingTime,
                 PERIOD_NAME, period.periodName.getOrDefault("None"),
                 PREVIOUS_PERIOD_NAME, period.previousPeriodName.getOrDefault("None"),
-                PERIOD_SPAN, BLOCKS_DAY_COUNT.multiply(DAY_COUNT).multiply(BigInteger.valueOf(2)));
+                PERIOD_SPAN, BLOCKS_DAY_COUNT.multiply(TOTAL_PERIOD));
     }
 
     @Override
@@ -736,6 +738,7 @@ public class CPSCore implements CPSCoreInterface {
         } else {
             Context.require(votersIndexDb.getOrDefault(CHANGE_VOTE, 0) == 0,
                     TAG + ": Vote change can be done only once.");
+            votersIndexDb.set(CHANGE_VOTE, VOTED);
             int index = votersIndexDb.getOrDefault(INDEX, 0);
             int voteIndex = votersIndexDb.getOrDefault(VOTE, 0);
             ProposalDataDb.votersReasons.at(proposalPrefix).set(index - 1, voteReason);
@@ -755,7 +758,6 @@ public class CPSCore implements CPSCoreInterface {
                 ArrayDBUtils.removeArrayItem(abstainVoters.at(proposalPrefix), caller);
                 ProposalDataDb.abstainedVotes.at(proposalPrefix).set(abstainedVotes.subtract(voterStake));
             }
-            votersIndexDb.set(CHANGE_VOTE, VOTED);
             approvedVotes = ProposalDataDb.approvedVotes.at(proposalPrefix).getOrDefault(BigInteger.ZERO);
             rejectedVotes = ProposalDataDb.rejectedVotes.at(proposalPrefix).getOrDefault(BigInteger.ZERO);
             abstainedVotes = ProposalDataDb.abstainedVotes.at(proposalPrefix).getOrDefault(BigInteger.ZERO);
@@ -939,19 +941,11 @@ public class CPSCore implements CPSCoreInterface {
         DictDB<Address,Integer> voteChanged = ProgressReportDataDb.voteChange.at(progressReportPrefix);
 
         if (voteChanged.getOrDefault(caller,NOT_VOTED) == 1){
-            Context.revert(TAG+ ": You have already votes for this progress report");
-        }
-        if (voteChange){
-            voteChanged.set(caller,VOTED);
+            Context.revert(TAG+ ":: Vote change can be done only once.");
         }
         for (MilestoneVoteAttributes milestoneVote : votes) {
             String milestonePrefix = mileStonePrefix(proposalKey,milestoneVote.id);
-            ArrayDB<Address> voterList = MilestoneDb.votersList.at(milestonePrefix);
-            if (!voteChange) {
-                if (ArrayDBUtils.containsInArrayDb(caller, voterList)) {
-                    Context.revert(TAG + ":: Already Voted");
-                }
-            }
+
 
             Map<String, Object> milestoneDetails = getDataFromMilestoneDB(milestonePrefix);
             BigInteger approvedVotes = (BigInteger) milestoneDetails.get(APPROVED_VOTES);
@@ -963,8 +957,7 @@ public class CPSCore implements CPSCoreInterface {
                 votersIndexDb.set(INDEX, MilestoneDb.votersList.at(milestonePrefix).size());
                 ProgressReportDataDb.votersReasons.at(progressReportPrefix).add(voteReason);
             } else {
-                Context.require(votersIndexDb.getOrDefault(CHANGE_VOTE, 0) == 0,
-                        TAG + ": Progress Report Vote change can be done only once.");
+                voteChanged.set(caller,VOTED);
                 int index = votersIndexDb.getOrDefault(INDEX, 0);
                 int voteIndex = votersIndexDb.getOrDefault(VOTE, 0);
                 ProgressReportDataDb.votersReasons.at(progressReportPrefix).set(index - 1, voteReason);
@@ -990,24 +983,23 @@ public class CPSCore implements CPSCoreInterface {
             approvedVotes = MilestoneDb.approvedVotes.at(milestonePrefix).getOrDefault(BigInteger.ZERO);
             rejectedVotes = MilestoneDb.rejectedVotes.at(milestonePrefix).getOrDefault(BigInteger.ZERO);
             if (milestoneVote.vote.equals(APPROVE)) {
-                // TODO : find more efficient way to do this
-                if (ArrayDBUtils.containsInArrayDb(caller,MilestoneDb.approveVoters.at(milestonePrefix))){
-                    continue;
-                }
+                // TODO : test on this more
+//                if (ArrayDBUtils.containsInArrayDb(caller,MilestoneDb.approveVoters.at(milestonePrefix))){
+//                    continue;
+//                }
                 MilestoneDb.approveVoters.at(milestonePrefix).add(caller);
                 votersIndexDb.set(VOTE, APPROVE_);
                 MilestoneDb.approvedVotes.at(milestonePrefix).set(approvedVotes.add(voterStake));
 
             } else {
-                if (ArrayDBUtils.containsInArrayDb(caller,MilestoneDb.rejectVoters.at(milestonePrefix))){
-                    continue;
-                }
+//                if (ArrayDBUtils.containsInArrayDb(caller,MilestoneDb.rejectVoters.at(milestonePrefix))){
+//                    continue;
+//                }
                 MilestoneDb.rejectVoters.at(milestonePrefix).add(caller);
                 votersIndexDb.set(VOTE, REJECT_);
                 MilestoneDb.rejectedVotes.at(milestonePrefix).set(rejectedVotes.add(voterStake));
 
             }
-//            MilestoneDb.progressReportHash.at(milestonePrefix).set(progressReportPrefix);
             if (budgetAdjustment && getBudgetAdjustmentFeature()) {
                 budgetAdjustment(reportKey,budgetAdjustmentVote,voteChange);
 
