@@ -1153,7 +1153,7 @@ public class CPSCore implements CPSCoreInterface {
                 period.periodName.set(VOTING_PERIOD);
                 period.periodCount.set(period.periodCount.getOrDefault(0) + 1);
                 period.previousPeriodName.set(APPLICATION_PERIOD);
-                period.nextBlock.set(nextBlock.add(BLOCKS_DAY_COUNT.multiply(getApplicationPeriod()))); // APPLICATION PERIOD KO TIMESTAMP
+                period.nextBlock.set(nextBlock.add(BLOCKS_DAY_COUNT.multiply(getVotingPeriod())));
                 updateApplicationResult();
 
                 period.updatePeriodIndex.set(0);
@@ -1185,7 +1185,7 @@ public class CPSCore implements CPSCoreInterface {
                 } else {
                     SetterGetter setterGetter = new SetterGetter();
                     updateDenylistPreps();
-                    period.nextBlock.set(nextBlock.add(BLOCKS_DAY_COUNT.multiply(getVotingPeriod()))); // VOTING PERIOD
+                    period.nextBlock.set(nextBlock.add(BLOCKS_DAY_COUNT.multiply(getApplicationPeriod())));
                     period.periodName.set(APPLICATION_PERIOD);
                     period.previousPeriodName.set(VOTING_PERIOD);
                     PeriodUpdate("Period Update State 4/4. Period Successfully Updated to Application Period.");
@@ -1281,13 +1281,12 @@ public class CPSCore implements CPSCoreInterface {
                     int _total_voters = ProgressReportDataDb.totalVoters.at(progressPrefix).getOrDefault(0);
 
                     if (_total_voters == 0 || _total_votes.equals(BigInteger.ZERO) || _main_preps_list.size() < MINIMUM_PREPS) {
-                        updateProgressReportStatus(_reports, PROGRESS_REPORT_REJECTED);
                         updateMilestoneStatus(milestonePrefix, MILESTONE_REPORT_REJECTED,_reports);
+                        updateMilestoneDB(milestonePrefix);
                     } else {
                         double votersRatio = (double) _approve_voters / _total_voters;
                         double votesRatio = _approved_votes.doubleValue() / _total_votes.doubleValue();
                         if (votersRatio >= MAJORITY && votesRatio >= MAJORITY) {
-                            updateProgressReportStatus(_reports, APPROVED);
                             updateMilestoneStatus(milestonePrefix, MILESTONE_REPORT_COMPLETED,_reports);
                             _approved_reports_count +=1 ;
                             milestonePassed +=1;
@@ -1306,7 +1305,6 @@ public class CPSCore implements CPSCoreInterface {
                             }
 
                             else if (_proposal_status.equals(PAUSED)) {
-                                updateProgressReportStatus(_reports, PROGRESS_REPORT_REJECTED);
                                 updateProposalStatus(_ipfs_hash, ACTIVE);
                             }
 
@@ -1317,18 +1315,20 @@ public class CPSCore implements CPSCoreInterface {
 
                         }else {
                             updateMilestoneStatus(milestonePrefix, MILESTONE_REPORT_REJECTED,_reports);
+                            updateMilestoneDB(milestonePrefix);
                         }
                     }
                 }
             }
             if (milestonePassed > 0) {
-
+                updateProgressReportStatus(_reports, APPROVED);
                 // Request CPS Treasury to add some installments amount to the contributor address
                 callScore(getCpsTreasuryScore(), "sendInstallmentToContributor", _ipfs_hash,milestonePassed);
                 //Request CPS Treasury to add some sponsor reward amount to the sponsor address
                 callScore(getCpsTreasuryScore(), "sendRewardToSponsor", _ipfs_hash,milestonePassed);
             }
             else {
+                updateProgressReportStatus(_reports, PROGRESS_REPORT_REJECTED);
                 // TODO: better name for the method
                 rejectProgressReport(_ipfs_hash, proposal_prefix,_proposal_details);
             }
@@ -1549,14 +1549,6 @@ public class CPSCore implements CPSCoreInterface {
     private void updateMilestoneStatus(String milestonePrefix, int milestoneStatus, String progressHash ){
 
         MilestoneDb.status.at(milestonePrefix).set(milestoneStatus);
-//        MilestoneDb.progressReportHash.at(milestonePrefix).set(progressHash);
-
-
-        // fetch data from pogrss hash? // NOT SO REQUIRED
-//        ArrayDB<String> progressTOm = this.progressReportToMilestone.at(progressHash);
-//        if(!ArrayDBUtils.containsInArrayDb(milestonePrefix,progressTOm)) {
-//            this.progressReportToMilestone.at(progressHash).add(milestonePrefix);
-//        }
 
     }
 
