@@ -47,8 +47,6 @@ public class CPSCore implements CPSCoreInterface {
     private final ArrayDB<Address> sponsors = Context.newArrayDB(SPONSORS, Address.class);
     private static final ArrayDB<Address> admins = Context.newArrayDB(ADMINS, Address.class);
     public final DictDB<String, BigInteger> period = Context.newDictDB(PERIOD,BigInteger.class);
-    // TODO: change this name
-//    public   final BranchDB<String, ArrayDB<String>> progressReportToMilestone = Context.newBranchDB("ptom",String.class);
     public   final VarDB<BigInteger> sponsorBondPercentage = Context.newVarDB(SPONSOR_BOND_PERCENTAGE, BigInteger.class);
     private final BranchDB<String, DictDB<String, BigInteger>> sponsorBondReturn = Context.newBranchDB(SPONSOR_BOND_RETURN, BigInteger.class);
     private final DictDB<Address, BigInteger> delegationSnapshot = Context.newDictDB(DELEGATION_SNAPSHOT, BigInteger.class);
@@ -605,7 +603,7 @@ public class CPSCore implements CPSCoreInterface {
 
     @Override
     @External(readonly = true)
-    public Map<String, ?> getPeriodStatus() { // TODO : change the usage accordingly (another branch)
+    public Map<String, ?> getPeriodStatus() {
         PeriodController period = new PeriodController();
         BigInteger remainingTime = period.nextBlock.getOrDefault(BigInteger.ZERO).subtract(BigInteger.valueOf(Context.getBlockHeight())).multiply(BigInteger.valueOf(2));
         if (remainingTime.compareTo(BigInteger.ZERO) < 0) {
@@ -818,6 +816,7 @@ public class CPSCore implements CPSCoreInterface {
         }
         addDataToProgressReportDB(progressReport, reportHashPrefix);
         int proposalMilestoneCount = ProposalDataDb.getMilestoneCount(ipfsHashPrefix);
+        // TODO: add revert for milestone count and duration
         int approvedReports = ProposalDataDb.approvedReports.at(ipfsHashPrefix).getOrDefault(0);
         if (proposalMilestoneCount !=0 ) {
             int[] milestones = progressReport.milestoneCompleted;
@@ -905,9 +904,8 @@ public class CPSCore implements CPSCoreInterface {
         for (MilestoneVoteAttributes milestoneVote : votes) {
             Context.require(List.of(APPROVE, REJECT).contains(milestoneVote.vote),
                     TAG + ": Vote should be either _approve or _reject");
-            if (!ArrayDBUtils.containsInArrayDb(milestoneVote.id,submittedMilestones) ){
-                Context.revert(TAG + ": Voting can only be done for milestone submitted in this progress report");
-            }
+            Context.require(ArrayDBUtils.containsInArrayDb(milestoneVote.id,submittedMilestones),
+                    TAG + ": Voting can only be done for milestone submitted in this progress report");
         }
         if (!voteChange) {
             if (votes.length == submittedMilestones.size()){
@@ -925,7 +923,7 @@ public class CPSCore implements CPSCoreInterface {
             Context.revert(TAG + ": Voting can be only be done in waiting progress reports.");
         }
 
-        BigInteger voterStake = getDelegation(caller); // TODO : why voter stake is added
+        BigInteger voterStake = getDelegation(caller);
         String proposalKey = ProgressReportDataDb.ipfsHash.at(progressReportPrefix).get();
 
         BigInteger totalVotes = ProgressReportDataDb.totalVotes.at(progressReportPrefix).getOrDefault(BigInteger.ZERO);
@@ -1224,9 +1222,7 @@ public class CPSCore implements CPSCoreInterface {
     }
 
 
-    private void updateMilestoneDB(String milestonePrefix){ // TODO:clear array db
-        //TODO: shoudld update on the vote reason too
-//        String milestonePrefix = mileStonePrefix(ipfsHash,milestoneId);
+    private void updateMilestoneDB(String milestonePrefix,String progressPrefix, int milestoneId){
         MilestoneDb.approvedVotes.at(milestonePrefix).set(BigInteger.ZERO);
         clearArrayDb(MilestoneDb.approveVoters.at(milestonePrefix));
 
@@ -1241,6 +1237,8 @@ public class CPSCore implements CPSCoreInterface {
             prepVote.set(VOTE,0);
         }
         clearArrayDb(MilestoneDb.votersList.at(milestonePrefix));
+        ArrayDB<Integer> milestone =  milestoneSubmitted.at(progressPrefix);
+        removeArrayItem(milestone,milestoneId);
 
     }
 
@@ -1303,7 +1301,7 @@ public class CPSCore implements CPSCoreInterface {
 
                     if (_total_voters == 0 || _total_votes.equals(BigInteger.ZERO) || _main_preps_list.size() < MINIMUM_PREPS) {
                         updateMilestoneStatus(milestonePrefix, MILESTONE_REPORT_REJECTED,_reports);
-                        updateMilestoneDB(milestonePrefix);
+                        updateMilestoneDB(milestonePrefix,progressPrefix, milestoneSubmitted.get(i));
                     } else {
                         double votersRatio = (double) _approve_voters / _total_voters;
                         double votesRatio = _approved_votes.doubleValue() / _total_votes.doubleValue();
@@ -1336,7 +1334,7 @@ public class CPSCore implements CPSCoreInterface {
 
                         }else {
                             updateMilestoneStatus(milestonePrefix, MILESTONE_REPORT_REJECTED,_reports);
-                            updateMilestoneDB(milestonePrefix);
+                            updateMilestoneDB(milestonePrefix,progressPrefix, milestoneSubmitted.get(i));
                         }
                     }
                 }
@@ -1350,13 +1348,12 @@ public class CPSCore implements CPSCoreInterface {
             }
             else {
                 updateProgressReportStatus(_reports, PROGRESS_REPORT_REJECTED);
-                // TODO: better name for the method
-                rejectProgressReport(_ipfs_hash, proposal_prefix,_proposal_details);
+                updateProposalStatus(_ipfs_hash, proposal_prefix,_proposal_details);
             }
         }
     }
 
-    private void rejectProgressReport(String _ipfs_hash,String proposal_prefix,Map<String,Object> _proposal_details){
+    private void updateProposalStatus(String _ipfs_hash, String proposal_prefix, Map<String,Object> _proposal_details){
         String _proposal_status = (String) _proposal_details.get(STATUS);
         Address _sponsor_address = (Address) _proposal_details.get(SPONSOR_ADDRESS);
         Address _contributor_address = (Address) _proposal_details.get(CONTRIBUTOR_ADDRESS);
@@ -1653,7 +1650,7 @@ public class CPSCore implements CPSCoreInterface {
         return getDataFromProgressReportDB(progressReportPrefix(progressKey));
     }
 
-    @External(readonly = true) // TODO: MILESTONE COUNT IN PROGRESS REPORT
+    @External(readonly = true)
     public List<Integer> getMilestoneCountOfProgressReport(String progressKey){
         return getMilestoneSubmittedFromProgressReportDB(progressReportPrefix(progressKey));
     }
@@ -2019,7 +2016,7 @@ public class CPSCore implements CPSCoreInterface {
                             PREP_NAME, getPrepName(voter),
                             VOTE_REASON, reason,
                             VOTE, vote,
-                            "milestoneId",milestoneID);
+                            MILESTONE_ID,milestoneID);
                     voteStatus.add(voters);
                 }
             }
@@ -2073,8 +2070,8 @@ public class CPSCore implements CPSCoreInterface {
             return Map.of(
                     TOTAL_VOTERS, ProgressReportDataDb.totalVoters.at(prefix).getOrDefault(0),
                     TOTAL_VOTES, ProgressReportDataDb.totalVotes.at(prefix).getOrDefault(BigInteger.ZERO),
-                    "milestoneId",milestoneSubmittedList,
-                    "isMilestone", hasMilestone);
+                    MILESTONE_ID,milestoneSubmittedList,
+                    IS_MILESTONE, hasMilestone);
         }
         return Map.of(APPROVE_VOTERS, ProgressReportDataDb.approveVoters.at(prefix).size(),
                 REJECT_VOTERS, ProgressReportDataDb.rejectVoters.at(prefix).size(),
@@ -2082,7 +2079,7 @@ public class CPSCore implements CPSCoreInterface {
                 APPROVED_VOTES, ProgressReportDataDb.approvedVotes.at(prefix).getOrDefault(BigInteger.ZERO),
                 REJECTED_VOTES, ProgressReportDataDb.rejectedVotes.at(prefix).getOrDefault(BigInteger.ZERO),
                 TOTAL_VOTES, ProgressReportDataDb.totalVotes.at(prefix).getOrDefault(BigInteger.ZERO),
-                "hasMilestone", hasMilestone);
+                IS_MILESTONE, hasMilestone);
     }
 
     @External(readonly = true)
@@ -2099,7 +2096,7 @@ public class CPSCore implements CPSCoreInterface {
         return 0;
     }
 
-    @External(readonly = true) // from milestone db // TODO: give a better name
+    @External(readonly = true)
     public int getMileststoneStatusOf(String proposalKey, int milestoneId){
         String milestonePrefix = mileStonePrefix(proposalKey,milestoneId);
         return MilestoneDb.status.at(milestonePrefix).getOrDefault(0);

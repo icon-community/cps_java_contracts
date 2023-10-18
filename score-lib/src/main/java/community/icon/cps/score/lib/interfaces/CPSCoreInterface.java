@@ -24,7 +24,7 @@ public interface CPSCoreInterface {
         public String token;
         public Address sponsor_address;
         public String ipfs_link;
-        public int milestoneCount; //TODO: duration> milestoneCount
+        public int milestoneCount;
         public Boolean isMilestone;
 
     }
