@@ -172,11 +172,9 @@ public class CPSCore implements CPSCoreInterface {
         onlyCPFTreasury();
         BigInteger votingPeriod = TOTAL_PERIOD.subtract(applicationPeriod);
 
-        Context.require(votingPeriod.compareTo(BigInteger.TEN) <= 0,
-                TAG + ": Voting period cannot be more than 10 days");
-        Context.require(applicationPeriod.compareTo(BigInteger.valueOf(14)) >0 &&
-                        applicationPeriod.compareTo(BigInteger.valueOf(21)) <=0
-                ,TAG+": Application period should be between 2-3 weeks");
+        Context.require(
+                (votingPeriod.compareTo(BigInteger.TEN) >= 0 ),
+                TAG + ": Voting period must be more than or equal to 10 days");
 
         this.period.set(APPLICATION_PERIOD,applicationPeriod);
         this.period.set(VOTING_PERIOD,votingPeriod);
