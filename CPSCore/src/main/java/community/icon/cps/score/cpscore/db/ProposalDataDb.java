@@ -65,7 +65,7 @@ public class ProposalDataDb {
         submitProgressReport.at(prefix).set(false);
         token.at(prefix).set(proposalData.token);
         milestoneCount.at(prefix).set(proposalData.milestoneCount);
-        isMilestone.at(prefix).set(proposalData.isMilestone);
+        isMilestone.at(prefix).set(true);
 
     }
 
