@@ -63,9 +63,11 @@ public class CPSCore implements CPSCoreInterface {
     private final BranchDB<Address, ArrayDB<String>> contributorProjects = Context.newBranchDB(CONTRIBUTOR_PROJECTS, String.class);
     private static final BigInteger HUNDRED = BigInteger.valueOf(100);
 
-    public CPSCore(@Optional BigInteger bondValue) {
+    public CPSCore(@Optional BigInteger bondValue, @Optional BigInteger applicationPeriod) {
         if (sponsorBondPercentage.get() == null){
             sponsorBondPercentage.set(bondValue);
+            this.period.set(APPLICATION_PERIOD,applicationPeriod);
+            this.period.set(VOTING_PERIOD,TOTAL_PERIOD.subtract(applicationPeriod));
         }
     }
 
