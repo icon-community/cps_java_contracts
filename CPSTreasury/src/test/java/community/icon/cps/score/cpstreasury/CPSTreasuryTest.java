@@ -15,11 +15,8 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import score.Address;
 import score.Context;
-import score.DictDB;
-import score.VarDB;
 
 import java.math.BigInteger;
-import java.security.SecureRandom;
 import java.util.List;
 import java.util.Map;
 
@@ -29,17 +26,12 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 public class CPSTreasuryTest extends TestBase {
-    private static final Address ZERO_ADDRESS = new Address(new byte[Address.LENGTH]);
-    private static final Address treasury_score = new Address(new byte[Address.LENGTH]);
     private static final Address score_address = Address.fromString("cx0000000000000000000000000000000000000000");
     private static final Address cpfTreasury = Address.fromString("cx0000000000000000000000000000000000000001");
     private static final Address bnUSDScore = Address.fromString("cx0000000000000000000000000000000000000002");
-    private static final Address dexScore = Address.fromString("cx0000000000000000000000000000000000000003");
-    private static final Address cpsTreasuryScore = Address.fromString("cx0000000000000000000000000000000000000004");
 
     private static final String name = "CPS_TREASURY";
     public static final String TAG = "CPS_TREASURY";
-    CPSTreasury cpsTreasury;
     private static final BigInteger MULTIPLIER = new BigInteger("1000000000000000000");
 
 
@@ -49,11 +41,7 @@ public class CPSTreasuryTest extends TestBase {
     private static final Account testing_account2 = sm.createAccount();
 
     private Score tokenScore;
-    private final SecureRandom secureRandom = new SecureRandom();
 
-    DictDB<String, BigInteger> proposalBudgets = Mockito.mock(DictDB.class);
-    VarDB<Integer> swapState = Mockito.mock(VarDB.class);
-    VarDB<Integer> swapCount = Mockito.mock(VarDB.class);
     public static MockedStatic<Context> contextMock;
 
     CPSTreasury scoreSpy;
@@ -240,7 +228,6 @@ public class CPSTreasuryTest extends TestBase {
         JsonObject params = new JsonObject();
         params.add("ipfs_hash", "Proposal 1");
         params.add("project_duration", 2);
-        params.add("milestone_count", 2);
         params.add("sponsor_address", testing_account.getAddress().toString());
         params.add("contributor_address", testing_account2.getAddress().toString());
         params.add("total_budget", BigInteger.valueOf(100).multiply(MULTIPLIER).toString(16));
@@ -336,8 +323,7 @@ public class CPSTreasuryTest extends TestBase {
         depositProposal.add("method", "depositProposalFund");
         JsonObject params = new JsonObject();
         params.add("ipfs_hash", "Proposal 1");
-        params.add("project_duration", 3);
-        params.add("milestone_count", 4);
+        params.add("project_duration", 4);
         params.add("sponsor_address", testing_account.getAddress().toString());
         params.add("contributor_address", testing_account2.getAddress().toString());
         params.add("total_budget", BigInteger.valueOf(100).multiply(MULTIPLIER).toString(16));
@@ -371,7 +357,7 @@ public class CPSTreasuryTest extends TestBase {
 
         proposalDetailsData = (List<Map<String, ?>>) proposalDataDetails_after.get("data");
         assertEquals(proposalDetailsData.get(0).get("total_installment_paid"), BigInteger.valueOf(2575).multiply(MULTIPLIER).divide(BigInteger.valueOf(100)));
-        assertEquals(proposalDetailsData.get(0).get("total_installment_count"), 3);
+        assertEquals(proposalDetailsData.get(0).get("total_installment_count"), 4);
         assertEquals(proposalDetailsData.get(0).get("installment_amount"),  BigInteger.valueOf(2475).multiply(MULTIPLIER).divide(BigInteger.valueOf(100)));
 
     }
@@ -388,7 +374,7 @@ public class CPSTreasuryTest extends TestBase {
 
         List<Map<String, ?>> proposalDetailsData = (List<Map<String, ?>>) proposalDataDetails_after.get("data");
         assertEquals(proposalDetailsData.get(0).get("total_installment_paid"), BigInteger.valueOf(505).multiply(MULTIPLIER).divide(BigInteger.valueOf(10)));
-        assertEquals(proposalDetailsData.get(0).get("total_installment_count"), 2);
+        assertEquals(proposalDetailsData.get(0).get("total_installment_count"), 4);
         assertEquals(proposalDetailsData.get(0).get("installment_amount"),  BigInteger.valueOf(2475).multiply(MULTIPLIER).divide(BigInteger.valueOf(100)));
 
     }
@@ -444,6 +430,8 @@ public class CPSTreasuryTest extends TestBase {
         * remainning budget = 102 -1-0.02 = 100.98
         *  */
         BigInteger remainingBudget = BigInteger.valueOf(10098).multiply(MULTIPLIER).divide(BigInteger.valueOf(100));
+        doNothing().when(scoreSpy).callScore(eq(bnUSDScore), eq("transfer"), eq(cpfTreasury),
+                eq(remainingBudget),any());
         contextMock.when(caller()).thenReturn(score_address);
         tokenScore.invoke(owner, "disqualifyProject", "Proposal 1");
         JsonObject disqualifyProjectParams = new JsonObject();
@@ -451,8 +439,6 @@ public class CPSTreasuryTest extends TestBase {
         JsonObject params = new JsonObject();
         params.add("ipfs_key", "Proposal 1");
         disqualifyProjectParams.add("params", params);
-        doNothing().when(scoreSpy).callScore(eq(bnUSDScore), eq("transfer"), eq(cpfTreasury),
-                eq(remainingBudget),any());
 
     }
 
@@ -462,11 +448,11 @@ public class CPSTreasuryTest extends TestBase {
         depositProposalFundMethod();
 //        sendRewardToSponsorMethod();
         setBnUSDScoreMethod();
+        BigInteger reward = BigInteger.valueOf(2).multiply(MULTIPLIER).divide(BigInteger.valueOf(100));
+        doNothing().when(scoreSpy).callScore(eq(bnUSDScore),eq("transfer"),eq(testing_account.getAddress()),eq(reward));
         contextMock.when(caller()).thenReturn(testing_account.getAddress());
         tokenScore.invoke(testing_account, "claimReward");
-        BigInteger reward = BigInteger.valueOf(2).multiply(MULTIPLIER).divide(BigInteger.valueOf(100));
 
-        doNothing().when(scoreSpy).callScore(eq(bnUSDScore),eq("transfer"),eq(testing_account.getAddress()),eq(reward));
 
     }
 }
