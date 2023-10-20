@@ -122,6 +122,7 @@ public class Constants {
     public static final String ADDITIONAL_DURATION = "additional_month";
     public static final String BUDGET_ADJUSTMENT = "budget_adjustment";
     public static final String IS_MILESTONE = "isMilestone";
+    public static final String PROPOSAL_PERIOD = "proposalPeriod";
     public static final String BUDGETADJUSTMENT = "budgetAdjustment";
     public static final String BUDGET_ADJUSTMENT_STATUS = "budget_adjustment_status";
     public static final String BUDGET_APPROVED_VOTES = "budget_approved_votes";

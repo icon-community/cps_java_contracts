@@ -811,16 +811,25 @@ public class CPSCore implements CPSCoreInterface {
         Context.require(proposalKeyExists(ipfsHash), TAG + ": Invalid proposal key");
         addNewProgressReportKey(ipfsHash, reportHash);
         String reportHashPrefix = progressReportPrefix(reportHash);
-        if(progressReport.milestoneCompleted == null){
-            progressReport.milestoneCompleted = new int[]{};
-        }
+        Context.require(progressReport.milestoneCompleted !=null,TAG+":: Submit at least one milestone " +
+                "in progress report");
+
         addDataToProgressReportDB(progressReport, reportHashPrefix);
-        int proposalMilestoneCount = ProposalDataDb.getMilestoneCount(ipfsHashPrefix);
-        // TODO: add revert for milestone count and duration
-        int approvedReports = ProposalDataDb.approvedReports.at(ipfsHashPrefix).getOrDefault(0);
-        if (proposalMilestoneCount !=0 ) {
+        int totalMilestoneCount = ProposalDataDb.getMilestoneCount(ipfsHashPrefix);
+        int currentPeriod = period.periodCount.get();
+        int duration = projectDuration.at(ipfsHashPrefix).get();
+        int totalPeriod =  duration+ proposalPeriod.at(ipfsHashPrefix).getOrDefault(0);
+
+        if (totalMilestoneCount !=0 ) {
+            boolean lastProgressReport = totalPeriod >= currentPeriod;
+            int approvedReports = ProposalDataDb.approvedReports.at(ipfsHashPrefix).getOrDefault(0);
             int[] milestones = progressReport.milestoneCompleted;
-            Context.require(milestones.length+ approvedReports <= proposalMilestoneCount,
+
+            if ((!lastProgressReport) && (milestones.length+ approvedReports != totalMilestoneCount) ) {
+                Context.revert(TAG+":: Submit progress report for all milestones.");
+            }
+
+            Context.require(milestones.length+ approvedReports <= totalMilestoneCount,
                     TAG + ":: Submitted milestone is greater than recorded on proposal.");
 
             for (int milestone : milestones) {
