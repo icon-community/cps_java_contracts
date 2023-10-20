@@ -138,6 +138,7 @@ public class Constants {
 
     public static final String DELEGATION_SNAPSHOT = "delegation_snapshot";
     public static final String MAX_DELEGATION = "max_delegation";
+    public static final String TOTAL_DELEGATION_SNAPSHOT = "totalDelegationSnapshot";
     public static final String PROPOSAL_FUND = "proposal_fund";
     public static final String PROPOSAL_FEES = "proposal_fees";
     public static final String SWAP_BLOCK_HEIGHT = "swap_block_height";
