@@ -120,7 +120,7 @@ public class MigrationTest extends CPSScoreTest {
 
         // old proposal details
         assertEquals(proposalDetails.get(IPFS_HASH),oldHash);
-        assertEquals(proposalDetails.get(IS_MILESTONE),false);
+        assertEquals(proposalDetails.get(IS_MILESTONE),true);
 
         // new proposal details
         assertEquals(newProposalDetails.get(IPFS_HASH),newHash);

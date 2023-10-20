@@ -141,7 +141,7 @@ public class CPSCore implements CPSCoreInterface {
         SetterGetter setterGetter = new SetterGetter();
         return setterGetter.balancedDollar.get();
     }
-    // TODO : set in CPFTreasury
+
     @External(readonly = true)
     public BigInteger getSponsorBondPercentage(){
         return sponsorBondPercentage.get();
@@ -1010,7 +1010,6 @@ public class CPSCore implements CPSCoreInterface {
                 MilestoneDb.rejectedVotes.at(milestonePrefix).set(rejectedVotes.add(voterStake));
 
             }
-//            MilestoneDb.progressReportHash.at(milestonePrefix).set(progressReportPrefix);
             if (budgetAdjustment && getBudgetAdjustmentFeature()) {
                 budgetAdjustment(reportKey,budgetAdjustmentVote,voteChange);
 
