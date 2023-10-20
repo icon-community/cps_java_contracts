@@ -950,7 +950,12 @@ public class CPSCore implements CPSCoreInterface {
         }
         for (MilestoneVoteAttributes milestoneVote : votes) {
             String milestonePrefix = mileStonePrefix(proposalKey,milestoneVote.id);
-
+            ArrayDB<Address> voterList = MilestoneDb.votersList.at(milestonePrefix);
+            if (!voteChange) {
+                if (ArrayDBUtils.containsInArrayDb(caller, voterList)) {
+                    Context.revert(TAG + ":: Already Voted");
+                }
+            }
 
             Map<String, Object> milestoneDetails = getDataFromMilestoneDB(milestonePrefix);
             BigInteger approvedVotes = (BigInteger) milestoneDetails.get(APPROVED_VOTES);

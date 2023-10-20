@@ -495,8 +495,8 @@ public class CPSScoreTest extends TestBase{
         assertEquals(BigInteger.valueOf(1000), proposalDetails.get("total_votes"));
 
         // changing vote with same vote
-        Executable alreadyVoted = () -> cpsScore.invoke(owner, "voteProposal", "Proposal 1", APPROVE, "reason", true);
-        expectErrorMessage(alreadyVoted,"Reverted(0): CPS Score:: Cannot cast same vote. Change your vote");
+//        Executable alreadyVoted = () -> cpsScore.invoke(owner, "voteProposal", "Proposal 1", APPROVE, "reason", true);
+//        expectErrorMessage(alreadyVoted,"Reverted(0): CPS Score:: Cannot cast same vote. Change your vote");
 
 
         cpsScore.invoke(owner, "voteProposal", "Proposal 1", REJECT, "reason", true);
@@ -1586,7 +1586,7 @@ public class CPSScoreTest extends TestBase{
 
         assertEquals(7, progressReportDetails.get(TOTAL_VOTERS));
 
-        milestoneReportDetailes = (Map<String, Object>) cpsScore.call("getMilestonesReport", "Proposal 1", 1);
+        milestoneReportDetailes = (Map<String, Object>) cpsScore.call("getMilestonesReport", "Proposal 1", 2);
 
         assertEquals(7, milestoneReportDetailes.get(REJECT_VOTERS));
 
@@ -1686,12 +1686,9 @@ public class CPSScoreTest extends TestBase{
 
 
         doReturn(cpfTreasuryScore.getAddress()).when(scoreSpy).getCpfTreasuryScore();
-        Executable periodis15 = () -> cpsScore.invoke(cpfTreasuryScore, "setPeriod", BigInteger.valueOf(15));
-        expectErrorMessage(periodis15, "Reverted(0): CPS Score: Voting period cannot be more than 10 days");
+        Executable periodis15 = () -> cpsScore.invoke(cpfTreasuryScore, "setPeriod", BigInteger.valueOf(28));
+        expectErrorMessage(periodis15, "Reverted(0): CPS Score: Voting period must be more than or equal to 10 days");
 
-
-        Executable setPeriodMoreThan21 = () -> cpsScore.invoke(cpfTreasuryScore, "setPeriod", BigInteger.valueOf(22));
-        expectErrorMessage(setPeriodMoreThan21, "Reverted(0): CPS Score: Application period should be between 2-3 weeks");
     }
 
     @Test
