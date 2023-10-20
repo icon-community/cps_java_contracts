@@ -30,24 +30,24 @@ import static org.mockito.Mockito.*;
 
 public class CPSScoreTest extends TestBase{
     public static final Address SYSTEM_ADDRESS = Address.fromString("cx0000000000000000000000000000000000000000");
-    private static final Address cpsTreasury = Address.fromString("cx0000000000000000000000000000000000000002");
-    private static final Address cpfTreasury = Address.fromString("cx0000000000000000000000000000000000000003");
-    private static final Address bnUSDScore = Address.fromString("cx0000000000000000000000000000000000000004");
+    public static final Address cpsTreasury = Address.fromString("cx0000000000000000000000000000000000000002");
+    public static final Address cpfTreasury = Address.fromString("cx0000000000000000000000000000000000000003");
+    public static final Address bnUSDScore = Address.fromString("cx0000000000000000000000000000000000000004");
     public static final String TAG = "CPS Score";
     public static final BigInteger MULTIPLIER = new BigInteger("1000000000000000000");
 
-    private static final ServiceManager sm = getServiceManager();
-    private static final Account owner = sm.createAccount();
-    private static final Account testingAccount = sm.createAccount();
-    private static final Account testingAccount1 = sm.createAccount();
-    private static final Account testingAccount2 = sm.createAccount();
-    private static final Account testingAccount3 = sm.createAccount();
-    private static final Account testingAccount4 = sm.createAccount();
-    private static final Account testingAccount5 = sm.createAccount();
-    private static final Account testingAccount6 = sm.createAccount();
-    private static final Account cpfTreasuryScore = Account.newScoreAccount(1);
-    private Score cpsScore;
-    private static MockedStatic<Context> contextMock;
+    public static final ServiceManager sm = getServiceManager();
+    public static final Account owner = sm.createAccount();
+    public static final Account testingAccount = sm.createAccount();
+    public static final Account testingAccount1 = sm.createAccount();
+    public static final Account testingAccount2 = sm.createAccount();
+    public static final Account testingAccount3 = sm.createAccount();
+    public static final Account testingAccount4 = sm.createAccount();
+    public static final Account testingAccount5 = sm.createAccount();
+    public static final Account testingAccount6 = sm.createAccount();
+    public static final Account cpfTreasuryScore = Account.newScoreAccount(1);
+    public Score cpsScore;
+    public static MockedStatic<Context> contextMock;
 
     CPSCore scoreSpy;
 
@@ -332,7 +332,7 @@ public class CPSScoreTest extends TestBase{
         cpsScore.invoke(owner, "setBnusdScore", bnUSDScore);
 
     }
-    private void registerPrepsMethod(){
+    public void registerPrepsMethod(){
         setScoresMethod();
         List<Map<String, Object>> prepDict =
                 List.of(Map.of("name", "owner", "address", owner.getAddress(), "power", BigInteger.valueOf(1000)),
@@ -1529,7 +1529,7 @@ public class CPSScoreTest extends TestBase{
 
         doReturn(totalFunds).when(scoreSpy).callScore(eq(Map.class), eq(cpfTreasury), eq("getTotalFunds"));
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("transferProposalFundToCpsTreasury"),
-                eq("Proposal 1"), eq(2),eq(2), eq(testingAccount.getAddress()), eq(owner.getAddress()),
+                eq("Proposal 1"), eq(2), eq(testingAccount.getAddress()), eq(owner.getAddress()),
                 eq(bnUSD), eq(BigInteger.valueOf(100).multiply(MULTIPLIER)));
 
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("resetSwapState"));

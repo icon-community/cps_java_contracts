@@ -3,11 +3,7 @@ package community.icon.cps.score.cpftreasury;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 import community.icon.cps.score.lib.interfaces.CPFTreasuryInterface;
-import score.Address;
-import score.ArrayDB;
-import score.Context;
-import score.DictDB;
-import score.VarDB;
+import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
@@ -485,6 +481,21 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         } else {
             Context.revert(TAG + ": Please send fund using addFund().");
         }
+    }
+
+    @External
+    public void migrateOldHashToNewHash(String oldHash, String newHash){
+        validateCpsScore();
+        int size = proposalsKeys.size();
+        for (int i = 0; i < size; i++) {
+            if (proposalsKeys.get(i).equals(oldHash)) {
+                proposalsKeys.set(i, newHash);
+            }
+        }
+
+        BigInteger totalBudget = proposalBudgets.get(oldHash);
+        proposalBudgets.set(oldHash,null);
+        proposalBudgets.set(newHash,totalBudget);
     }
 
 

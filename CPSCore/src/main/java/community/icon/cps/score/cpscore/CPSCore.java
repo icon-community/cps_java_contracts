@@ -141,7 +141,7 @@ public class CPSCore implements CPSCoreInterface {
         SetterGetter setterGetter = new SetterGetter();
         return setterGetter.balancedDollar.get();
     }
-
+    // TODO : set in CPFTreasury
     @External(readonly = true)
     public BigInteger getSponsorBondPercentage(){
         return sponsorBondPercentage.get();
@@ -1010,6 +1010,7 @@ public class CPSCore implements CPSCoreInterface {
                 MilestoneDb.rejectedVotes.at(milestonePrefix).set(rejectedVotes.add(voterStake));
 
             }
+//            MilestoneDb.progressReportHash.at(milestonePrefix).set(progressReportPrefix);
             if (budgetAdjustment && getBudgetAdjustmentFeature()) {
                 budgetAdjustment(reportKey,budgetAdjustmentVote,voteChange);
 
@@ -2501,6 +2502,208 @@ public class CPSCore implements CPSCoreInterface {
             proposalHistory.add(proposalDetails);
         }
         return Map.of(DATA, proposalHistory, COUNT, size);
+    }
+
+
+    // FOR MIGRATION
+    // THE PROJECTS WHO HAVE NOT SUBMITTED ANY PROGRESS REPORTS
+    @External
+    public void proposalChanges(String ipfsHash){
+        onlyOwner();
+        String ipfsHashPrefix = proposalPrefix(ipfsHash);
+        int projectDuration = ProposalDataDb.projectDuration.at(ipfsHashPrefix).get();
+        milestoneCount.at(ipfsHashPrefix).set(projectDuration);
+    }
+
+    // THE PROJECTS WHO HAVE PROGRESS REPORTS
+    @External
+    public void submitProposalMock(ProposalAttributes newProposal, String oldHash, int[] milestones) {
+        String newHash = newProposal.ipfs_hash;
+        Context.require(proposalKeyExists(oldHash), TAG + ": Proposal key should exist on proposal db.");
+        Context.require(!proposalKeyExists(newHash), TAG + ": Proposal key already exists.");
+
+        Address caller = Context.getCaller();
+        Context.require(!caller.isContract(), TAG + ": Contract Address not supported.");
+
+        String newIpfsHashPrefix = proposalPrefix(newHash);
+        String oldIpfsHashPrefix = proposalPrefix(oldHash);
+
+        Address contributorAddr = contributorAddress.at(oldIpfsHashPrefix).get();
+        Context.require(contributorAddr.equals(caller), "Caller should be same as old proposal");
+
+        Address sponsorAddr = sponsorAddress.at(oldIpfsHashPrefix).get();
+        Context.require(sponsorAddr.equals(newProposal.sponsor_address), "Sponsor should be same as old proposal");
+
+        int project_duration = projectDuration.at(oldIpfsHashPrefix).getOrDefault(0);
+        Context.require(newProposal.project_duration == project_duration,
+                TAG + ": Project Duration should be same as old proposal");
+
+        BigInteger projectBudget = newProposal.total_budget.multiply(EXA);
+        BigInteger budget = totalBudget.at(oldIpfsHashPrefix).getOrDefault(BigInteger.ZERO);
+        Context.require(budget.equals(projectBudget),
+                TAG + ": Project Budget should be same as old proposal");
+
+        String tokenFlag = token.at(oldIpfsHashPrefix).getOrDefault("ICX");
+        Context.require(newProposal.token.equals(tokenFlag),
+                TAG + ": Token should be same as old proposal");
+
+        addDataToProposalDB(newProposal, newIpfsHashPrefix);
+
+        BigInteger timestamp = ProposalDataDb.timestamp.at(oldIpfsHashPrefix).getOrDefault(BigInteger.ZERO);
+        ProposalDataDb.timestamp.at(newIpfsHashPrefix).set(timestamp);
+
+        int perCompleted = percentageCompleted.at(oldIpfsHashPrefix).getOrDefault(0);
+        percentageCompleted.at(newIpfsHashPrefix).set(perCompleted);
+
+        BigInteger totalVotes = ProposalDataDb.totalVotes.at(oldIpfsHashPrefix).getOrDefault(BigInteger.ZERO);
+        int totalVoters = ProposalDataDb.totalVoters.at(oldIpfsHashPrefix).getOrDefault(0);
+        BigInteger approvedVotes = ProposalDataDb.approvedVotes.at(oldIpfsHashPrefix).getOrDefault(BigInteger.ZERO);
+        BigInteger rejectedVotes = ProposalDataDb.rejectedVotes.at(oldIpfsHashPrefix).getOrDefault(BigInteger.ZERO);
+        BigInteger abstainedVotes = ProposalDataDb.abstainedVotes.at(oldIpfsHashPrefix).getOrDefault(BigInteger.ZERO);
+        int approvedReports = ProposalDataDb.approvedReports.at(oldIpfsHashPrefix).getOrDefault(0);
+
+        ProposalDataDb.totalVotes.at(newIpfsHashPrefix).set(totalVotes);
+        ProposalDataDb.totalVoters.at(newIpfsHashPrefix).set(totalVoters);
+        ProposalDataDb.approvedVotes.at(newIpfsHashPrefix).set(approvedVotes);
+        ProposalDataDb.rejectedVotes.at(newIpfsHashPrefix).set(rejectedVotes);
+        ProposalDataDb.abstainedVotes.at(newIpfsHashPrefix).set(abstainedVotes);
+        ProposalDataDb.approvedReports.at(newIpfsHashPrefix).set(approvedReports);
+
+
+        ArrayDB<Address> votersList = ProposalDataDb.votersList.at(oldIpfsHashPrefix);
+        List<Address> voterList = ArrayDBUtils.arrayDBtoList(votersList);
+        for (Address voter : voterList) {
+            ProposalDataDb.votersList.at(newIpfsHashPrefix).add(voter);
+        }
+
+        ArrayDB<Address> approveVoters = ProposalDataDb.approveVoters.at(oldIpfsHashPrefix);
+        List<Address> appVoters = ArrayDBUtils.arrayDBtoList(approveVoters);
+        for (Address voters : appVoters) {
+            ProposalDataDb.approveVoters.at(newIpfsHashPrefix).add(voters);
+        }
+
+        ArrayDB<Address> rejectVoters = ProposalDataDb.rejectVoters.at(oldIpfsHashPrefix);
+        List<Address> rejVoters = ArrayDBUtils.arrayDBtoList(rejectVoters);
+        for (Address voters : rejVoters) {
+            ProposalDataDb.rejectVoters.at(newIpfsHashPrefix).add(voters);
+        }
+
+        ArrayDB<Address> abstainVoters = ProposalDataDb.abstainVoters.at(oldIpfsHashPrefix);
+        List<Address> absVoters = ArrayDBUtils.arrayDBtoList(abstainVoters);
+        for (Address voters : absVoters) {
+            ProposalDataDb.abstainVoters.at(newIpfsHashPrefix).add(voters);
+        }
+
+        ArrayDB<String> votersReasons = ProposalDataDb.votersReasons.at(oldIpfsHashPrefix);
+        List<String> reasons = ArrayDBUtils.arrayDBtoList(votersReasons);
+        for (String reason : reasons) {
+            ProposalDataDb.votersReasons.at(newIpfsHashPrefix).add(reason);
+        }
+
+        Boolean progressSubmitted = ProposalDataDb.submitProgressReport.at(oldIpfsHashPrefix).get();
+        submitProgressReport.at(newIpfsHashPrefix).set(progressSubmitted);
+
+        ArrayDB<String> progReports = ProposalDataDb.progressReports.at(oldIpfsHashPrefix);
+        List<String> progressReportsList = ArrayDBUtils.arrayDBtoList(progReports);
+        for (int i = 0; i < progressReportsList.size(); i++) {
+            String report = progressReportsList.get(i);
+            String progressHashPrefix = progressReportPrefix(report);
+            ProgressReportDataDb.ipfsHash.at(progressHashPrefix).set(newHash);
+
+            // add to milestone db
+            String milestonePrefix = mileStonePrefix(newHash,milestones[i]);
+            MilestoneDb.id.at(milestonePrefix).set(milestones[i]);
+            MilestoneDb.status.at(milestonePrefix).set(MILESTONE_REPORT_COMPLETED);
+            MilestoneDb.progressReportHash.at(milestonePrefix).set(report);
+
+            approvedVotes = ProgressReportDataDb.approvedVotes.at(progressHashPrefix).getOrDefault(BigInteger.ZERO);
+            MilestoneDb.approvedVotes.at(milestonePrefix).set(approvedVotes);
+            rejectedVotes = ProgressReportDataDb.rejectedVotes.at(progressHashPrefix).getOrDefault(BigInteger.ZERO);
+            MilestoneDb.rejectedVotes.at(milestonePrefix).set(rejectedVotes);
+
+            approveVoters = ProgressReportDataDb.approveVoters.at(progressHashPrefix);
+            appVoters = ArrayDBUtils.arrayDBtoList(approveVoters);
+            for (Address voters : appVoters) {
+                MilestoneDb.approveVoters.at(milestonePrefix).add(voters);
+            }
+
+            rejectVoters = ProgressReportDataDb.rejectVoters.at(progressHashPrefix);
+            rejVoters = ArrayDBUtils.arrayDBtoList(rejectVoters);
+            for (Address voters : rejVoters) {
+                MilestoneDb.rejectVoters.at(milestonePrefix).add(voters);
+            }
+
+            votersList = ProgressReportDataDb.votersList.at(progressHashPrefix);
+            voterList = ArrayDBUtils.arrayDBtoList(votersList);
+            for (Address voter : voterList) {
+                MilestoneDb.votersList.at(milestonePrefix).add(voter);
+            }
+
+            BranchDB<Address, DictDB<String, Integer>> votersListIndex = ProgressReportDataDb.votersListIndices.at(progressHashPrefix);
+            List<Address> preps = arrayDBtoList(votersList);
+            for (Address prep : preps) {
+                DictDB<String, Integer> votersVote = votersListIndex.at(prep);
+                int voteData = votersVote.get(VOTE);
+                int indexData = votersVote.get(INDEX);
+                int changeVoteData = votersVote.getOrDefault(CHANGE_VOTE,0);
+
+                MilestoneDb.votersListIndices.at(milestonePrefix).at(prep).set(VOTE, voteData);
+                MilestoneDb.votersListIndices.at(milestonePrefix).at(prep).set(INDEX, indexData);
+                voteChange.at(progressHashPrefix).set(prep,changeVoteData); // TODO: Update to progressReportDB
+            }
+
+            ProposalDataDb.progressReports.at(newIpfsHashPrefix).add(report);
+        }
+
+        BigInteger sponsorDepositAmount = ProposalDataDb.sponsorDepositAmount.at(oldIpfsHashPrefix).getOrDefault(BigInteger.ZERO);
+        BigInteger sponsoredTimestamp = ProposalDataDb.sponsoredTimestamp.at(oldIpfsHashPrefix).getOrDefault(BigInteger.ZERO);
+        String sponsorDepositStatus = ProposalDataDb.sponsorDepositStatus.at(oldIpfsHashPrefix).getOrDefault("");
+        String sponsorVoteReason = ProposalDataDb.sponsorVoteReason.at(oldIpfsHashPrefix).getOrDefault("");
+
+        ProposalDataDb.sponsorDepositAmount.at(newIpfsHashPrefix).set(sponsorDepositAmount);
+        ProposalDataDb.sponsoredTimestamp.at(newIpfsHashPrefix).set(sponsoredTimestamp);
+        ProposalDataDb.sponsorDepositStatus.at(newIpfsHashPrefix).set(sponsorDepositStatus);
+        ProposalDataDb.sponsorVoteReason.at(newIpfsHashPrefix).set(sponsorVoteReason);
+
+        ArrayDBUtils.replaceArrayItem(proposalsKeyList, oldHash, newHash);
+        int getIndex = proposalsKeyListIndex.get(oldHash);
+        proposalsKeyListIndex.set(oldHash, null);
+        proposalsKeyListIndex.set(newHash, getIndex);
+
+        String oldStatus = ProposalDataDb.status.at(oldIpfsHashPrefix).getOrDefault(SPONSOR_PENDING);
+        Status statusOb = new Status();
+        ArrayDBUtils.replaceArrayItem(statusOb.proposalStatus.get(oldStatus), oldHash, newHash);
+        ProposalDataDb.status.at(newIpfsHashPrefix).set(oldStatus);
+
+        ArrayDB<String> contributedProjects = contributorProjects.at(caller);
+        ArrayDBUtils.replaceArrayItem(contributedProjects, oldHash, newHash);
+
+        ArrayDB<String> sponsoredProjects = sponsorProjects.at(sponsorAddr);
+        ArrayDBUtils.replaceArrayItem(sponsoredProjects, oldHash, newHash);
+
+        ProposalSubmitted(caller, "Successfully submitted a Proposal.");
+    }
+
+    @External
+    public void updateProposalKeyIndex(String oldHash, String newHash) {
+        validateAdmins();
+        String oldIpfsHashPrefix = proposalPrefix(oldHash);
+        String newIpfsHashPrefix = proposalPrefix(newHash);
+        BranchDB<Address, DictDB<String, Integer>> votersListIndex = ProposalDataDb.votersListIndex.at(oldIpfsHashPrefix);
+        List<Address> preps = arrayDBtoList(ProposalDataDb.votersList.at(oldIpfsHashPrefix));
+        for (Address prep : preps) {
+            DictDB<String, Integer> votersVote = votersListIndex.at(prep);
+            int voteData = votersVote.get(VOTE);
+            int indexData = votersVote.get(INDEX);
+            int changeVoteData = votersVote.getOrDefault(CHANGE_VOTE,0);
+
+            ProposalDataDb.votersListIndex.at(newIpfsHashPrefix).at(prep).set(VOTE, voteData);
+            ProposalDataDb.votersListIndex.at(newIpfsHashPrefix).at(prep).set(INDEX, indexData);
+            ProposalDataDb.votersListIndex.at(newIpfsHashPrefix).at(prep).set(CHANGE_VOTE, changeVoteData);
+        }
+
+        callScore(getCpfTreasuryScore(), "migrateOldHashToNewHash", oldHash,newHash);
+        callScore(getCpsTreasuryScore(), "updateNewProjects", oldHash, newHash);
     }
 
 

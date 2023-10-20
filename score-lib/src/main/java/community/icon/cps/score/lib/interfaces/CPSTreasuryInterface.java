@@ -2,7 +2,6 @@ package community.icon.cps.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
-
 import score.Address;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -70,10 +69,6 @@ public interface CPSTreasuryInterface {
 
     @External
     void tokenFallback(Address from, BigInteger value, byte[] _data);
-
-    //    for migration into java contract
-    @External
-    void updateSponsorAndContributorProjects();
 
     @External
     void setOnsetPayment(BigInteger paymentPercentage);

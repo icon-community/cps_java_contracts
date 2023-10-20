@@ -202,9 +202,9 @@ public class CPSTreasuryTest extends TestBase {
     @Test
     void depositProposalFund() {
         /* totalBudget = 100, onsetPayment = 1% installmentCount = 2
-        * remainingBudgetAfter onsetPayment = 99
-        * installMentAmount = 99/2 =49.5
-        */
+         * remainingBudgetAfter onsetPayment = 99
+         * installMentAmount = 99/2 =49.5
+         */
         setOnsetPayment();
         depositProposalFundMethod();
         @SuppressWarnings("unchecked")
@@ -318,7 +318,7 @@ public class CPSTreasuryTest extends TestBase {
 
     private void depositProposalFund_MilestoneCheck() {
         /* Sponsor bond = 10 % intital payement = 1%
-        * duration = 2 months milestone = 3 */
+         * duration = 2 months milestone = 3 */
         JsonObject depositProposal = new JsonObject();
         depositProposal.add("method", "depositProposalFund");
         JsonObject params = new JsonObject();
@@ -426,9 +426,9 @@ public class CPSTreasuryTest extends TestBase {
         setBnUSDScoreMethod();
 
         /* total budget = 100 sponsor reward = 2
-        * on proposal submission : contributor_reward = 1 and sponsor_reward = 0.02
-        * remainning budget = 102 -1-0.02 = 100.98
-        *  */
+         * on proposal submission : contributor_reward = 1 and sponsor_reward = 0.02
+         * remainning budget = 102 -1-0.02 = 100.98
+         *  */
         BigInteger remainingBudget = BigInteger.valueOf(10098).multiply(MULTIPLIER).divide(BigInteger.valueOf(100));
         doNothing().when(scoreSpy).callScore(eq(bnUSDScore), eq("transfer"), eq(cpfTreasury),
                 eq(remainingBudget),any());
