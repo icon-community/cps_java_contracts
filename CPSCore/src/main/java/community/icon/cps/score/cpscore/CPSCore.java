@@ -1246,9 +1246,6 @@ public class CPSCore implements CPSCoreInterface {
             prepVote.set(VOTE,0);
         }
         clearArrayDb(MilestoneDb.votersList.at(milestonePrefix));
-        ArrayDB<Integer> milestone =  milestoneSubmitted.at(progressPrefix);
-        removeArrayItem(milestone,milestoneId);
-
     }
 
     /***
@@ -1283,7 +1280,7 @@ public class CPSCore implements CPSCoreInterface {
             int milestoneCount = ProposalDataDb.getMilestoneCount(proposalPrefix(_ipfs_hash));
 
             String _proposal_status = (String) _proposal_details.get(STATUS);
-            int _approved_reports_count = (int) _proposal_details.get(APPROVED_REPORTS); // todo get milestone count
+            int _approved_reports_count = (int) _proposal_details.get(APPROVED_REPORTS);
             Address _sponsor_address = (Address) _proposal_details.get(SPONSOR_ADDRESS);
             BigInteger _sponsor_deposit_amount = (BigInteger) _proposal_details.get(SPONSOR_DEPOSIT_AMOUNT);
             String flag = (String) _proposal_details.get(TOKEN);
@@ -1298,14 +1295,14 @@ public class CPSCore implements CPSCoreInterface {
                 Map<String, Object> _milestone_details = getDataFromMilestoneDB(milestonePrefix);
 
                 // checking which prep(s) did not vote the progress report
-                checkInactivePreps(MilestoneDb.votersList.at(milestonePrefix));// TODO: fix this, voterList to be where
+                checkInactivePreps(MilestoneDb.votersList.at(milestonePrefix));
 
 
                 int milestoneStatus = (int)_milestone_details.get(STATUS);
                 if (milestoneStatus == MILESTONE_REPORT_SUBMITTED){
                     int _approve_voters = (int) _milestone_details.get(APPROVE_VOTERS);
                     BigInteger _approved_votes = (BigInteger) _milestone_details.get(APPROVED_VOTES);
-                    BigInteger _total_votes = ProgressReportDataDb.totalVotes.at(progressPrefix).get(); // TODO: take from progressreportdb
+                    BigInteger _total_votes = ProgressReportDataDb.totalVotes.at(progressPrefix).get();
                     int _total_voters = ProgressReportDataDb.totalVoters.at(progressPrefix).getOrDefault(0);
 
                     if (_total_voters == 0 || _total_votes.equals(BigInteger.ZERO) || _main_preps_list.size() < MINIMUM_PREPS) {
@@ -1757,7 +1754,7 @@ public class CPSCore implements CPSCoreInterface {
 
         int reportCount = reportKeys.size();
         for (int i = 0; i < reportCount; i++) {
-            Map<String, Object> progressReportDetails = this.getProgressReportsByHash(reportKeys.get(i)); // TODO : the milestone is not being fetched
+            Map<String, Object> progressReportDetails = this.getProgressReportsByHash(reportKeys.get(i));
             progressReportList.add(progressReportDetails);
         }
         return Map.of(DATA, progressReportList, COUNT, reportCount);
@@ -1835,7 +1832,7 @@ public class CPSCore implements CPSCoreInterface {
      :return: list of details of proposal or progress report what they need to vote on the same voting period
      ***/
     @External(readonly = true)
-    public List<Map<String, Object>> getRemainingProject(String projectType, Address walletAddress) { // TODO: MILESTONES
+    public List<Map<String, Object>> getRemainingProject(String projectType, Address walletAddress) {
         List<Map<String, Object>> _remaining_proposals = new ArrayList<>();
         List<Map<String, Object>> _remaining_progress_report = new ArrayList<>();
         if (projectType.equals(PROPOSAL)) {
@@ -2289,7 +2286,7 @@ public class CPSCore implements CPSCoreInterface {
 
             BigInteger projectBudget = (BigInteger) proposalDetails.get(TOTAL_BUDGET);
 
-            Context.require(value.equals(projectBudget.multiply(getSponsorBondPercentage()).divide(HUNDRED)), // TODO : check calculations
+            Context.require(value.equals(projectBudget.multiply(getSponsorBondPercentage()).divide(HUNDRED)),
                     TAG + ": Deposit " + getSponsorBondPercentage() +"% of the total budget of the project.");
 
             updateProposalStatus(ipfsKey, PENDING);
