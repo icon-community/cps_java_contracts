@@ -670,6 +670,7 @@ public class CPSCore implements CPSCoreInterface {
         String ipfsHashPrefix = proposalPrefix(ipfsHash);
 
         addDataToProposalDB(proposals, ipfsHashPrefix);
+        proposalPeriod.at(ipfsHashPrefix).set(period.periodCount.getOrDefault(0));
         proposalsKeyList.add(proposals.ipfs_hash);
         proposalsKeyListIndex.set(ipfsHash, proposalsKeyList.size() - 1);
         Status status = new Status();
@@ -821,11 +822,10 @@ public class CPSCore implements CPSCoreInterface {
         int totalPeriod =  duration+ proposalPeriod.at(ipfsHashPrefix).getOrDefault(0);
 
         if (totalMilestoneCount !=0 ) {
-            boolean lastProgressReport = totalPeriod >= currentPeriod;
+            boolean lastProgressReport = totalPeriod <= currentPeriod;
             int approvedReports = ProposalDataDb.approvedReports.at(ipfsHashPrefix).getOrDefault(0);
             int[] milestones = progressReport.milestoneCompleted;
-
-            if ((!lastProgressReport) && (milestones.length+ approvedReports != totalMilestoneCount) ) {
+            if ((lastProgressReport) && (milestones.length+ approvedReports != totalMilestoneCount) ) {
                 Context.revert(TAG+":: Submit progress report for all milestones.");
             }
 
@@ -888,7 +888,7 @@ public class CPSCore implements CPSCoreInterface {
             }
         }
         return true;
-    }
+    }// TODO : make this generic
 
 
     @Override
@@ -1350,12 +1350,20 @@ public class CPSCore implements CPSCoreInterface {
                     }
                 }
             }
+            PeriodController period = new PeriodController();
+            int currentPeriod = period.periodCount.get();
+            int duration = projectDuration.at(proposal_prefix).get();
+            int totalPeriod =  duration+ proposalPeriod.at(proposal_prefix).getOrDefault(0);
+            Address _contributor_address = (Address) _proposal_details.get(CONTRIBUTOR_ADDRESS);
             if (milestonePassed > 0) {
                 updateProgressReportStatus(_reports, APPROVED);
                 // Request CPS Treasury to add some installments amount to the contributor address
                 callScore(getCpsTreasuryScore(), "sendInstallmentToContributor", _ipfs_hash,milestonePassed);
                 //Request CPS Treasury to add some sponsor reward amount to the sponsor address
                 callScore(getCpsTreasuryScore(), "sendRewardToSponsor", _ipfs_hash,milestonePassed);
+                if (currentPeriod>totalPeriod){
+                    updateProposalStatus(_ipfs_hash, proposal_prefix,_proposal_details);
+                }
             }
             else {
                 updateProgressReportStatus(_reports, PROGRESS_REPORT_REJECTED);
