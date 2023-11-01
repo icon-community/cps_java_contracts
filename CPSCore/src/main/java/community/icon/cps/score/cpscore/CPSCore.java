@@ -654,6 +654,8 @@ public class CPSCore implements CPSCoreInterface {
         Context.require(!Context.getCaller().isContract(), TAG + ": Contract Address not supported.");
         Context.require(proposals.project_duration <= MAX_PROJECT_PERIOD,
                 TAG + ": Maximum Project Duration exceeds " + MAX_PROJECT_PERIOD + " months.");
+        Context.require(proposals.project_duration>=proposals.milestoneCount,
+                TAG+ ": Milestones count should be equal to or greater than project duration.");
         BigInteger projectBudget = proposals.total_budget.multiply(EXA);
         BigInteger maxCapBNUsd = getMaxCapBNUsd();
         Context.require(projectBudget.compareTo(maxCapBNUsd) < 0,
