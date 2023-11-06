@@ -331,7 +331,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         Address balancedDollar = CPFTreasury.balancedDollar.get();
 
         Context.call(balancedDollar, TRANSFER, address, value, "".getBytes());
-        EmergencyFundTranserred(address, value,purpose);
+        EmergencyFundTransferred(address, value,purpose);
     }
 
 
@@ -521,6 +521,6 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     }
 
     @EventLog(indexed = 1)
-    public void EmergencyFundTranserred(Address _address, BigInteger _value, String _purpose) {
+    public void EmergencyFundTransferred(Address _address, BigInteger _value, String _purpose) {
     }
 }

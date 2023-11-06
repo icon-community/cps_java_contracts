@@ -53,6 +53,24 @@ public interface CPFTreasuryInterface {
     @External(readonly = true)
     Address getRouterScore();
 
+    @External
+    void setOracleAddress(Address score);
+
+    @External(readonly = true)
+    Address getOracleAddress();
+
+    @External
+    void setSponsorBondPercentage(BigInteger bondValue);
+
+    @External
+    void setPeriod(BigInteger applicationPeriod);
+
+    @External
+    void setOnsetPayment(BigInteger paymentPercentage);
+
+    @External(readonly = true)
+    int getSlippagePercentage();
+
     @External(readonly = true)
     BigInteger getEmergencyFund();
 
@@ -84,6 +102,9 @@ public interface CPFTreasuryInterface {
     void withdrawFromEmergencyFund(BigInteger value, Address address, String purpose);
 
     @External
+    void allocateEmergencyFund(BigInteger value);
+
+    @External
     void setOraclePercentageDifference(int value);
 
     @External
@@ -110,6 +131,8 @@ public interface CPFTreasuryInterface {
 
     @Payable
     void fallback();
+    @External
+    void toggleSwapFlag();
 
     //EventLogs
     @EventLog(indexed = 1)
@@ -123,4 +146,7 @@ public interface CPFTreasuryInterface {
 
     @EventLog(indexed = 1)
     void FundReceived(Address _sponsor_address, String note);
+
+    @EventLog(indexed = 1)
+    void EmergencyFundTransferred(Address _address, BigInteger _value, String _purpose);
 }

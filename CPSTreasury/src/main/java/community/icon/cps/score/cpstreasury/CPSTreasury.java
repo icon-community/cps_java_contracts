@@ -50,7 +50,6 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
     private final VarDB<Address> balancedDollar = Context.newVarDB(BALANCED_DOLLAR, Address.class);
     private final BranchDB<String, ArrayDB<String>> contributorProjects = Context.newBranchDB(CONTRIBUTOR_PROJECTS, String.class);
     private final BranchDB<String, ArrayDB<String>> sponsorProjects = Context.newBranchDB(SPONSOR_PROJECTS, String.class);
-    private final VarDB<Integer> batchSize = Context.newVarDB("batch_size", Integer.class);
     private final VarDB<BigInteger> onsetPaymentPercentage = Context.newVarDB(ONSET_PAYMENT,BigInteger.class);
 
     private static final BigInteger HUNDRED = BigInteger.valueOf(100);
@@ -167,7 +166,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
 
     @Override
     @External(readonly = true)
-    public Map<String, ?> getContributorProjectedFund(Address walletAddress) { // TODO: check in UI too
+    public Map<String, ?> getContributorProjectedFund(Address walletAddress) {
         BigInteger totalAmountToBePaidbnUSD = BigInteger.ZERO;
         List<Map<String, ?>> projectDetails = new ArrayList<>();
         ArrayDB<String> proposalKeysArray = contributorProjects.at(walletAddress.toString());
@@ -186,7 +185,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
                     BigInteger totalBudget = (BigInteger) proposal_details.get(consts.TOTAL_BUDGET);
                     BigInteger totalPaidAmount = (BigInteger) proposal_details.get(consts.WITHDRAW_AMOUNT);
 
-                    BigInteger remaingAmount = totalBudget.subtract(totalPaidAmount);
+                    BigInteger remainingAmount = totalBudget.subtract(totalPaidAmount);
                     Map<String, ?> project_details = Map.of(
                             consts.IPFS_HASH, _ipfs_key,
                             consts.TOKEN, flag,
@@ -194,7 +193,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
                             consts.TOTAL_INSTALLMENT_PAID, totalPaidAmount,
                             consts.TOTAL_INSTALLMENT_COUNT, totalInstallment,
                             consts.TOTAL_TIMES_INSTALLMENT_PAID, totalPaidCount,
-                            consts.INSTALLMENT_AMOUNT, remaingAmount.divide(BigInteger.valueOf(totalInstallment-totalPaidCount)));
+                            consts.INSTALLMENT_AMOUNT, remainingAmount.divide(BigInteger.valueOf(totalInstallment-totalPaidCount)));
 
                     projectDetails.add(project_details);
 
@@ -208,7 +207,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
         return Map.of(
                 DATA, projectDetails,
                 PROJECT_COUNT, projectDetails.size(),
-                TOTAL_AMOUNT, Map.of( "bnUSD", totalAmountToBePaidbnUSD),
+                TOTAL_AMOUNT, Map.of( consts.bnUSD, totalAmountToBePaidbnUSD),
                 WITHDRAWN_BNUSD, installmentRecord.getOrDefault(consts.bnUSD, BigInteger.ZERO));
     }
 
@@ -280,10 +279,10 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
         return Map.of(
                 DATA, projectDetails,
                 PROJECT_COUNT, projectDetails.size(),
-                TOTAL_AMOUNT, Map.of( "bnUSD", totalAmountToBePaidbnUSD),
+                TOTAL_AMOUNT, Map.of( consts.bnUSD, totalAmountToBePaidbnUSD),
                 WITHDRAWN_ICX, installmentRecord.getOrDefault(consts.ICX, BigInteger.ZERO),
                 WITHDRAWN_BNUSD, installmentRecord.getOrDefault(consts.bnUSD, BigInteger.ZERO),
-                TOTAL_SPONSOR_BOND, Map.of("bnUSD", totalSponsorBondbnUSD)
+                TOTAL_SPONSOR_BOND, Map.of(consts.bnUSD, totalSponsorBondbnUSD)
         );
     }
 
@@ -343,7 +342,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
         } else {
             installmentAmount = remainingAmount.divide(BigInteger.valueOf(_installmentCount)).multiply(BigInteger.valueOf(milestoneApproved));
         }
-        int newInstallmentCount = _installmentCount - milestoneApproved; // TODO: check for negative value
+        int newInstallmentCount = _installmentCount - milestoneApproved;
 
         setInstallmentCount(prefix, newInstallmentCount);
         setRemainingAmount(prefix, remainingAmount.subtract(installmentAmount));
@@ -369,7 +368,7 @@ private void onsetPaymentContributor(String _ipfs_key){
         BigInteger withdrawAmount = (BigInteger) proposalData.get(consts.WITHDRAW_AMOUNT);
 
         BigInteger onSetPaymentPercentage = getOnsetPayment();
-        BigInteger onsetAmount = (totalBudget.multiply(getOnsetPayment()).divide(HUNDRED));
+        BigInteger onsetAmount = (totalBudget.multiply(onSetPaymentPercentage).divide(HUNDRED));
 
         setRemainingAmount(prefix,totalBudget.subtract(onsetAmount));
 
@@ -456,9 +455,9 @@ private void onsetPaymentContributor(String _ipfs_key){
         BigInteger remainingReward = sponsorReward.subtract(sponsorWithdrawAmount);
         BigInteger totalReturnAmount = remainingBudget.add(remainingReward);
 
-        Address cpfTreasuryAddres = cpfTreasuryScore.get();
+        Address cpfTreasuryAddress = cpfTreasuryScore.get();
         if (flag.equals(consts.ICX)) {
-            callScore(totalReturnAmount, cpfTreasuryAddres, "disqualifyProposalFund", ipfsKey);
+            callScore(totalReturnAmount, cpfTreasuryAddress, "disqualifyProposalFund", ipfsKey);
         } else if (flag.equals(consts.bnUSD)) {
             JsonObject disqualifyProjectParams = new JsonObject();
             disqualifyProjectParams.add("method", "disqualifyProject");
@@ -466,7 +465,7 @@ private void onsetPaymentContributor(String _ipfs_key){
             params.add("ipfs_key", ipfsKey);
             disqualifyProjectParams.add("params", params);
 
-            callScore(balancedDollar.get(), "transfer", cpfTreasuryAddres, totalReturnAmount, disqualifyProjectParams.toString().getBytes());
+            callScore(balancedDollar.get(), "transfer", cpfTreasuryAddress, totalReturnAmount, disqualifyProjectParams.toString().getBytes());
         } else {
             Context.revert(TAG + ": Not supported token.");
         }

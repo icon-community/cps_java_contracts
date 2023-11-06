@@ -38,7 +38,6 @@ public class Constants {
     public static final String MAX_CAP = "maxCap";
     public static final String REMAINING_TO_SWAP = "remainingToSwap";
     public static final String PROJECT_IPFS_HASH = "ipfs_hash";
-    public static final String MILESTONE_COUNT = "milestone_count";
     public static final String PROJECT_DURATION = "project_duration";
     public static final String SPONSOR_ADDRESS = "sponsor_address";
     public static final String CONTRIBUTOR_ADDRESS = "contributor_address";
