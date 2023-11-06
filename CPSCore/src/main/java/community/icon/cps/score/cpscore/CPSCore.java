@@ -2524,7 +2524,13 @@ public class CPSCore implements CPSCoreInterface {
     public void migrateProposal(){ // TODO: call this in before migration
         onlyOwner();
         List<String> activeProposals = getProposalsKeysByStatus(ACTIVE);
-        for (String proposal:activeProposals) {
+        List<String> pausedProposals = getProposalsKeysByStatus(PAUSED);
+
+        List<String> proposals = new ArrayList<>();
+        proposals.addAll(activeProposals);
+        proposals.addAll(pausedProposals);
+
+        for (String proposal:proposals) {
             migrationProposal.add(proposal);
         }
     }
