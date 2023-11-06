@@ -893,7 +893,7 @@ public class CPSCore implements CPSCoreInterface {
             }
         }
         return true;
-    }// TODO : make this generic
+    }
 
 
     @Override
@@ -998,18 +998,11 @@ public class CPSCore implements CPSCoreInterface {
             approvedVotes = MilestoneDb.approvedVotes.at(milestonePrefix).getOrDefault(BigInteger.ZERO);
             rejectedVotes = MilestoneDb.rejectedVotes.at(milestonePrefix).getOrDefault(BigInteger.ZERO);
             if (milestoneVote.vote.equals(APPROVE)) {
-                // TODO : test on this more
-//                if (ArrayDBUtils.containsInArrayDb(caller,MilestoneDb.approveVoters.at(milestonePrefix))){
-//                    continue;
-//                }
                 MilestoneDb.approveVoters.at(milestonePrefix).add(caller);
                 votersIndexDb.set(VOTE, APPROVE_);
                 MilestoneDb.approvedVotes.at(milestonePrefix).set(approvedVotes.add(voterStake));
 
             } else {
-//                if (ArrayDBUtils.containsInArrayDb(caller,MilestoneDb.rejectVoters.at(milestonePrefix))){
-//                    continue;
-//                }
                 MilestoneDb.rejectVoters.at(milestonePrefix).add(caller);
                 votersIndexDb.set(VOTE, REJECT_);
                 MilestoneDb.rejectedVotes.at(milestonePrefix).set(rejectedVotes.add(voterStake));
@@ -2539,14 +2532,7 @@ public class CPSCore implements CPSCoreInterface {
         }
     }
 
-//    @External // TODO: remove this in production
-//    public void setProposalPeriod(String newHash, int period){
-//        onlyOwner();
-//        String newIpfsHashPrefix = proposalPrefix(newHash);
-//        proposalPeriod.at(newIpfsHashPrefix).set(period);
-//    }
-
-    // THE PROJECTS WHO HAVE PROGRESS REPORTS
+    // TODO: rename the method
     @External
     public void submitProposalMock(ProposalAttributes newProposal, String oldHash, int[] milestones) {
         String newHash = newProposal.ipfs_hash;
@@ -2689,7 +2675,7 @@ public class CPSCore implements CPSCoreInterface {
 
                 MilestoneDb.votersListIndices.at(milestonePrefix).at(prep).set(VOTE, voteData);
                 MilestoneDb.votersListIndices.at(milestonePrefix).at(prep).set(INDEX, indexData);
-                voteChange.at(progressHashPrefix).set(prep,changeVoteData); // TODO: Update to progressReportDB
+                voteChange.at(progressHashPrefix).set(prep,changeVoteData);
             }
 
             ProposalDataDb.progressReports.at(newIpfsHashPrefix).add(report);
