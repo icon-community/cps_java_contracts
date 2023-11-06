@@ -18,20 +18,20 @@ public class ProposalData {
         public String status;
         public int milestoneCount;
     }
-    private final BranchDB<String, VarDB<String>> ipfsHash = Context.newBranchDB(consts.IPFS_HASH, String.class);
-    private final BranchDB<String, VarDB<BigInteger>> totalBudget = Context.newBranchDB(consts.TOTAL_BUDGET, BigInteger.class);
-    private final BranchDB<String, VarDB<BigInteger>> sponsorReward = Context.newBranchDB(consts.SPONSOR_REWARD, BigInteger.class);
-    private final BranchDB<String, VarDB<Integer>> projectDuration = Context.newBranchDB(consts.PROJECT_DURATION, Integer.class);
-    private final BranchDB<String, VarDB<Address>> sponsorAddress = Context.newBranchDB(consts.SPONSOR_ADDRESS, Address.class);
-    private final BranchDB<String, VarDB<Address>> contributorAddress = Context.newBranchDB(consts.CONTRIBUTOR_ADDRESS, Address.class);
-    private final BranchDB<String, VarDB<String>> token = Context.newBranchDB(consts.TOKEN, String.class);
-    private final BranchDB<String, VarDB<BigInteger>> withdrawAmount = Context.newBranchDB(consts.WITHDRAW_AMOUNT, BigInteger.class);
-    private final BranchDB<String, VarDB<BigInteger>> sponsorWithdrawAmount = Context.newBranchDB(consts.SPONSOR_WITHDRAW_AMOUNT, BigInteger.class);
-    private final BranchDB<String, VarDB<BigInteger>> remainingAmount = Context.newBranchDB(consts.REMAINING_AMOUNT, BigInteger.class);
-    private final BranchDB<String, VarDB<BigInteger>> sponsorRemainingAmount = Context.newBranchDB(consts.SPONSOR_REMAINING_AMOUNT, BigInteger.class);
-    private final BranchDB<String, VarDB<Integer>> installmentCount = Context.newBranchDB(consts.INSTALLMENT_COUNT, Integer.class);
-    private final BranchDB<String, VarDB<Integer>> sponsorRewardCount = Context.newBranchDB(consts.SPONSOR_REWARD_COUNT, Integer.class);
-    private final BranchDB<String, VarDB<String>> status = Context.newBranchDB(consts.STATUS, String.class);
+    public final BranchDB<String, VarDB<String>> ipfsHash = Context.newBranchDB(consts.IPFS_HASH, String.class);
+    public final BranchDB<String, VarDB<BigInteger>> totalBudget = Context.newBranchDB(consts.TOTAL_BUDGET, BigInteger.class);
+    public final BranchDB<String, VarDB<BigInteger>> sponsorReward = Context.newBranchDB(consts.SPONSOR_REWARD, BigInteger.class);
+    public final BranchDB<String, VarDB<Integer>> projectDuration = Context.newBranchDB(consts.PROJECT_DURATION, Integer.class);
+    public final BranchDB<String, VarDB<Address>> sponsorAddress = Context.newBranchDB(consts.SPONSOR_ADDRESS, Address.class);
+    public final BranchDB<String, VarDB<Address>> contributorAddress = Context.newBranchDB(consts.CONTRIBUTOR_ADDRESS, Address.class);
+    public final BranchDB<String, VarDB<String>> token = Context.newBranchDB(consts.TOKEN, String.class);
+    public final BranchDB<String, VarDB<BigInteger>> withdrawAmount = Context.newBranchDB(consts.WITHDRAW_AMOUNT, BigInteger.class);
+    public final BranchDB<String, VarDB<BigInteger>> sponsorWithdrawAmount = Context.newBranchDB(consts.SPONSOR_WITHDRAW_AMOUNT, BigInteger.class);
+    public final BranchDB<String, VarDB<BigInteger>> remainingAmount = Context.newBranchDB(consts.REMAINING_AMOUNT, BigInteger.class);
+    public final BranchDB<String, VarDB<BigInteger>> sponsorRemainingAmount = Context.newBranchDB(consts.SPONSOR_REMAINING_AMOUNT, BigInteger.class);
+    public final BranchDB<String, VarDB<Integer>> installmentCount = Context.newBranchDB(consts.INSTALLMENT_COUNT, Integer.class);
+    public final BranchDB<String, VarDB<Integer>> sponsorRewardCount = Context.newBranchDB(consts.SPONSOR_REWARD_COUNT, Integer.class);
+    public final BranchDB<String, VarDB<String>> status = Context.newBranchDB(consts.STATUS, String.class);
 
 
 
