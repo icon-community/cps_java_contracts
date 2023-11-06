@@ -1249,8 +1249,8 @@ public class CPSCore implements CPSCoreInterface {
             prepVote.set(VOTE,0);
         }
         clearArrayDb(MilestoneDb.votersList.at(milestonePrefix));
-        removeArrayItem(milestoneSubmitted.at(progressPrefix),milestoneId);
-        clearArrayDb(ProgressReportDataDb.votersReasons.at(progressPrefix));// TODO: removing milestone submitted and voteReason
+//        removeArrayItem(milestoneSubmitted.at(progressPrefix),milestoneId);
+//        clearArrayDb(ProgressReportDataDb.votersReasons.at(progressPrefix));// TODO: removing milestone submitted and voteReason
     }
 
     /***
@@ -2188,19 +2188,12 @@ public class CPSCore implements CPSCoreInterface {
             period.periodName.set(APPLICATION_PERIOD);
             PeriodUpdate("Period Updated back to Application Period due to less Registered P-Reps Count");
 
-        } else if (getProposalsKeysByStatus(PENDING).size() == 0 && status.progressReportStatus.get(WAITING).size() == 0 && activeProposals.size() + status.paused.size() == 0) {
+        } else if (getProposalsKeysByStatus(PENDING).size() == 0 && status.progressReportStatus.get(WAITING).size() == 0 && activeProposals.size() + status.paused.size() >= 0) {
             createActiveProposalDb();
             checkProgressReportSubmission();
             period.periodName.set(APPLICATION_PERIOD);
             PeriodUpdate("Period Updated back to Application Period due not enough " +
                     "Voting Proposals or Progress Reports.");
-        } else if (status.pending.size() == 0 && status.waitingProgressReports.size() == 0 && activeProposals.size() + status.paused.size() > 0) {
-            createActiveProposalDb();
-            checkProgressReportSubmission();
-            period.periodName.set(APPLICATION_PERIOD);
-            PeriodUpdate("Period Updated back to Application Period due not enough " +
-                    "Voting Proposals or Progress Reports.");
-
         } else {
             createActiveProposalDb();
             PeriodUpdate("Period Updated to Voting Period");
