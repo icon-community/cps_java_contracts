@@ -1354,7 +1354,6 @@ public class CPSCore implements CPSCoreInterface {
             int currentPeriod = period.periodCount.get();
             int duration = projectDuration.at(proposal_prefix).get();
             int totalPeriod =  duration+ proposalPeriod.at(proposal_prefix).getOrDefault(0);
-            Address _contributor_address = (Address) _proposal_details.get(CONTRIBUTOR_ADDRESS);
             if (milestonePassed > 0) {
                 updateProgressReportStatus(_reports, APPROVED);
                 // Request CPS Treasury to add some installments amount to the contributor address
@@ -2574,7 +2573,7 @@ public class CPSCore implements CPSCoreInterface {
 
         BigInteger timestamp = ProposalDataDb.timestamp.at(oldIpfsHashPrefix).getOrDefault(BigInteger.ZERO);
         ProposalDataDb.timestamp.at(newIpfsHashPrefix).set(timestamp);
-        proposalPeriod.at(newIpfsHashPrefix).set(2); // TODO: hard coded
+        proposalPeriod.at(newIpfsHashPrefix).set(31); // TODO: hard coded
 
         int perCompleted = percentageCompleted.at(oldIpfsHashPrefix).getOrDefault(0);
         percentageCompleted.at(newIpfsHashPrefix).set(perCompleted);
