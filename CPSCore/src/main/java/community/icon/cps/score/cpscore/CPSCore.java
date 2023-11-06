@@ -2646,6 +2646,11 @@ public class CPSCore implements CPSCoreInterface {
             ProgressReportDataDb.ipfsHash.at(progressHashPrefix).set(newHash);
 
             // add to milestone db
+            String progressReportStatus = ProgressReportDataDb.status.at(progressHashPrefix).getOrDefault("");
+
+            if (progressReportStatus.equals(APPROVED)){
+                milestoneSubmitted.at(progressHashPrefix).add(milestones[i]);
+            }
             String milestonePrefix = mileStonePrefix(newHash,milestones[i]);
             MilestoneDb.id.at(milestonePrefix).set(milestones[i]);
             MilestoneDb.status.at(milestonePrefix).set(MILESTONE_REPORT_COMPLETED);
