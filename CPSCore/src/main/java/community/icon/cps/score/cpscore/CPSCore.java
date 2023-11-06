@@ -723,14 +723,14 @@ public class CPSCore implements CPSCoreInterface {
         BigInteger rejectedVotes = (BigInteger) proposalDetails.get(REJECTED_VOTES);
         BigInteger abstainedVotes = (BigInteger) proposalDetails.get(ABSTAINED_VOTES);
         Integer totalVoter = (Integer) proposalDetails.get(TOTAL_VOTERS);
-        if (totalVoter == 0) {
+        if (totalVoter == 0 || totalVotes.equals(BigInteger.ZERO)) {
             ProposalDataDb.totalVoters.at(proposalPrefix).set(pReps.validPreps.size());
+            ProposalDataDb.totalVotes.at(proposalPrefix).set(totalDelegationSnapshot.getOrDefault(BigInteger.ZERO));
         }
 
         DictDB<String, Integer> votersIndexDb = votersListIndex.at(proposalPrefix).at(caller);
 
         if (!voteChange) {
-            ProposalDataDb.totalVotes.at(proposalPrefix).set(totalVotes.add(voterStake));
             ProposalDataDb.votersList.at(proposalPrefix).add(caller);
             votersIndexDb.set(INDEX, ProposalDataDb.votersList.at(proposalPrefix).size());
             ProposalDataDb.votersReasons.at(proposalPrefix).add(voteReason);
