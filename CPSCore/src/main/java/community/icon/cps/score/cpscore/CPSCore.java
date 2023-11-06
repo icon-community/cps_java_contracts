@@ -1249,6 +1249,8 @@ public class CPSCore implements CPSCoreInterface {
             prepVote.set(VOTE,0);
         }
         clearArrayDb(MilestoneDb.votersList.at(milestonePrefix));
+        removeArrayItem(milestoneSubmitted.at(progressPrefix),milestoneId);
+        clearArrayDb(ProgressReportDataDb.votersReasons.at(progressPrefix));// TODO: removing milestone submitted and voteReason
     }
 
     /***
