@@ -101,6 +101,7 @@ public class ProposalDataDb {
                 Map.entry(BUDGET_ADJUSTMENT, budgetAdjustment.at(prefix).getOrDefault(false)),
                 Map.entry(MILESTONE_COUNT,milestoneCount.at(prefix).getOrDefault(0)),
                 Map.entry(IS_MILESTONE,isMilestone.at(prefix).getOrDefault(false)),
+                Map.entry(PERCENTAGE_COMPLETED,percentageCompleted.at(prefix).getOrDefault(0)),
                 Map.entry(SUBMIT_PROGRESS_REPORT, submitProgressReport.at(prefix).getOrDefault(false)));
     }
 
