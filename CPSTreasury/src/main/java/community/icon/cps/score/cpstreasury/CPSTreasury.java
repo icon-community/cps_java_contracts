@@ -140,7 +140,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
     }
 
     @Override
-    @External
+    @External(readonly = true)
     public Address getBnUSDScore() {
         return balancedDollar.get();
     }
@@ -542,21 +542,62 @@ private void onsetPaymentContributor(String _ipfs_key){
     public void updateNewProjects(String oldHash, String newHash) {
         validateCpsScore();
 
+        String newIpfsHashPrefix = proposalPrefix(newHash);
         String oldProposalPrefix = proposalPrefix(oldHash);
 
-        Address contributorAddress = getContributorAddress(oldProposalPrefix);
-        Address sponsorAddress = getSponsorAddress(oldProposalPrefix);
+        Address _contributorAddress = getContributorAddress(oldProposalPrefix);
+        Address _sponsorAddress = getSponsorAddress(oldProposalPrefix);
 
-        ArrayDB<String> contributedProjects = contributorProjects.at(contributorAddress.toString());
+        ArrayDB<String> contributedProjects = contributorProjects.at(_contributorAddress.toString());
         replaceArrayItem(contributedProjects, oldHash, newHash);
 
-        ArrayDB<String> sponsoredProjects = sponsorProjects.at(sponsorAddress.toString());
+        ArrayDB<String> sponsoredProjects = sponsorProjects.at(_sponsorAddress.toString());
         replaceArrayItem(sponsoredProjects, oldHash, newHash);
 
         replaceArrayItem(proposalsKeys, oldHash, newHash);
         int getIndex = proposalsKeyListIndex.get(oldHash);
         proposalsKeyListIndex.set(oldHash, null);
         proposalsKeyListIndex.set(newHash, getIndex);
+
+        // for proposal db
+        String _ipfsHash = ipfsHash.at(oldProposalPrefix).get();
+        ipfsHash.at(newIpfsHashPrefix).set(_ipfsHash);
+
+        BigInteger _totalBudget = totalBudget.at(oldProposalPrefix).get();
+        totalBudget.at(newIpfsHashPrefix).set(_totalBudget);
+
+        BigInteger _sponsorReward = sponsorReward.at(oldProposalPrefix).get();
+        sponsorReward.at(newIpfsHashPrefix).set(_sponsorReward);
+
+        int _projectDuration = projectDuration.at(oldProposalPrefix).get();
+        projectDuration.at(newIpfsHashPrefix).set(_projectDuration);
+
+        sponsorAddress.at(newIpfsHashPrefix).set(_sponsorAddress);
+        contributorAddress.at(newIpfsHashPrefix).set(_contributorAddress);
+
+        String _token = token.at(oldProposalPrefix).get();
+        token.at(newIpfsHashPrefix).set(_token);
+
+        BigInteger _withdrawAmount = withdrawAmount.at(oldProposalPrefix).get();
+        withdrawAmount.at(newIpfsHashPrefix).set(_withdrawAmount);
+
+        BigInteger _sponsorWithdrawAmount = sponsorWithdrawAmount.at(oldProposalPrefix).get();
+        sponsorWithdrawAmount.at(newIpfsHashPrefix).set(_sponsorWithdrawAmount);
+
+        BigInteger _remainingAmount = remainingAmount.at(oldProposalPrefix).get();
+        remainingAmount.at(newIpfsHashPrefix).set(_remainingAmount);
+
+        BigInteger _sponsorRemainingAmount = sponsorRemainingAmount.at(oldProposalPrefix).get();
+        sponsorRemainingAmount.at(newIpfsHashPrefix).set(_sponsorRemainingAmount);
+
+        int _installmentCount = installmentCount.at(oldProposalPrefix).get();
+        installmentCount.at(newIpfsHashPrefix).set(_installmentCount);
+
+        int _sponsorRewardCount = sponsorRewardCount.at(oldProposalPrefix).get();
+        sponsorRewardCount.at(newIpfsHashPrefix).set(_sponsorRewardCount);
+
+        String _status = status.at(oldProposalPrefix).get();
+        status.at(newIpfsHashPrefix).set(_status);
     }
 
 
