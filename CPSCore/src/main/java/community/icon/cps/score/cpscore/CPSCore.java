@@ -1311,13 +1311,13 @@ public class CPSCore implements CPSCoreInterface {
                     int _total_voters = ProgressReportDataDb.totalVoters.at(progressPrefix).getOrDefault(0);
 
                     if (_total_voters == 0 || _total_votes.equals(BigInteger.ZERO) || _main_preps_list.size() < MINIMUM_PREPS) {
-                        updateMilestoneStatus(milestonePrefix, MILESTONE_REPORT_REJECTED,_reports);
+                        MilestoneDb.status.at(milestonePrefix).set(MILESTONE_REPORT_REJECTED);
                         updateMilestoneDB(milestonePrefix,progressPrefix, milestoneSubmitted.get(i));
                     } else {
                         double votersRatio = (double) _approve_voters / _total_voters;
                         double votesRatio = _approved_votes.doubleValue() / _total_votes.doubleValue();
                         if (votersRatio >= MAJORITY && votesRatio >= MAJORITY) {
-                            updateMilestoneStatus(milestonePrefix, MILESTONE_REPORT_COMPLETED,_reports);
+                            MilestoneDb.status.at(milestonePrefix).set(MILESTONE_REPORT_COMPLETED);
                             _approved_reports_count +=1 ;
                             milestonePassed +=1;
 
@@ -1344,7 +1344,7 @@ public class CPSCore implements CPSCoreInterface {
                             ProposalDataDb.approvedReports.at(proposal_prefix).set(_approved_reports_count);
 
                         }else {
-                            updateMilestoneStatus(milestonePrefix, MILESTONE_REPORT_REJECTED,_reports);
+                            MilestoneDb.status.at(milestonePrefix).set(MILESTONE_REPORT_REJECTED);
                             updateMilestoneDB(milestonePrefix,progressPrefix, milestoneSubmitted.get(i));
                         }
                     }
@@ -1586,11 +1586,6 @@ public class CPSCore implements CPSCoreInterface {
         status.progressReportStatus.get(progressStatus).add(progressHash);
     }
 
-    private void updateMilestoneStatus(String milestonePrefix, int milestoneStatus, String progressHash ){
-
-        MilestoneDb.status.at(milestonePrefix).set(milestoneStatus);
-
-    }
 
     private void checkInactivePreps(ArrayDB<Address> prepList) {
         PReps pReps = new PReps();
