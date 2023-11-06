@@ -61,6 +61,9 @@ public class CPSCore implements CPSCoreInterface {
     private final BranchDB<Address, ArrayDB<String>> contributorProjects = Context.newBranchDB(CONTRIBUTOR_PROJECTS, String.class);
     private static final BigInteger HUNDRED = BigInteger.valueOf(100);
 
+    // TODO: remove on next update
+    private final ArrayDB<String> migrationProposal = Context.newArrayDB("migration_proposal",String.class);
+
     public CPSCore(@Optional BigInteger bondValue, @Optional BigInteger applicationPeriod) {
         if (sponsorBondPercentage.get() == null){
             sponsorBondPercentage.set(bondValue);
@@ -2524,10 +2527,29 @@ public class CPSCore implements CPSCoreInterface {
         milestoneCount.at(ipfsHashPrefix).set(projectDuration);
     }
 
+    @External
+    public void migrateProposal(){ // TODO: call this in before migration
+        onlyOwner();
+        List<String> activeProposals = getProposalsKeysByStatus(ACTIVE);
+        for (String proposal:activeProposals) {
+            migrationProposal.add(proposal);
+        }
+    }
+
+//    @External // TODO: remove this in production
+//    public void setProposalPeriod(String newHash, int period){
+//        onlyOwner();
+//        String newIpfsHashPrefix = proposalPrefix(newHash);
+//        proposalPeriod.at(newIpfsHashPrefix).set(period);
+//    }
+
     // THE PROJECTS WHO HAVE PROGRESS REPORTS
     @External
     public void submitProposalMock(ProposalAttributes newProposal, String oldHash, int[] milestones) {
         String newHash = newProposal.ipfs_hash;
+        if (!containsInArrayDb(oldHash,migrationProposal)){
+            Context.revert(TAG+ ": Proposal cannot be migrated.");
+        }
         Context.require(proposalKeyExists(oldHash), TAG + ": Proposal key should exist on proposal db.");
         Context.require(!proposalKeyExists(newHash), TAG + ": Proposal key already exists.");
 
@@ -2560,6 +2582,7 @@ public class CPSCore implements CPSCoreInterface {
 
         BigInteger timestamp = ProposalDataDb.timestamp.at(oldIpfsHashPrefix).getOrDefault(BigInteger.ZERO);
         ProposalDataDb.timestamp.at(newIpfsHashPrefix).set(timestamp);
+        proposalPeriod.at(newIpfsHashPrefix).set(2); // TODO: hard coded
 
         int perCompleted = percentageCompleted.at(oldIpfsHashPrefix).getOrDefault(0);
         percentageCompleted.at(newIpfsHashPrefix).set(perCompleted);
@@ -2689,7 +2712,7 @@ public class CPSCore implements CPSCoreInterface {
 
         ArrayDB<String> sponsoredProjects = sponsorProjects.at(sponsorAddr);
         ArrayDBUtils.replaceArrayItem(sponsoredProjects, oldHash, newHash);
-
+        removeArrayItem(migrationProposal,oldHash);
         ProposalSubmitted(caller, "Successfully submitted a Proposal.");
     }
 
