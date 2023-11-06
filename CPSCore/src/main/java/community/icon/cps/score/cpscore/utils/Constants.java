@@ -9,7 +9,7 @@ public class Constants {
     public static final String TAG = "CPS Score";
 
 
-    public static final BigInteger EXA = new BigInteger("1000000000000000000");
+    public static final BigInteger EXA = BigInteger.valueOf(1000000000000000000L);
     public static final Integer MINIMUM_PREPS = 7;
 
     public static final Integer MAX_PROJECT_PERIOD = 12;
@@ -58,7 +58,6 @@ public class Constants {
 
     public static final String ICX = "ICX";
     public static final String bnUSD = "bnUSD";
-    public static final List<String> SUPPORTED_TOKENS = List.of(ICX, bnUSD);
 
     public static final String MAINTENANCE = "maintenance";
     public static final String MESSAGE = "message";
@@ -74,8 +73,6 @@ public class Constants {
     public static final String SPONSOR_ADDRESS = "sponsor_address";
     public static final String TOTAL_BUDGET = "total_budget";
     public static final String ACTIVE_PROPOSALS = "active_proposals";
-    public static final String VOTING_PROPOSALS = "voting_proposals";
-    public static final String VOTING_PROGRESS_REPORTS = "voting_progress_reports";
     public static final String AMOUNT = "_total_amount";
     public static final String ADDRESS = "address";
 
@@ -110,7 +107,6 @@ public class Constants {
     public static final String CONTRIBUTOR_ADDRESS = "contributor_address";
     public static final String TX_HASH = "tx_hash";
     public static final String IPFS_HASH = "ipfs_hash";
-    public static final String REPORT_KEY = "report_key";
     public static final String REPORT_HASH = "report_hash";
     public static final String MILESTONE_ID= "milestoneID";
     public static final String PROJECT_DURATION = "project_duration";
@@ -137,11 +133,17 @@ public class Constants {
     public static final String STATUS = "status";
     public static final String DATA = "data";
     public static final String COUNT = "count";
+    public static final String VOTING_PREP = "votingPRep";
+    public static final String PAY_PENALTY = "payPenalty";
+    public static final String IS_REGISTERED = "isRegistered";
+    public static final String IS_PREP = "isPRep";
+    public static final String PENALTY_AMOUNT1 = "penaltyAmount";
+    public static final String TRANSFER = "transfer";
+    public static final String METHOD = "method";
 
     public static final String DELEGATION_SNAPSHOT = "delegation_snapshot";
     public static final String MAX_DELEGATION = "max_delegation";
     public static final String TOTAL_DELEGATION_SNAPSHOT = "totalDelegationSnapshot";
-    public static final String PROPOSAL_FUND = "proposal_fund";
     public static final String PROPOSAL_FEES = "proposal_fees";
     public static final String SWAP_BLOCK_HEIGHT = "swap_block_height";
     public static final String SWAP_COUNT = "swap_count";
@@ -198,9 +200,6 @@ public class Constants {
     public static final Integer PENALTY_LEVELS = 3;
 
     //    migration
-    public static final int MIGRATION_BATCH = 10;
-
-    public static final String BATCH_SIZE = "batch_size";
     public static final Integer MILESTONE_REPORT_SUBMITTED = 1;
     public static final Integer MILESTONE_REPORT_REJECTED = 2;
     public static final Integer MILESTONE_REPORT_COMPLETED = 3;
