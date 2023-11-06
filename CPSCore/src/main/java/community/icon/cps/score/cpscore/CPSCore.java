@@ -2509,19 +2509,10 @@ public class CPSCore implements CPSCoreInterface {
     }
 
 
-    // FOR MIGRATION
-    // THE PROJECTS WHO HAVE NOT SUBMITTED ANY PROGRESS REPORTS
-    @External
-    public void proposalChanges(String ipfsHash){
-        onlyOwner();
-        String ipfsHashPrefix = proposalPrefix(ipfsHash);
-        int projectDuration = ProposalDataDb.projectDuration.at(ipfsHashPrefix).get();
-        milestoneCount.at(ipfsHashPrefix).set(projectDuration);
-    }
 
     @External
     public void migrateProposal(){ // TODO: call this in before migration
-        onlyOwner();
+        validateAdmins();
         List<String> activeProposals = getProposalsKeysByStatus(ACTIVE);
         List<String> pausedProposals = getProposalsKeysByStatus(PAUSED);
 
@@ -2532,6 +2523,13 @@ public class CPSCore implements CPSCoreInterface {
         for (String proposal:proposals) {
             migrationProposal.add(proposal);
         }
+    }
+
+    @External
+    public void updatePeriodCount(String newHash, int count){
+        validateAdmins();
+        String newIpfsHashPrefix = proposalPrefix(newHash);
+        proposalPeriod.at(newIpfsHashPrefix).set(count);
     }
 
     // TODO: rename the method
