@@ -1366,7 +1366,7 @@ public class CPSCore implements CPSCoreInterface {
                 callScore(getCpsTreasuryScore(), "sendInstallmentToContributor", _ipfs_hash,milestonePassed);
                 //Request CPS Treasury to add some sponsor reward amount to the sponsor address
                 callScore(getCpsTreasuryScore(), "sendRewardToSponsor", _ipfs_hash,milestonePassed);
-                if (currentPeriod>totalPeriod){
+                if (currentPeriod >= totalPeriod && milestonePassed != milestoneSubmittedSize){
                     updateProposalStatus(_ipfs_hash, proposal_prefix,_proposal_details);
                 }
             }
@@ -1385,6 +1385,9 @@ public class CPSCore implements CPSCoreInterface {
         String flag = (String) _proposal_details.get(TOKEN);
 
         if (_proposal_status.equals(ACTIVE)) {
+            String proposalPrefix = proposalPrefix(_ipfs_hash);
+            int project_duration = (int) _proposal_details.get(PROJECT_DURATION);
+            projectDuration.at(proposalPrefix).set(project_duration+1);
             updateProposalStatus(_ipfs_hash, PAUSED);
         } else if (_proposal_status.equals(PAUSED)) {
             updateProposalStatus(_ipfs_hash, DISQUALIFIED);
