@@ -56,7 +56,9 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
     public static final BigInteger MAX_ONSET_PAYMENT = BigInteger.valueOf(20);
 
     public CPSTreasury() {
-        onsetPaymentPercentage.set(BigInteger.TEN);
+        if(onsetPaymentPercentage.get() == null){
+            onsetPaymentPercentage.set(BigInteger.TEN);
+        }
     }
 
     @Override
