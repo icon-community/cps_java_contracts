@@ -17,6 +17,8 @@ public class MilestoneDb {
     public static final BranchDB<String, ArrayDB<Address>> votersList = Context.newBranchDB(VOTERS_LIST, Address.class);
     public static final BranchDB<String, ArrayDB<Address>> approveVoters = Context.newBranchDB(APPROVE_VOTERS, Address.class);
     public static final BranchDB<String, ArrayDB<Address>> rejectVoters = Context.newBranchDB(REJECT_VOTERS, Address.class);
+    public static final BranchDB<String, VarDB<Integer>> days = Context.newBranchDB("days", Integer.class);
+    public static final BranchDB<String, VarDB<BigInteger>> budget = Context.newBranchDB("budget", BigInteger.class);
 
     public static final BranchDB<String, BranchDB<Address, DictDB<String, Integer>>> votersListIndices = Context.newBranchDB(VOTERS_LIST_INDEXES, Integer.class);
 
@@ -26,6 +28,8 @@ public class MilestoneDb {
         progressReportHash.at(prefix).set(milestoneData.reportHash);
         approvedVotes.at(prefix).set(BigInteger.ZERO);
         rejectedVotes.at(prefix).set(BigInteger.ZERO);
+        days.at(prefix).set(milestoneData.days);
+        budget.at(prefix).set(milestoneData.budget);
 
     }
 

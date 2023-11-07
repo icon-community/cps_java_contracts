@@ -37,13 +37,15 @@ public interface CPSCoreInterface {
         public Boolean budget_adjustment;
         public BigInteger additional_budget;
         public int additional_month;
-        public int[] milestoneCompleted;
+//        public int[] milestoneCompleted;
     }
 
     public static class MilestonesAttributes {
         public int id;
         public String reportHash;
         public int status;
+        public int days;
+        public BigInteger budget;
     }
 
     public static class MilestoneVoteAttributes {
@@ -178,7 +180,7 @@ public interface CPSCoreInterface {
 
 
     @External
-    void submitProgressReport(ProgressReportAttributes progressReport);
+    void submitProgressReport(ProgressReportAttributes progressReport, MilestonesAttributes[] milestone);
 
 
     @External
