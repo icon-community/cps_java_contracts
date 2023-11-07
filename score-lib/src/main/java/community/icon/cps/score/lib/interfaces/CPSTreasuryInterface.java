@@ -56,7 +56,7 @@ public interface CPSTreasuryInterface {
                             int addedInstallmentCount);
 
     @External
-    void sendInstallmentToContributor(String ipfsKey, int installmentCount);
+    void sendInstallmentToContributor(String ipfsKey, BigInteger milestoneBudget);
 
     @External
     void sendRewardToSponsor(String ipfsKey, int installmentCount);

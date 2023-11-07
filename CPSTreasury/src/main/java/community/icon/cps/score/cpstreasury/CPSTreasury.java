@@ -326,7 +326,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
 
     @Override
     @External
-    public void sendInstallmentToContributor(String ipfsKey, int milestoneApproved) {
+    public void sendInstallmentToContributor(String ipfsKey, BigInteger milestoneBudget) {
         validateCpsScore();
         Context.require(proposalExists(ipfsKey), TAG + ": Invalid IPFS Hash.");
         BigInteger installmentAmount;
@@ -339,14 +339,17 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
         Address contributorAddress = (Address) proposalData.get(consts.CONTRIBUTOR_ADDRESS);
         String flag = (String) proposalData.get(consts.TOKEN);
 
-        if (_installmentCount == 1) {
-            installmentAmount = remainingAmount;
-        } else {
-            installmentAmount = remainingAmount.divide(BigInteger.valueOf(_installmentCount)).multiply(BigInteger.valueOf(milestoneApproved));
-        }
-        int newInstallmentCount = _installmentCount - milestoneApproved;
+        Context.require(milestoneBudget.compareTo(remainingAmount)<= 0,TAG+"Requested budget is greater than remaining amount.");
+        installmentAmount = remainingAmount.subtract(milestoneBudget);
 
-        setInstallmentCount(prefix, newInstallmentCount);
+//        if (_installmentCount == 1) {
+//            installmentAmount = remainingAmount;
+//        } else {
+//            installmentAmount = remainingAmount.subtract(milestoneBudget);
+//        }
+//        int newInstallmentCount = _installmentCount - milestoneApproved;
+
+//        setInstallmentCount(prefix, newInstallmentCount);
         setRemainingAmount(prefix, remainingAmount.subtract(installmentAmount));
         setWithdrawAmount(prefix, withdrawAmount.add(installmentAmount));
         DictDB<String, BigInteger> installmentFund = this.installmentFundRecord.at(contributorAddress.toString());
@@ -354,7 +357,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
         installmentFund.set(flag, installmentFundAmount.add(installmentAmount));
         ProposalFundSent(contributorAddress, "new installment " + installmentAmount + " " + flag + " sent to contributors address.");
 
-        if (newInstallmentCount == 0) {
+        if (remainingAmount.subtract(installmentAmount).equals(BigInteger.ZERO)) {
             setStatus(prefix, COMPLETED);
         }
     }
