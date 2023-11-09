@@ -781,10 +781,33 @@ public class CPSCore implements CPSCoreInterface {
         swapBNUsdToken();
     }
 
+    @External(readonly = true) // todo: make this private
+    public List<Integer> getMilestoneDeadline(String ipfsHash){
+
+        String ipfsHAshPRefix = proposalPrefix(ipfsHash);
+        ArrayDB<Integer> milestoneIDs = milestoneIds.at(ipfsHAshPRefix);
+
+        List<Integer> milestoneIdList= new ArrayList<>();
+        for (int i = 0; i < milestoneIDs.size(); i++) {
+            int milestoneId = milestoneIDs.get(i);
+            String milestonePrefix = mileStonePrefix(ipfsHash, milestoneId);
+            int proposalTotalPeriod = proposalPeriod.at(ipfsHAshPRefix).getOrDefault(0);
+            int completionPeriod = MilestoneDb.completionPeriod.at(milestonePrefix).getOrDefault(0);
+
+            int computedCompletionPeriod = proposalTotalPeriod+ completionPeriod;
+
+            int currentPeriod = getPeriodCount();
+            if (currentPeriod == computedCompletionPeriod){
+                milestoneIdList.add(milestoneId);
+            }
+        }
+        return milestoneIdList;
+    }
+
 
     @Override
     @External
-    public void submitProgressReport(ProgressReportAttributes progressReport, MilestonesAttributes[] milestoneData) {
+    public void submitProgressReport(ProgressReportAttributes progressReport, MilestoneSubmission[] milestoneSubmissions ) {
         checkMaintenance();
         updatePeriod();
         PeriodController period = new PeriodController();
@@ -815,49 +838,43 @@ public class CPSCore implements CPSCoreInterface {
         Context.require(proposalKeyExists(ipfsHash), TAG + ": Invalid proposal key");
         addNewProgressReportKey(ipfsHash, reportHash);
         String reportHashPrefix = progressReportPrefix(reportHash);
-//        Context.require(milestoneData.length > 0, TAG + ":: Submit at least one milestone " +
-//                "in progress report");
 
         addDataToProgressReportDB(progressReport, reportHashPrefix);
         int totalMilestoneCount = ProposalDataDb.getMilestoneCount(ipfsHashPrefix);
-        int currentPeriod = period.periodCount.get();
+        int currentPeriod = getPeriodCount();
         int duration = projectDuration.at(ipfsHashPrefix).get();
         int totalPeriod = duration + proposalPeriod.at(ipfsHashPrefix).getOrDefault(0);
 
         if (totalMilestoneCount != 0) {
-            boolean lastProgressReport = totalPeriod <= currentPeriod;
+            boolean lastProgressReport = totalPeriod-currentPeriod == 0;
             int approvedReports = ProposalDataDb.approvedReports.at(ipfsHashPrefix).getOrDefault(0);
-            int[] milestones = new int[]{milestoneData.length};
-            if ((lastProgressReport) && (milestones.length + approvedReports != totalMilestoneCount)) {
+            if ((lastProgressReport) && (milestoneSubmissions.length + approvedReports != totalMilestoneCount)) {
                 Context.revert(TAG + ":: Submit progress report for all milestones.");
             }
 
-            Context.require(milestones.length + approvedReports <= totalMilestoneCount,
+
+            Context.require(milestoneSubmissions.length + approvedReports <= totalMilestoneCount,
                     TAG + ":: Submitted milestone is greater than recorded on proposal.");
 
-            for (MilestonesAttributes milestone: milestoneData) {
-                int milestoneStatus = getMileststoneStatusOf(ipfsHash, milestone.id);
+            for (MilestoneSubmission milestoneAttr: milestoneSubmissions) {
+                if (getMilestoneDeadline(ipfsHash).size() > 0){
+                    Context.require(getMilestoneDeadline(ipfsHash).contains(milestoneAttr.id),TAG +
+                            ": Submit milestone report for milestone id " + getMilestoneDeadline(ipfsHash));
+                }
+                int milestoneStatus = getMileststoneStatusOf(ipfsHash, milestoneAttr.id);
                 if (milestoneStatus == MILESTONE_REPORT_COMPLETED || milestoneStatus == MILESTONE_REPORT_SUBMITTED) {
                     Context.revert(TAG + " Milestone already completed/submitted " + milestoneStatus);
                 }
-                addDataToMilestoneDb(milestone, mileStonePrefix(ipfsHash, milestone.id));
-                milestoneSubmitted.at(reportHashPrefix).add(milestone.id);
+                int stats = MILESTONE_REPORT_NOT_COMPLETED;
+                if (milestoneAttr.status){
+                    stats = MILESTONE_REPORT_SUBMITTED;
+                }
+                String milestonePrefix = mileStonePrefix(ipfsHash,milestoneAttr.id);
+                MilestoneDb.status.at(milestonePrefix).set(stats);
+                MilestoneDb.progressReportHash.at(milestonePrefix).set(reportHash);
+                milestoneSubmitted.at(reportHashPrefix).add(milestoneAttr.id);
             }
 
-//            for (int milestone : milestones) {
-//
-//                int milestoneStatus = getMileststoneStatusOf(ipfsHash, milestone);
-//                if (milestoneStatus == MILESTONE_REPORT_COMPLETED || milestoneStatus == MILESTONE_REPORT_SUBMITTED) {
-//                    Context.revert(TAG + " Milestone already completed/submitted " + milestoneStatus);
-//                }
-//
-//                MilestonesAttributes milestonesAttributes = new MilestonesAttributes();
-//                milestonesAttributes.reportHash = reportHash;
-//                milestonesAttributes.id = milestone;
-//                milestonesAttributes.days = ;
-//                addDataToMilestoneDb(milestonesAttributes, mileStonePrefix(ipfsHash, milestone));
-//                milestoneSubmitted.at(reportHashPrefix).add(milestone);
-//            }
         }
 
         if (progressReport.budget_adjustment) {

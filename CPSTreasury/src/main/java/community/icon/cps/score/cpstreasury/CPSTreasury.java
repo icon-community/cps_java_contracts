@@ -340,7 +340,10 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
         String flag = (String) proposalData.get(consts.TOKEN);
 
         Context.require(milestoneBudget.compareTo(remainingAmount)<= 0,TAG+"Requested budget is greater than remaining amount.");
-        installmentAmount = remainingAmount.subtract(milestoneBudget);
+//        installmentAmount = remainingAmount.subtract(milestoneBudget);
+
+        installmentAmount = milestoneBudget;
+        Context.println("yhe installment is "+ installmentAmount);
 
 //        if (_installmentCount == 1) {
 //            installmentAmount = remainingAmount;

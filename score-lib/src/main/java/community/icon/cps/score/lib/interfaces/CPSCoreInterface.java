@@ -46,6 +46,11 @@ public interface CPSCoreInterface {
         public BigInteger budget;
     }
 
+    public static class MilestoneSubmission{
+        public int id;
+        public boolean status;
+    }
+
     public static class MilestoneVoteAttributes {
         public int id;
         public String vote;
@@ -178,7 +183,7 @@ public interface CPSCoreInterface {
 
 
     @External
-    void submitProgressReport(ProgressReportAttributes progressReport, MilestonesAttributes[] milestone);
+    void submitProgressReport(ProgressReportAttributes progressReport, MilestoneSubmission[] milestoneSubmissions);
 
 
     @External
