@@ -2409,6 +2409,7 @@ public class CPSCore implements CPSCoreInterface {
             sponsoredTimestamp.at(proposalPrefix).set(BigInteger.valueOf(Context.getBlockTimestamp()));
             sponsorDepositStatus.at(proposalPrefix).set(BOND_RECEIVED);
             sponsorVoteReason.at(proposalPrefix).set(voteReason);
+            proposalPeriod.at(proposalPrefix).set(period.periodCount.getOrDefault(0));
 
             SponsorBondReceived(from, "Sponsor Bond " + value + " " + token + " Received.");
         } else {
@@ -2546,13 +2547,14 @@ public class CPSCore implements CPSCoreInterface {
             String prefix = proposalPrefix(proposals);
             String status = ProposalDataDb.status.at(prefix).getOrDefault("");
             if (ArrayDBUtils.containsInList(status, List.of(ACTIVE, PAUSED))) {
-                int _project_duration = projectDuration.at(prefix).getOrDefault(0);
-                int _approved_reports_count = approvedReports.at(prefix).getOrDefault(0);
-                boolean _last_progress_report = _project_duration - _approved_reports_count == 1;
+                int projectDuration = ProposalDataDb.projectDuration.at(prefix).getOrDefault(0);
+                int proposalPeriod = ProposalDataDb.proposalPeriod.at(prefix).getOrDefault(0);
+                boolean lastProgressReport = proposalPeriod + projectDuration- getPeriodCount() == 0;
                 Map<String, Object> _proposals_details = Map.of(PROJECT_TITLE, projectTitle.at(prefix).getOrDefault(""),
                         IPFS_HASH, proposals,
                         NEW_PROGRESS_REPORT, submitProgressReport.at(prefix).getOrDefault(false),
-                        "last_progress_report", _last_progress_report);
+                        "last_progress_report", lastProgressReport,
+                        "milestoneDeadlines", getMilestoneDeadline(proposals));
                 _proposal_titles.add(_proposals_details);
             }
         }
