@@ -718,11 +718,12 @@ public class CPSCore implements CPSCoreInterface {
         Context.require(status.equals(PENDING), TAG + ": Proposal must be done in Voting state.");
 
         BigInteger voterStake = getDelegation(caller);
-        BigInteger totalVotes = (BigInteger) proposalDetails.get(TOTAL_VOTES);
-        BigInteger approvedVotes = (BigInteger) proposalDetails.get(APPROVED_VOTES);
-        BigInteger rejectedVotes = (BigInteger) proposalDetails.get(REJECTED_VOTES);
-        BigInteger abstainedVotes = (BigInteger) proposalDetails.get(ABSTAINED_VOTES);
-        Integer totalVoter = (Integer) proposalDetails.get(TOTAL_VOTERS);
+        Map<String, Object> proposalVoteDetails = getVoteResult(ipfsKey);
+        BigInteger totalVotes = (BigInteger) proposalVoteDetails.get(TOTAL_VOTES);
+        BigInteger approvedVotes = (BigInteger) proposalVoteDetails.get(APPROVED_VOTES);
+        BigInteger rejectedVotes = (BigInteger) proposalVoteDetails.get(REJECTED_VOTES);
+        BigInteger abstainedVotes = (BigInteger) proposalVoteDetails.get(ABSTAINED_VOTES);
+        Integer totalVoter = (Integer) proposalVoteDetails.get(TOTAL_VOTERS);
         if (totalVoter == 0 || totalVotes.equals(BigInteger.ZERO)) {
             ProposalDataDb.totalVoters.at(proposalPrefix).set(pReps.validPreps.size());
             ProposalDataDb.totalVotes.at(proposalPrefix).set(totalDelegationSnapshot.getOrDefault(BigInteger.ZERO));
@@ -1479,15 +1480,16 @@ public class CPSCore implements CPSCoreInterface {
 
         for (String proposal : proposals) {
             Map<String, Object> proposalDetails = getProposalDetails(proposal);
+            Map<String, Object> proposalVoteDetails = getVoteResult(proposal);
             Address sponsorAddress = (Address) proposalDetails.get(SPONSOR_ADDRESS);
             Address contributorAddress = (Address) proposalDetails.get(CONTRIBUTOR_ADDRESS);
             BigInteger totalBudget = (BigInteger) proposalDetails.get(TOTAL_BUDGET);
             int projectDuration = (int) proposalDetails.get(MILESTONE_COUNT);
             BigInteger sponsorDepositAmount = (BigInteger) proposalDetails.get(SPONSOR_DEPOSIT_AMOUNT);
-            int approvedVoters = (int) proposalDetails.get(APPROVE_VOTERS);
-            BigInteger approvedVotes = (BigInteger) proposalDetails.get(APPROVED_VOTES);
-            BigInteger totalVotes = (BigInteger) proposalDetails.get(TOTAL_VOTES);
-            int totalVoters = (int) proposalDetails.get(TOTAL_VOTERS);
+            int approvedVoters = (int) proposalVoteDetails.get(APPROVE_VOTERS);
+            BigInteger approvedVotes = (BigInteger) proposalVoteDetails.get(APPROVED_VOTES);
+            BigInteger totalVotes = (BigInteger) proposalVoteDetails.get(TOTAL_VOTES);
+            int totalVoters = (int) proposalVoteDetails.get(TOTAL_VOTERS);
             String flag = (String) proposalDetails.get(TOKEN);
             String updatedStatus;
             String proposalPrefix = proposalPrefix(proposal);
@@ -1911,6 +1913,7 @@ public class CPSCore implements CPSCoreInterface {
         ArrayDB<Address> _voters_list = ProposalDataDb.votersList.at(prefix);
         ArrayDB<Address> approve_voters = ProposalDataDb.approveVoters.at(prefix);
         ArrayDB<Address> reject_voters = ProposalDataDb.rejectVoters.at(prefix);
+        ArrayDB<Address> abstain_voters = ProposalDataDb.abstainVoters.at(prefix);
         List<Map<String, Object>> _vote_status = new ArrayList<>();
         String vote;
         for (int i = 0; i < _voters_list.size(); i++) {
@@ -1938,9 +1941,11 @@ public class CPSCore implements CPSCoreInterface {
 
         return Map.of(DATA, _vote_status, APPROVE_VOTERS, approve_voters.size(),
                 REJECT_VOTERS, reject_voters.size(),
+                ABSTAIN_VOTERS, abstain_voters.size(),
                 TOTAL_VOTERS, ProposalDataDb.totalVoters.at(prefix).getOrDefault(0),
                 APPROVED_VOTES, ProposalDataDb.approvedVotes.at(prefix).getOrDefault(BigInteger.ZERO),
                 REJECTED_VOTES, ProposalDataDb.rejectedVotes.at(prefix).getOrDefault(BigInteger.ZERO),
+                ABSTAINED_VOTES, ProposalDataDb.abstainedVotes.at(prefix).getOrDefault(BigInteger.ZERO),
                 TOTAL_VOTES, ProposalDataDb.totalVotes.at(prefix).getOrDefault(BigInteger.ZERO));
     }
 

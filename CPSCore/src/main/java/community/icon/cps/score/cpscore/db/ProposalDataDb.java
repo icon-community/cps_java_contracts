@@ -88,22 +88,15 @@ public class ProposalDataDb {
                 Map.entry(STATUS, status.at(prefix).getOrDefault("")),
                 Map.entry(TX_HASH, txHash.at(prefix).getOrDefault("")),
                 Map.entry(TOKEN, token.at(prefix).getOrDefault("")),
-                Map.entry(TOTAL_VOTES, totalVotes.at(prefix).getOrDefault(BigInteger.ZERO)),
-                Map.entry(TOTAL_VOTERS, totalVoters.at(prefix).getOrDefault(0)),
-                Map.entry(APPROVED_VOTES, approvedVotes.at(prefix).getOrDefault(BigInteger.ZERO)),
-                Map.entry(REJECTED_VOTES, rejectedVotes.at(prefix).getOrDefault(BigInteger.ZERO)),
-                Map.entry(ABSTAINED_VOTES, abstainedVotes.at(prefix).getOrDefault(BigInteger.ZERO)),
                 Map.entry(SPONSOR_DEPOSIT_AMOUNT, sponsorDepositAmount.at(prefix).getOrDefault(BigInteger.ZERO)),
                 Map.entry(SPONSORED_TIMESTAMP, sponsoredTimestamp.at(prefix).getOrDefault(BigInteger.ZERO)),
                 Map.entry(SPONSOR_DEPOSIT_STATUS, sponsorDepositStatus.at(prefix).getOrDefault("")),
-                Map.entry(APPROVE_VOTERS, approveVoters.at(prefix).size()),
-                Map.entry(REJECT_VOTERS, rejectVoters.at(prefix).size()),
-                Map.entry(ABSTAIN_VOTERS, abstainVoters.at(prefix).size()),
                 Map.entry(BUDGET_ADJUSTMENT, budgetAdjustment.at(prefix).getOrDefault(false)),
                 Map.entry(MILESTONE_COUNT,milestoneCount.at(prefix).getOrDefault(0)),
                 Map.entry(IS_MILESTONE,isMilestone.at(prefix).getOrDefault(false)),
                 Map.entry(PERCENTAGE_COMPLETED,percentageCompleted.at(prefix).getOrDefault(0)),
-                Map.entry(SUBMIT_PROGRESS_REPORT, submitProgressReport.at(prefix).getOrDefault(false)));
+                Map.entry(SUBMIT_PROGRESS_REPORT, submitProgressReport.at(prefix).getOrDefault(false)),
+                Map.entry(PROPOSAL_PERIOD,proposalPeriod.at(prefix).getOrDefault(0)));
     }
 
     public static int getMilestoneCount(String prefix) {
