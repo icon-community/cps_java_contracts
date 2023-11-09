@@ -417,7 +417,11 @@ public class CPSCore implements CPSCoreInterface {
     @Override
     @External(readonly = true)
     public boolean checkPriorityVoting(Address _prep) {
-        return ArrayDBUtils.containsInArrayDb(_prep, priorityVotedPreps);
+        int count = (int)getActiveProposalsList(0).get(COUNT);
+        if (count >0 ){
+            return ArrayDBUtils.containsInArrayDb(_prep, priorityVotedPreps);
+        }
+        return false;
     }
 
     @Override
