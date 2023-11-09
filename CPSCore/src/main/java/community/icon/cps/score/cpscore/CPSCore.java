@@ -1322,80 +1322,172 @@ public class CPSCore implements CPSCoreInterface {
                 // checking which prep(s) did not vote the progress report
                 checkInactivePreps(MilestoneDb.votersList.at(milestonePrefix));
                 int milestoneStatus = (int) _milestone_details.get(STATUS);
-                if (milestoneStatus == MILESTONE_REPORT_SUBMITTED) {
-                    int _approve_voters = (int) _milestone_details.get(APPROVE_VOTERS);
-                    BigInteger _approved_votes = (BigInteger) _milestone_details.get(APPROVED_VOTES);
-                    BigInteger _total_votes = ProgressReportDataDb.totalVotes.at(progressPrefix).get();
-                    int _total_voters = ProgressReportDataDb.totalVoters.at(progressPrefix).getOrDefault(0);
+                int _approve_voters = (int) _milestone_details.get(APPROVE_VOTERS);
+                BigInteger _approved_votes = (BigInteger) _milestone_details.get(APPROVED_VOTES);
+                BigInteger _total_votes = ProgressReportDataDb.totalVotes.at(progressPrefix).get();
+                int _total_voters = ProgressReportDataDb.totalVoters.at(progressPrefix).getOrDefault(0);
 
-                    if (_total_voters == 0 || _total_votes.equals(BigInteger.ZERO) || _main_preps_list.size() < MINIMUM_PREPS) {
+                if (_total_voters == 0 || _total_votes.equals(BigInteger.ZERO) || _main_preps_list.size() < MINIMUM_PREPS) {
+                    MilestoneDb.status.at(milestonePrefix).set(MILESTONE_REPORT_REJECTED);
+                    updateMilestoneDB(milestonePrefix);
+                } else {
+                    double votersRatio = (double) _approve_voters / _total_voters;
+                    double votesRatio = _approved_votes.doubleValue() / _total_votes.doubleValue();
+                    if (votersRatio >= MAJORITY && votesRatio >= MAJORITY) {
+                        MilestoneDb.status.at(milestonePrefix).set(MILESTONE_REPORT_COMPLETED);
+                        _approved_reports_count += 1;
+                        milestonePassed += 1;
+                        milestoneBudget = milestoneBudget.add(MilestoneDb.budget.at(milestonePrefix).getOrDefault(BigInteger.ZERO));
+
+                    } else {
                         MilestoneDb.status.at(milestonePrefix).set(MILESTONE_REPORT_REJECTED);
                         updateMilestoneDB(milestonePrefix);
-                    } else {
-                        double votersRatio = (double) _approve_voters / _total_voters;
-                        double votesRatio = _approved_votes.doubleValue() / _total_votes.doubleValue();
-                        if (votersRatio >= MAJORITY && votesRatio >= MAJORITY) {
-                            MilestoneDb.status.at(milestonePrefix).set(MILESTONE_REPORT_COMPLETED);
-                            _approved_reports_count += 1;
-                            milestonePassed += 1;
-                            milestoneBudget = milestoneBudget.add(MilestoneDb.budget.at(milestonePrefix).getOrDefault(BigInteger.ZERO));
+                    }
+                }
 
-                            if (_approved_reports_count == milestoneCount) {
-                                updateProposalStatus(_ipfs_hash, COMPLETED);
-                                ProposalDataDb.updatePercentageCompleted(proposal_prefix, 100);
+                if (milestoneStatus == MILESTONE_REPORT_SUBMITTED){
+                    if (_approved_reports_count == milestoneCount) {
+                        updateProposalStatus(_ipfs_hash, COMPLETED);
+                        ProposalDataDb.updatePercentageCompleted(proposal_prefix, 100);
 
-                                // Transfer the Sponsor - Bond back to the Sponsor P - Rep after the project is completed.
-                                this.sponsorBondReturn.at(_sponsor_address.toString()).set(flag,
-                                        this.sponsorBondReturn.at(_sponsor_address.toString()).getOrDefault(flag, BigInteger.ZERO).
-                                                add(_sponsor_deposit_amount));
-                                sponsorDepositStatus.at(proposal_prefix).set(BOND_RETURNED);
-                                SponsorBondReturned(_sponsor_address,
-                                        _sponsor_deposit_amount + " " + flag + " returned to sponsor address.");
-                            } else if (_proposal_status.equals(PAUSED)) {
-                                updateProposalStatus(_ipfs_hash, ACTIVE);
-                            }
+                        // Transfer the Sponsor - Bond back to the Sponsor P - Rep after the project is completed.
+                        this.sponsorBondReturn.at(_sponsor_address.toString()).set(flag,
+                                this.sponsorBondReturn.at(_sponsor_address.toString()).getOrDefault(flag, BigInteger.ZERO).
+                                        add(_sponsor_deposit_amount));
+                        sponsorDepositStatus.at(proposal_prefix).set(BOND_RETURNED);
+                        SponsorBondReturned(_sponsor_address,
+                                _sponsor_deposit_amount + " " + flag + " returned to sponsor address.");
+                    } else if (_proposal_status.equals(PAUSED)) {
+                        updateProposalStatus(_ipfs_hash, ACTIVE);
+                    }
 
-                            int percentageCompleted = (_approved_reports_count * 100) / milestoneCount;
-                            ProposalDataDb.updatePercentageCompleted(proposal_prefix, percentageCompleted);
+                    int percentageCompleted = (_approved_reports_count * 100) / milestoneCount;
+                    ProposalDataDb.updatePercentageCompleted(proposal_prefix, percentageCompleted);
 
-                            ProposalDataDb.approvedReports.at(proposal_prefix).set(_approved_reports_count);
+                    ProposalDataDb.approvedReports.at(proposal_prefix).set(_approved_reports_count);
 
-                        } else {
-                            MilestoneDb.status.at(milestonePrefix).set(MILESTONE_REPORT_REJECTED);
-                            updateMilestoneDB(milestonePrefix);
+                    int currentPeriod = getPeriodCount();
+                    int duration = projectDuration.at(proposal_prefix).get();
+                    int totalPeriod = duration + proposalPeriod.at(proposal_prefix).getOrDefault(0);
+
+                    if (milestonePassed > 0) {
+                        updateProgressReportStatus(_reports, APPROVED);
+                        // Request CPS Treasury to add some installments amount to the contributor address
+                        callScore(getCpsTreasuryScore(), "sendInstallmentToContributor", _ipfs_hash, milestoneBudget);
+                        //Request CPS Treasury to add some sponsor reward amount to the sponsor address
+                        callScore(getCpsTreasuryScore(), "sendRewardToSponsor", _ipfs_hash, milestonePassed);
+                        if (currentPeriod >= totalPeriod && milestonePassed != milestoneSubmittedSize) {
+                            updateProposalStatus(_ipfs_hash, _proposal_details);
                         }
+                    } else {
+                        updateProgressReportStatus(_reports, PROGRESS_REPORT_REJECTED);
+                        updateProposalStatus(_ipfs_hash, _proposal_details);
+                    }
+
+                } else if (milestoneStatus == MILESTONE_REPORT_NOT_COMPLETED) {
+                    _approved_reports_count = 0;
+                    milestoneBudget = BigInteger.ZERO;
+
+                    int completionPeriod = MilestoneDb.completionPeriod.at(milestonePrefix).getOrDefault(0);
+                    boolean extended = MilestoneDb.extensionFlag.at(milestonePrefix).getOrDefault(false);
+
+                    int currentPeriod = getPeriodCount();
+
+                    if (currentPeriod == completionPeriod ){
+                        if (extended){
+                            updateProposalStatus(_ipfs_hash, _proposal_details);
+                        }
+                        else {
+                            String proposalPrefix = proposalPrefix(_ipfs_hash);
+                            int project_duration = (int) _proposal_details.get(PROJECT_DURATION);
+                            projectDuration.at(proposalPrefix).set(project_duration + 1);
+
+                            int proposal_period = (int) _proposal_details.get(PROPOSAL_PERIOD);
+                            proposalPeriod.at(proposalPrefix).set(proposal_period + 1);
+
+                            MilestoneDb.completionPeriod.at(milestonePrefix).set(completionPeriod + 1);
+                            MilestoneDb.extensionFlag.at(milestonePrefix).set(true);
+                        }
+                    }
+
+                    if (milestonePassed > 0) {
+                        updateProgressReportStatus(_reports, APPROVED);
+                    } else {
+                        updateProgressReportStatus(_reports, PROGRESS_REPORT_REJECTED);
+                        updateProposalStatus(_ipfs_hash, _proposal_details); // reject huda paused?
                     }
                 }
             }
-            PeriodController period = new PeriodController();
-            int currentPeriod = period.periodCount.get();
-            int duration = projectDuration.at(proposal_prefix).get();
-            int totalPeriod = duration + proposalPeriod.at(proposal_prefix).getOrDefault(0);
-            if (milestoneBudget.compareTo(BigInteger.ZERO) > 0) {
-                updateProgressReportStatus(_reports, APPROVED);
-                // Request CPS Treasury to add some installments amount to the contributor address
-                callScore(getCpsTreasuryScore(), "sendInstallmentToContributor", _ipfs_hash, milestoneBudget);
-                //Request CPS Treasury to add some sponsor reward amount to the sponsor address
-                callScore(getCpsTreasuryScore(), "sendRewardToSponsor", _ipfs_hash, milestonePassed);
-                if (currentPeriod >= totalPeriod && milestonePassed != milestoneSubmittedSize) {
-                    updateProposalStatus(_ipfs_hash, proposal_prefix, _proposal_details);
-                }
-            } else {
-                updateProgressReportStatus(_reports, PROGRESS_REPORT_REJECTED);
-                updateProposalStatus(_ipfs_hash, proposal_prefix, _proposal_details);
-            }
+
         }
+
     }
 
-    private void updateProposalStatus(String _ipfs_hash, String proposal_prefix, Map<String, Object> _proposal_details) {
+    private BigInteger updateVoteResult(Map<String, Object> _milestone_details, String milestonePrefix,
+                                        Map<String, Object> _proposal_details, String progressPrefix,
+                                        String proposal_prefix, String _ipfs_hash ){
+        BigInteger milestoneBudget = BigInteger.ZERO;
+        int milestonePassed = 0;
+        int milestoneCount = ProposalDataDb.getMilestoneCount(proposal_prefix);
+
+        Address _sponsor_address = (Address) _proposal_details.get(SPONSOR_ADDRESS);
+        BigInteger _sponsor_deposit_amount = (BigInteger) _proposal_details.get(SPONSOR_DEPOSIT_AMOUNT);
+        String flag = (String) _proposal_details.get(TOKEN);
+
+        String _proposal_status = (String) _proposal_details.get(STATUS);
+
+        int _approved_reports_count = (int) _proposal_details.get(APPROVED_REPORTS);
+        int _approve_voters = (int) _milestone_details.get(APPROVE_VOTERS);
+        BigInteger _approved_votes = (BigInteger) _milestone_details.get(APPROVED_VOTES);
+        BigInteger _total_votes = ProgressReportDataDb.totalVotes.at(progressPrefix).get();
+        int _total_voters = ProgressReportDataDb.totalVoters.at(progressPrefix).getOrDefault(0);
+
+        double votersRatio = (double) _approve_voters / _total_voters;
+        double votesRatio = _approved_votes.doubleValue() / _total_votes.doubleValue();
+        if (votersRatio >= MAJORITY && votesRatio >= MAJORITY) {
+            MilestoneDb.status.at(milestonePrefix).set(MILESTONE_REPORT_COMPLETED);
+            _approved_reports_count += 1;
+            milestonePassed += 1;
+            milestoneBudget = milestoneBudget.add(MilestoneDb.budget.at(milestonePrefix).getOrDefault(BigInteger.ZERO));
+
+            if (_approved_reports_count == milestoneCount) {
+                updateProposalStatus(_ipfs_hash, COMPLETED);
+                ProposalDataDb.updatePercentageCompleted(proposal_prefix, 100);
+
+                // Transfer the Sponsor - Bond back to the Sponsor P - Rep after the project is completed.
+                this.sponsorBondReturn.at(_sponsor_address.toString()).set(flag,
+                        this.sponsorBondReturn.at(_sponsor_address.toString()).getOrDefault(flag, BigInteger.ZERO).
+                                add(_sponsor_deposit_amount));
+                sponsorDepositStatus.at(proposal_prefix).set(BOND_RETURNED);
+                SponsorBondReturned(_sponsor_address,
+                        _sponsor_deposit_amount + " " + flag + " returned to sponsor address.");
+            } else if (_proposal_status.equals(PAUSED)) {
+                updateProposalStatus(_ipfs_hash, ACTIVE);
+            }
+
+            int percentageCompleted = (_approved_reports_count * 100) / milestoneCount;
+            ProposalDataDb.updatePercentageCompleted(proposal_prefix, percentageCompleted);
+
+            ProposalDataDb.approvedReports.at(proposal_prefix).set(_approved_reports_count);
+    }
+        return milestoneBudget;
+    }
+
+    @External // TODO : remove in production
+    public void updateProposalPeriod(String ipfsHash){
+        String ipfsHashPrefix = proposalPrefix(ipfsHash);
+        proposalPeriod.at(ipfsHashPrefix).set(25);
+    }
+
+    private void updateProposalStatus(String _ipfs_hash, Map<String, Object> _proposal_details) {
         String _proposal_status = (String) _proposal_details.get(STATUS);
         Address _sponsor_address = (Address) _proposal_details.get(SPONSOR_ADDRESS);
         Address _contributor_address = (Address) _proposal_details.get(CONTRIBUTOR_ADDRESS);
         BigInteger _sponsor_deposit_amount = (BigInteger) _proposal_details.get(SPONSOR_DEPOSIT_AMOUNT);
         String flag = (String) _proposal_details.get(TOKEN);
 
+        String proposalPrefix = proposalPrefix(_ipfs_hash);
         if (_proposal_status.equals(ACTIVE)) {
-            String proposalPrefix = proposalPrefix(_ipfs_hash);
             int project_duration = (int) _proposal_details.get(PROJECT_DURATION);
             projectDuration.at(proposalPrefix).set(project_duration + 1);
             updateProposalStatus(_ipfs_hash, PAUSED);
@@ -1406,7 +1498,7 @@ public class CPSCore implements CPSCoreInterface {
             removeContributor(_contributor_address, _ipfs_hash);
             removeSponsor(_sponsor_address, _ipfs_hash);
 
-            sponsorDepositStatus.at(proposal_prefix).set(BOND_CANCELLED);
+            sponsorDepositStatus.at(proposalPrefix).set(BOND_CANCELLED);
 
 //          Transferring the sponsor bond deposit to CPF after the project being disqualified
             disqualifyProject(_sponsor_address, _sponsor_deposit_amount, flag);
