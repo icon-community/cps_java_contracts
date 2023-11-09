@@ -635,7 +635,7 @@ public class CPSCore implements CPSCoreInterface {
     @Override
     @Payable
     @External
-    public void submitProposal(ProposalAttributes proposals) {
+    public void submitProposal(ProposalAttributes proposals, MilestonesAttributes[] milestones) {
         checkMaintenance();
         updatePeriod();
         PeriodController period = new PeriodController();
@@ -645,8 +645,7 @@ public class CPSCore implements CPSCoreInterface {
         Context.require(!Context.getCaller().isContract(), TAG + ": Contract Address not supported.");
         Context.require(proposals.project_duration <= MAX_PROJECT_PERIOD,
                 TAG + ": Maximum Project Duration exceeds " + MAX_PROJECT_PERIOD + " months.");
-        Context.require(proposals.milestoneCount >= proposals.project_duration,
-                TAG + ": Milestones count should be equal to or greater than project duration.");
+        Context.require(proposals.milestoneCount == milestones.length,TAG+ ": Milestone count mismatch");
         BigInteger projectBudget = proposals.total_budget.multiply(EXA);
         BigInteger maxCapBNUsd = getMaxCapBNUsd();
         Context.require(projectBudget.compareTo(maxCapBNUsd) < 0,
@@ -663,7 +662,18 @@ public class CPSCore implements CPSCoreInterface {
         String ipfsHashPrefix = proposalPrefix(ipfsHash);
 
         addDataToProposalDB(proposals, ipfsHashPrefix);
-        proposalPeriod.at(ipfsHashPrefix).set(period.periodCount.getOrDefault(0));
+        BigInteger initialPaymentPercentage = callScore(BigInteger.class,getCpsTreasuryScore(),"getOnsetPayment");
+        BigInteger milestoneBudget = proposals.total_budget.subtract(proposals.total_budget.multiply(initialPaymentPercentage).divide(HUNDRED));
+        BigInteger totalMilestoneBudget = BigInteger.ZERO;
+        for (MilestonesAttributes milestone: milestones) {
+            totalMilestoneBudget = totalMilestoneBudget.add(milestone.budget);
+            String milestonePrefix = mileStonePrefix(ipfsHash,milestone.id);
+            addDataToMilestoneDb(milestone,milestonePrefix);
+            milestoneIds.at(ipfsHashPrefix).add(milestone.id);
+        }
+        Context.require(milestoneBudget.equals(totalMilestoneBudget),TAG + ":: Total milestone budget and " +
+                "project budget is not equal");
+
         proposalsKeyList.add(proposals.ipfs_hash);
         proposalsKeyListIndex.set(ipfsHash, proposalsKeyList.size() - 1);
         Status status = new Status();

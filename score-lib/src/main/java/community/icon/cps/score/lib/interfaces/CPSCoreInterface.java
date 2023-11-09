@@ -42,9 +42,7 @@ public interface CPSCoreInterface {
 
     public static class MilestonesAttributes {
         public int id;
-        public String reportHash;
-        public int status;
-        public int days;
+        public int completionPeriod;
         public BigInteger budget;
     }
 
@@ -172,7 +170,7 @@ public interface CPSCoreInterface {
 
     @Payable
     @External
-    void submitProposal(ProposalAttributes proposals);
+    void submitProposal(ProposalAttributes proposals, MilestonesAttributes[] milestones);
 
 
     @External

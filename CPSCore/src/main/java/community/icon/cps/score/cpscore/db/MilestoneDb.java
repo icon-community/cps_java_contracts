@@ -17,18 +17,17 @@ public class MilestoneDb {
     public static final BranchDB<String, ArrayDB<Address>> votersList = Context.newBranchDB(VOTERS_LIST, Address.class);
     public static final BranchDB<String, ArrayDB<Address>> approveVoters = Context.newBranchDB(APPROVE_VOTERS, Address.class);
     public static final BranchDB<String, ArrayDB<Address>> rejectVoters = Context.newBranchDB(REJECT_VOTERS, Address.class);
-    public static final BranchDB<String, VarDB<Integer>> days = Context.newBranchDB("days", Integer.class);
-    public static final BranchDB<String, VarDB<BigInteger>> budget = Context.newBranchDB("budget", BigInteger.class);
+    public static final BranchDB<String, VarDB<Integer>> completionPeriod = Context.newBranchDB(COMPLETION_PERIOD, Integer.class);
+    public static final BranchDB<String, VarDB<BigInteger>> budget = Context.newBranchDB(BUDGET, BigInteger.class);
+    public static final BranchDB<String, VarDB<Boolean>> extensionFlag = Context.newBranchDB("extensionFlag", Boolean.class);
 
     public static final BranchDB<String, BranchDB<Address, DictDB<String, Integer>>> votersListIndices = Context.newBranchDB(VOTERS_LIST_INDEXES, Integer.class);
 
     public static void addDataToMilestoneDb(CPSCoreInterface.MilestonesAttributes milestoneData, String prefix) {
         id.at(prefix).set(milestoneData.id);
-        status.at(prefix).set(MILESTONE_REPORT_SUBMITTED);
-        progressReportHash.at(prefix).set(milestoneData.reportHash);
         approvedVotes.at(prefix).set(BigInteger.ZERO);
         rejectedVotes.at(prefix).set(BigInteger.ZERO);
-        days.at(prefix).set(milestoneData.days);
+        completionPeriod.at(prefix).set(milestoneData.completionPeriod);
         budget.at(prefix).set(milestoneData.budget);
 
     }
@@ -38,13 +37,16 @@ public class MilestoneDb {
         return Map.ofEntries(
                 Map.entry(MILESTONE_ID, id.at(prefix).get()),
                 Map.entry(STATUS, status.at(prefix).getOrDefault(0)),
+                Map.entry(COMPLETION_PERIOD, completionPeriod.at(prefix).getOrDefault(0)),
+                Map.entry(BUDGET, budget.at(prefix).getOrDefault(BigInteger.ZERO)),
                 Map.entry(REPORT_HASH, progressReportHash.at(prefix).getOrDefault("")),
                 Map.entry(TOTAL_VOTES, ProgressReportDataDb.totalVotes.at(progressReportPrefix(reportHash)).getOrDefault(BigInteger.ZERO)),
                 Map.entry(APPROVED_VOTES, approvedVotes.at(prefix).getOrDefault(BigInteger.ZERO)),
                 Map.entry(REJECTED_VOTES, rejectedVotes.at(prefix).getOrDefault(BigInteger.ZERO)),
                 Map.entry(TOTAL_VOTERS, ProgressReportDataDb.totalVoters.at(progressReportPrefix(reportHash)).getOrDefault(0)),
                 Map.entry(APPROVE_VOTERS, approveVoters.at(prefix).size()),
-                Map.entry(REJECT_VOTERS, rejectVoters.at(prefix).size()));
+                Map.entry(REJECT_VOTERS, rejectVoters.at(prefix).size()),
+                Map.entry("extensionFlag", extensionFlag.at(prefix).getOrDefault(false)));
     }
 
     public static String progressReportPrefix(String progressHash) {
