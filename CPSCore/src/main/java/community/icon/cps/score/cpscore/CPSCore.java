@@ -1290,7 +1290,6 @@ public class CPSCore implements CPSCoreInterface {
             String _ipfs_hash = (String) _report_result.get(IPFS_HASH);
             String proposal_prefix = proposalPrefix(_ipfs_hash);
             String progressPrefix = progressReportPrefix(_reports);
-            Map<String, Object> _proposal_details = getProposalDetails(_ipfs_hash);
 
             submitProgressReport.at(proposal_prefix).set(Boolean.FALSE);
 
@@ -1301,10 +1300,9 @@ public class CPSCore implements CPSCoreInterface {
             if (_budget_adjustment && getBudgetAdjustmentFeature()) {
                 updateBudgetAdjustments(_reports);
             }
-            int milestonePassed = 0;
-            BigInteger milestoneBudget = BigInteger.ZERO;
-            int milestoneCount = ProposalDataDb.getMilestoneCount(proposalPrefix(_ipfs_hash));
+            Map<String, Object> _proposal_details = getProposalDetails(_ipfs_hash);
 
+            int milestoneCount = (int)_proposal_details.get(MILESTONE_COUNT);
             String _proposal_status = (String) _proposal_details.get(STATUS);
             int _approved_reports_count = (int) _proposal_details.get(APPROVED_REPORTS);
             Address _sponsor_address = (Address) _proposal_details.get(SPONSOR_ADDRESS);
@@ -1314,13 +1312,19 @@ public class CPSCore implements CPSCoreInterface {
             List<Address> _main_preps_list = arrayDBtoList(pReps.validPreps);
 
             ArrayDB<Integer> milestoneSubmitted = ProgressReportDataDb.milestoneSubmitted.at(progressPrefix);
+
+            int milestonePassed = 0;
+            BigInteger milestoneBudget = BigInteger.ZERO;
             int milestoneSubmittedSize = milestoneSubmitted.size();
+
             for (int i = 0; i < milestoneSubmittedSize; i++) {
                 String milestonePrefix = mileStonePrefix(_ipfs_hash, milestoneSubmitted.get(i));
-                Map<String, Object> _milestone_details = getDataFromMilestoneDB(milestonePrefix);
 
                 // checking which prep(s) did not vote the progress report
                 checkInactivePreps(MilestoneDb.votersList.at(milestonePrefix));
+
+                Map<String, Object> _milestone_details = getDataFromMilestoneDB(milestonePrefix);
+
                 int milestoneStatus = (int) _milestone_details.get(STATUS);
                 int _approve_voters = (int) _milestone_details.get(APPROVE_VOTERS);
                 BigInteger _approved_votes = (BigInteger) _milestone_details.get(APPROVED_VOTES);
@@ -1337,7 +1341,6 @@ public class CPSCore implements CPSCoreInterface {
                         MilestoneDb.status.at(milestonePrefix).set(MILESTONE_REPORT_COMPLETED);
                         _approved_reports_count += 1;
                         milestonePassed += 1;
-                        milestoneBudget = milestoneBudget.add(MilestoneDb.budget.at(milestonePrefix).getOrDefault(BigInteger.ZERO));
 
                     } else {
                         MilestoneDb.status.at(milestonePrefix).set(MILESTONE_REPORT_REJECTED);
@@ -1349,6 +1352,7 @@ public class CPSCore implements CPSCoreInterface {
                     if (_approved_reports_count == milestoneCount) {
                         updateProposalStatus(_ipfs_hash, COMPLETED);
                         ProposalDataDb.updatePercentageCompleted(proposal_prefix, 100);
+                        milestoneBudget = milestoneBudget.add(MilestoneDb.budget.at(milestonePrefix).getOrDefault(BigInteger.ZERO));
 
                         // Transfer the Sponsor - Bond back to the Sponsor P - Rep after the project is completed.
                         this.sponsorBondReturn.at(_sponsor_address.toString()).set(flag,
@@ -1366,27 +1370,7 @@ public class CPSCore implements CPSCoreInterface {
 
                     ProposalDataDb.approvedReports.at(proposal_prefix).set(_approved_reports_count);
 
-                    int currentPeriod = getPeriodCount();
-                    int duration = projectDuration.at(proposal_prefix).get();
-                    int totalPeriod = duration + proposalPeriod.at(proposal_prefix).getOrDefault(0);
-
-                    if (milestonePassed > 0) {
-                        updateProgressReportStatus(_reports, APPROVED);
-                        // Request CPS Treasury to add some installments amount to the contributor address
-                        callScore(getCpsTreasuryScore(), "sendInstallmentToContributor", _ipfs_hash, milestoneBudget);
-                        //Request CPS Treasury to add some sponsor reward amount to the sponsor address
-                        callScore(getCpsTreasuryScore(), "sendRewardToSponsor", _ipfs_hash, milestonePassed);
-                        if (currentPeriod >= totalPeriod && milestonePassed != milestoneSubmittedSize) {
-                            updateProposalStatus(_ipfs_hash, _proposal_details);
-                        }
-                    } else {
-                        updateProgressReportStatus(_reports, PROGRESS_REPORT_REJECTED);
-                        updateProposalStatus(_ipfs_hash, _proposal_details);
-                    }
-
                 } else if (milestoneStatus == MILESTONE_REPORT_NOT_COMPLETED) {
-                    _approved_reports_count = 0;
-                    milestoneBudget = BigInteger.ZERO;
 
                     int completionPeriod = MilestoneDb.completionPeriod.at(milestonePrefix).getOrDefault(0);
                     boolean extended = MilestoneDb.extensionFlag.at(milestonePrefix).getOrDefault(false);
@@ -1410,14 +1394,32 @@ public class CPSCore implements CPSCoreInterface {
                         }
                     }
 
-                    if (milestonePassed > 0) {
-                        updateProgressReportStatus(_reports, APPROVED);
-                    } else {
-                        updateProgressReportStatus(_reports, PROGRESS_REPORT_REJECTED);
-                        updateProposalStatus(_ipfs_hash, _proposal_details); // reject huda paused?
-                    }
+                }
+                if (milestonePassed > 0) {
+                    updateProgressReportStatus(_reports, APPROVED);
+                } else {
+                    updateProgressReportStatus(_reports, PROGRESS_REPORT_REJECTED);
+                    updateProposalStatus(_ipfs_hash, _proposal_details);
                 }
             }
+
+            int currentPeriod = getPeriodCount(); // TODO : apply last progress report logic
+            int duration = projectDuration.at(proposal_prefix).get();
+            int totalPeriod = duration + proposalPeriod.at(proposal_prefix).getOrDefault(0);
+
+            if (milestoneBudget.compareTo(BigInteger.ZERO) > 0) {
+
+                // Request CPS Treasury to add some installments amount to the contributor address
+                callScore(getCpsTreasuryScore(), "sendInstallmentToContributor", _ipfs_hash, milestoneBudget);
+                //Request CPS Treasury to add some sponsor reward amount to the sponsor address
+                callScore(getCpsTreasuryScore(), "sendRewardToSponsor", _ipfs_hash, milestonePassed);
+                if (currentPeriod >= totalPeriod && milestonePassed != milestoneSubmittedSize) {
+                    updateProposalStatus(_ipfs_hash, _proposal_details);
+                }
+            } else {
+                updateProposalStatus(_ipfs_hash, _proposal_details);
+            }
+
 
         }
 
