@@ -2345,7 +2345,7 @@ public class CPSCore implements CPSCoreInterface {
             sponsoredTimestamp.at(proposalPrefix).set(BigInteger.valueOf(Context.getBlockTimestamp()));
             sponsorDepositStatus.at(proposalPrefix).set(BOND_RECEIVED);
             sponsorVoteReason.at(proposalPrefix).set(voteReason);
-            proposalPeriod.at(proposalPrefix).set(period.periodCount.getOrDefault(0));
+            proposalPeriod.at(proposalPrefix).set(getPeriodCount());
 
             SponsorBondReceived(from, "Sponsor Bond " + value + " " + token + " Received.");
         } else {
@@ -2662,7 +2662,7 @@ public class CPSCore implements CPSCoreInterface {
             }
             String milestonePrefix = mileStonePrefix(newHash, milestones[i]);
             MilestoneDb.id.at(milestonePrefix).set(milestones[i]);
-            MilestoneDb.status.at(milestonePrefix).set(MILESTONE_REPORT_COMPLETED);
+            MilestoneDb.status.at(milestonePrefix).set(MILESTONE_REPORT_APPROVED);
             MilestoneDb.progressReportHash.at(milestonePrefix).set(report);
 
             approvedVotes = ProgressReportDataDb.approvedVotes.at(progressHashPrefix).getOrDefault(BigInteger.ZERO);
