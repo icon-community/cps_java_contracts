@@ -1409,11 +1409,7 @@ public class CPSCore implements CPSCoreInterface {
     }
 
 
-    @External // TODO : remove in production
-    public void updateProposalPeriod(String ipfsHash){
-        String ipfsHashPrefix = proposalPrefix(ipfsHash);
-        proposalPeriod.at(ipfsHashPrefix).set(25);
-    }
+
 
     private void updateProposalStatus(String _ipfs_hash, Map<String, Object> _proposal_details) {
         String _proposal_status = (String) _proposal_details.get(STATUS);
@@ -2557,7 +2553,7 @@ public class CPSCore implements CPSCoreInterface {
     }
 
     @External
-    public void submitProposalMock(ProposalAttributes newProposal, String oldHash, int[] milestones) {
+    public void submitProposalMock(ProposalAttributes newProposal, String oldHash, MilestonesAttributes[] milestones) {
         String newHash = newProposal.ipfs_hash;
         if (!containsInArrayDb(oldHash, activeProposals)) {
             Context.revert(TAG + ": Proposal cannot be migrated.");
@@ -2591,6 +2587,14 @@ public class CPSCore implements CPSCoreInterface {
                 TAG + ": Token should be same as old proposal");
 
         addDataToProposalDB(newProposal, newIpfsHashPrefix);
+
+        for (MilestonesAttributes milestone: milestones) {
+            String milestonePrefix = mileStonePrefix(newIpfsHashPrefix,milestone.id);
+            addDataToMilestoneDb(milestone,milestonePrefix);
+            milestoneIds.at(newIpfsHashPrefix).add(milestone.id);
+        }
+
+
 
         BigInteger timestamp = ProposalDataDb.timestamp.at(oldIpfsHashPrefix).getOrDefault(BigInteger.ZERO);
         ProposalDataDb.timestamp.at(newIpfsHashPrefix).set(timestamp);
@@ -2658,10 +2662,9 @@ public class CPSCore implements CPSCoreInterface {
             String progressReportStatus = ProgressReportDataDb.status.at(progressHashPrefix).getOrDefault("");
 
             if (progressReportStatus.equals(APPROVED)) {
-                milestoneSubmitted.at(progressHashPrefix).add(milestones[i]);
+                milestoneSubmitted.at(progressHashPrefix).add(milestones[i].id);
             }
-            String milestonePrefix = mileStonePrefix(newHash, milestones[i]);
-            MilestoneDb.id.at(milestonePrefix).set(milestones[i]);
+            String milestonePrefix = mileStonePrefix(newHash, milestones[i].id);
             MilestoneDb.status.at(milestonePrefix).set(MILESTONE_REPORT_APPROVED);
             MilestoneDb.progressReportHash.at(milestonePrefix).set(report);
 
