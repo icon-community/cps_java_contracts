@@ -865,12 +865,12 @@ public class CPSCore implements CPSCoreInterface {
                             ": Submit milestone report for milestone id " + getMilestoneDeadline(ipfsHash));
                 }
                 int milestoneStatus = getMileststoneStatusOf(ipfsHash, milestoneAttr.id);
-                if (milestoneStatus == MILESTONE_REPORT_COMPLETED || milestoneStatus == MILESTONE_REPORT_SUBMITTED) {
+                if (milestoneStatus == MILESTONE_REPORT_APPROVED || milestoneStatus == MILESTONE_REPORT_COMPLETED) {
                     Context.revert(TAG + " Milestone already completed/submitted " + milestoneStatus);
                 }
                 int stats = MILESTONE_REPORT_NOT_COMPLETED;
                 if (milestoneAttr.status){
-                    stats = MILESTONE_REPORT_SUBMITTED;
+                    stats = MILESTONE_REPORT_COMPLETED;
                 }
                 String milestonePrefix = mileStonePrefix(ipfsHash,milestoneAttr.id);
                 MilestoneDb.status.at(milestonePrefix).set(stats);

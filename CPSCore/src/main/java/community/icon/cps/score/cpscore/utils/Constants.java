@@ -100,6 +100,8 @@ public class Constants {
     public static final String BUDGET_VOTERS_LIST_INDICES = "budget_voters_list_indexes";
     public static final String MILESTONE_SUBMITTED_COUNT = "milestone_submitted_count";
     public static final String VOTE_CHANGE = "vote_change";
+    public static final String COMPLETION_PERIOD = "completionPeriod";
+    public static final String BUDGET = "budget";
 
 
     public static final String TIMESTAMP = "timestamp";
@@ -200,9 +202,10 @@ public class Constants {
     public static final Integer PENALTY_LEVELS = 3;
 
     //    migration
-    public static final Integer MILESTONE_REPORT_SUBMITTED = 1;
+    public static final Integer MILESTONE_REPORT_COMPLETED = 1;
     public static final Integer MILESTONE_REPORT_REJECTED = 2;
-    public static final Integer MILESTONE_REPORT_COMPLETED = 3;
+    public static final Integer MILESTONE_REPORT_APPROVED = 3;
+    public static final Integer MILESTONE_REPORT_NOT_COMPLETED = 4;
 
 
     public static final BigInteger TOTAL_PERIOD = BigInteger.valueOf(30);
