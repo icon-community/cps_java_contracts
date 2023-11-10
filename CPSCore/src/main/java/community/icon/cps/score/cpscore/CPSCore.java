@@ -663,7 +663,10 @@ public class CPSCore implements CPSCoreInterface {
 
         addDataToProposalDB(proposals, ipfsHashPrefix);
         BigInteger initialPaymentPercentage = callScore(BigInteger.class,getCpsTreasuryScore(),"getOnsetPayment");
-        BigInteger milestoneBudget = proposals.total_budget.subtract(proposals.total_budget.multiply(initialPaymentPercentage).divide(HUNDRED));
+
+        BigInteger totalBudget = proposals.total_budget.multiply(EXA);
+        BigInteger milestoneBudget = totalBudget.subtract(totalBudget.multiply(initialPaymentPercentage).divide(HUNDRED));
+
         BigInteger totalMilestoneBudget = BigInteger.ZERO;
         for (MilestonesAttributes milestone: milestones) {
             totalMilestoneBudget = totalMilestoneBudget.add(milestone.budget);
