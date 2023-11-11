@@ -800,7 +800,7 @@ public class CPSCore implements CPSCoreInterface {
             int computedCompletionPeriod = proposalTotalPeriod+ completionPeriod;
 
             int currentPeriod = getPeriodCount();
-            if (currentPeriod == computedCompletionPeriod){
+            if (currentPeriod >= computedCompletionPeriod){
                 milestoneIdList.add(milestoneId);
             }
         }
