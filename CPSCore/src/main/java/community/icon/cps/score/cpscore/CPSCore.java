@@ -1412,7 +1412,7 @@ public class CPSCore implements CPSCoreInterface {
             boolean lastProgressReport = proposalPeriod + projectDuration- getPeriodCount() == 0;
             if (milestoneBudget.compareTo(BigInteger.ZERO) > 0) {
                 // Request CPS Treasury to add some installments amount to the contributor address
-                callScore(getCpsTreasuryScore(), "sendInstallmentToContributor", _ipfs_hash, milestonePassed);
+                callScore(getCpsTreasuryScore(), "sendInstallmentToContributor", _ipfs_hash, milestoneBudget);
                 //Request CPS Treasury to add some sponsor reward amount to the sponsor address
                 callScore(getCpsTreasuryScore(), "sendRewardToSponsor", _ipfs_hash, milestonePassed);
                 if (lastProgressReport && milestonePassed != milestoneSubmittedSize) {

@@ -102,6 +102,7 @@ public class Constants {
     public static final String VOTE_CHANGE = "vote_change";
     public static final String COMPLETION_PERIOD = "completionPeriod";
     public static final String BUDGET = "budget";
+    public static final String EXTENSION_FLAG = "extensionFlag";
 
 
     public static final String TIMESTAMP = "timestamp";
