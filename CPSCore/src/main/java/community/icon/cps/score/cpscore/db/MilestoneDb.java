@@ -19,7 +19,7 @@ public class MilestoneDb {
     public static final BranchDB<String, ArrayDB<Address>> rejectVoters = Context.newBranchDB(REJECT_VOTERS, Address.class);
     public static final BranchDB<String, VarDB<Integer>> completionPeriod = Context.newBranchDB(COMPLETION_PERIOD, Integer.class);
     public static final BranchDB<String, VarDB<BigInteger>> budget = Context.newBranchDB(BUDGET, BigInteger.class);
-    public static final BranchDB<String, VarDB<Boolean>> extensionFlag = Context.newBranchDB("extensionFlag", Boolean.class);
+    public static final BranchDB<String, VarDB<Boolean>> extensionFlag = Context.newBranchDB(EXTENSION_FLAG, Boolean.class);
 
     public static final BranchDB<String, BranchDB<Address, DictDB<String, Integer>>> votersListIndices = Context.newBranchDB(VOTERS_LIST_INDEXES, Integer.class);
 
@@ -46,7 +46,7 @@ public class MilestoneDb {
                 Map.entry(TOTAL_VOTERS, ProgressReportDataDb.totalVoters.at(progressReportPrefix(reportHash)).getOrDefault(0)),
                 Map.entry(APPROVE_VOTERS, approveVoters.at(prefix).size()),
                 Map.entry(REJECT_VOTERS, rejectVoters.at(prefix).size()),
-                Map.entry("extensionFlag", extensionFlag.at(prefix).getOrDefault(false)));
+                Map.entry(EXTENSION_FLAG, extensionFlag.at(prefix).getOrDefault(false)));
     }
 
     public static String progressReportPrefix(String progressHash) {
