@@ -784,8 +784,8 @@ public class CPSCore implements CPSCoreInterface {
         swapBNUsdToken();
     }
 
-    @External(readonly = true) // todo: make this private
-    public List<Integer> getMilestoneDeadline(String ipfsHash){
+
+    private List<Integer> getMilestoneDeadline(String ipfsHash){
 
         String ipfsHAshPRefix = proposalPrefix(ipfsHash);
         ArrayDB<Integer> milestoneIDs = milestoneIds.at(ipfsHAshPRefix);
@@ -1345,7 +1345,7 @@ public class CPSCore implements CPSCoreInterface {
                         milestonePassed += 1;
 
                         if (milestoneStatus == MILESTONE_REPORT_COMPLETED){
-                            milestoneBudget = milestoneBudget.add(MilestoneDb.budget.at(milestonePrefix).getOrDefault(BigInteger.ZERO)); // todo
+                            milestoneBudget = milestoneBudget.add(MilestoneDb.budget.at(milestonePrefix).getOrDefault(BigInteger.ZERO));
                             MilestoneDb.status.at(milestonePrefix).set(MILESTONE_REPORT_APPROVED);
                             int percentageCompleted = (_approved_reports_count * 100) / milestoneCount;
                             ProposalDataDb.updatePercentageCompleted(proposal_prefix, percentageCompleted);
