@@ -1375,8 +1375,7 @@ public class CPSCore implements CPSCoreInterface {
                             int proposalPeriod = ProposalDataDb.proposalPeriod.at(proposal_prefix).getOrDefault(0);
                             boolean extended = MilestoneDb.extensionFlag.at(milestonePrefix).getOrDefault(false);
 
-
-                            if (getPeriodCount() == (proposalPeriod+completionPeriod) ){
+                            if (getPeriodCount() == (proposalPeriod+completionPeriod+1) ){
                                 if (extended){
                                     updateProposalStatus(_ipfs_hash, _proposal_details);
                                 }
