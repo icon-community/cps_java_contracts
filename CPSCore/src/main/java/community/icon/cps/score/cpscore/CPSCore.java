@@ -1388,6 +1388,7 @@ public class CPSCore implements CPSCoreInterface {
                                     MilestoneDb.completionPeriod.at(milestonePrefix).set(completionPeriod + 1);
                                 }
                             }
+                            updateMilestoneDB(milestonePrefix);
 
                         }
 
