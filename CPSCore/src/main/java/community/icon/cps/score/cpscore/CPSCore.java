@@ -1404,6 +1404,21 @@ public class CPSCore implements CPSCoreInterface {
                 updateProgressReportStatus(_reports, PROGRESS_REPORT_REJECTED);
                 updateProposalStatus(_ipfs_hash, _proposal_details);
             }
+
+
+
+            int projectDuration = ProposalDataDb.projectDuration.at(proposal_prefix).getOrDefault(0);
+            int proposalPeriod = ProposalDataDb.proposalPeriod.at(proposal_prefix).getOrDefault(0);
+            boolean lastProgressReport = proposalPeriod + projectDuration- getPeriodCount() == 0;
+            if (milestoneBudget.compareTo(BigInteger.ZERO) > 0) {
+                // Request CPS Treasury to add some installments amount to the contributor address
+                callScore(getCpsTreasuryScore(), "sendInstallmentToContributor", _ipfs_hash, milestonePassed);
+                //Request CPS Treasury to add some sponsor reward amount to the sponsor address
+                callScore(getCpsTreasuryScore(), "sendRewardToSponsor", _ipfs_hash, milestonePassed);
+                if (lastProgressReport && milestonePassed != milestoneSubmittedSize) {
+                    updateProposalStatus(_ipfs_hash, _proposal_details);
+                }
+            }
         }
 
     }
