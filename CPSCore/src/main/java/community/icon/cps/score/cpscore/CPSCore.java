@@ -1780,7 +1780,11 @@ public class CPSCore implements CPSCoreInterface {
             Map<String, Object> progressReportDetails = getProgressReportDetails(reportKey);
             finalDetail.putAll(progressReportDetails);
             String ipfsHash = (String) progressReportDetails.get(IPFS_HASH);
-            boolean hasMilestone = isMilestone.at(proposalPrefix(ipfsHash)).getOrDefault(false);
+            boolean hasMilestone = false;
+            int milestoneSubmittedSize = (int)progressReportDetails.get(MILESTONE_SUBMITTED_COUNT);
+            if (milestoneSubmittedSize > 0){
+                hasMilestone = true;
+            }
             finalDetail.put("isMilestone", hasMilestone);
             if (hasMilestone) {
                 List<Integer> milestoneSubmittedList = getMilestoneCountOfProgressReport(reportKey);
