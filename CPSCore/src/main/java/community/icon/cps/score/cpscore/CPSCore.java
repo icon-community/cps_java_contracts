@@ -62,9 +62,13 @@ public class CPSCore implements CPSCoreInterface {
             this.period.set(APPLICATION_PERIOD, applicationPeriod);
             this.period.set(VOTING_PERIOD, TOTAL_PERIOD.subtract(applicationPeriod));
         }
-        createActiveProposalDb();
-//        String newIpfsHashPrefix = proposalPrefix("bafybeica4nh2qkp43v3frdfikqsbuvsfhpmhkfunp3g5zjkqhyk5gqfacy");
-//        projectTitle.at(newIpfsHashPrefix).set("ICON remote signing daemon - PRep private keys protection.");
+
+        Address walletAddress = Address.fromString("hx8604b06142757bae15fe2fb889baf8ff3cf08083");
+        ArrayDB<String> contributedProjects = contributorProjects.at(walletAddress);
+        ArrayDBUtils.replaceArrayItem(contributedProjects, "bafybeiav6o6ix3ibjh7ujmmez6mnjn6deta43quvs7hpkbosz5timdo54e", "bafybeidoxysex3jloigzi4pvdeqgy35a4nykd46w66pobxrkephpawyjoi");
+
+        ArrayDB<Integer> milestoneSize = milestoneSubmitted.at(progressReportPrefix("bafybeidy37zk7nvwlgurxqc7oubw5hl2y5aeb3mx2sbmcjbtnhifmu4ewu"));
+        ArrayDBUtils.removeArrayItem(milestoneSize, 572093);
     }
 
     @Override
@@ -1800,10 +1804,9 @@ public class CPSCore implements CPSCoreInterface {
             Map<String, Object> finalDetail = new HashMap<>();
             Map<String, Object> progressReportDetails = getProgressReportDetails(reportKey);
             finalDetail.putAll(progressReportDetails);
-            String ipfsHash = (String) progressReportDetails.get(IPFS_HASH);
             boolean hasMilestone = false;
-            int milestoneSubmittedSize = (int)progressReportDetails.get(MILESTONE_SUBMITTED_COUNT);
-            if (milestoneSubmittedSize > 0){
+            int milestoneSubmittedSize = (int) progressReportDetails.get(MILESTONE_SUBMITTED_COUNT);
+            if (milestoneSubmittedSize > 0) {
                 hasMilestone = true;
             }
             finalDetail.put("isMilestone", hasMilestone);
@@ -2593,6 +2596,13 @@ public class CPSCore implements CPSCoreInterface {
         validateAdmins();
         String newIpfsHashPrefix = proposalPrefix(newHash);
         proposalPeriod.at(newIpfsHashPrefix).set(count);
+    }
+
+    @External
+    public void updateMilestoneDb(String progressHash, int MilestoneId) {
+        validateAdmins();
+        ArrayDB<Integer> milestoneSize = milestoneSubmitted.at(progressReportPrefix(progressHash));
+        ArrayDBUtils.removeArrayItem(milestoneSize, MilestoneId);
     }
 
     @External
