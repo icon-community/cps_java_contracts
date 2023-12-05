@@ -2785,7 +2785,24 @@ public class CPSCore implements CPSCoreInterface {
 
     //    =====================================TEMPORARY MIGRATIONS METHODS===============================================
 
+    @External
+    public void milestoneDbMigration(String ipfsHash){
+        onlyOwner();
+        String proposalPrefix = proposalPrefix(ipfsHash);
+        ArrayDB<Integer> milestoneId =  milestoneIds.at(proposalPrefix);
+        int size = milestoneId.size();
+        for (int i = 0; i < size; i++) {
+            String migration_milestonePrefix = mileStonePrefix(proposalPrefix,milestoneId.get(i));
+            String actual_milestonePrefix = mileStonePrefix(ipfsHash,milestoneId.get(i));
 
+            MilestonesAttributes milestonesAttributes = new MilestonesAttributes();
+            milestonesAttributes.id = MilestoneDb.id.at(migration_milestonePrefix).get();
+            milestonesAttributes.budget = MilestoneDb.budget.at(migration_milestonePrefix).get();
+            milestonesAttributes.completionPeriod = MilestoneDb.completionPeriod.at(migration_milestonePrefix).get();
+            addDataToMilestoneDb(milestonesAttributes, actual_milestonePrefix);
+
+        }
+    }
     //    =====================================EventLogs===============================================
     @Override
     @EventLog(indexed = 1)
