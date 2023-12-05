@@ -63,8 +63,8 @@ public class CPSCore implements CPSCoreInterface {
             this.period.set(VOTING_PERIOD, TOTAL_PERIOD.subtract(applicationPeriod));
         }
         createActiveProposalDb();
-        String newIpfsHashPrefix = proposalPrefix("bafybeica4nh2qkp43v3frdfikqsbuvsfhpmhkfunp3g5zjkqhyk5gqfacy");
-        projectTitle.at(newIpfsHashPrefix).set("ICON remote signing daemon - PRep private keys protection.");
+//        String newIpfsHashPrefix = proposalPrefix("bafybeica4nh2qkp43v3frdfikqsbuvsfhpmhkfunp3g5zjkqhyk5gqfacy");
+//        projectTitle.at(newIpfsHashPrefix).set("ICON remote signing daemon - PRep private keys protection.");
     }
 
     @Override
@@ -1684,18 +1684,39 @@ public class CPSCore implements CPSCoreInterface {
 
         for (int i = startIndex; i < endIndex; i++) {
             String proposalKey = proposalKeys.get(i);
-            Map<String, Object> proposalDetails = getProposalDetails(proposalKey);
-            String propStatus = (String) proposalDetails.get(STATUS);
+            Map<String, Object> proposalDetails = new HashMap<>();
+            if (proposalKeyExists(proposalKey)) {
+                String proposalPrefix = proposalPrefix(proposalKey);
+                proposalDetails.put(IPFS_HASH,ProposalDataDb.ipfsHash.at(proposalPrefix).getOrDefault(""));
+                proposalDetails.put(PROJECT_TITLE,ProposalDataDb.projectTitle.at(proposalPrefix).getOrDefault(""));
+                proposalDetails.put(TOTAL_BUDGET, totalBudget.at(proposalPrefix).getOrDefault(BigInteger.ZERO));
+                proposalDetails.put(TOKEN, token.at(proposalPrefix).getOrDefault(""));
+                proposalDetails.put(PERCENTAGE_COMPLETED, percentageCompleted.at(proposalPrefix).getOrDefault(0));
 
-            if (status.equals(SPONSOR_PENDING)) {
-                Address wallet = (Address) proposalDetails.get(CONTRIBUTOR_ADDRESS);
-                if (wallet.equals(walletAddress)) {
+
+                proposalDetails.put(TOTAL_VOTES, ProposalDataDb.totalVotes.at(proposalPrefix).getOrDefault(BigInteger.ZERO));
+                proposalDetails.put(APPROVED_VOTES, ProposalDataDb.approvedVotes.at(proposalPrefix).getOrDefault(BigInteger.ZERO));
+                proposalDetails.put(REJECTED_VOTES, ProposalDataDb.rejectedVotes.at(proposalPrefix).getOrDefault(BigInteger.ZERO));
+                proposalDetails.put(ABSTAINED_VOTES, ProposalDataDb.abstainedVotes.at(proposalPrefix).getOrDefault(BigInteger.ZERO));
+
+                proposalDetails.put(APPROVE_VOTERS, ProposalDataDb.approveVoters.at(proposalPrefix).size());
+                proposalDetails.put(REJECT_VOTERS, ProposalDataDb.rejectVoters.at(proposalPrefix).size());
+                proposalDetails.put(ABSTAIN_VOTERS, abstainVoters.at(proposalPrefix).size());
+                proposalDetails.put(TOTAL_VOTERS, ProposalDataDb.totalVoters.at(proposalPrefix).getOrDefault(0));
+
+                String propStatus = ProposalDataDb.status.at(proposalPrefix).getOrDefault("");
+                proposalDetails.put(STATUS,propStatus);
+
+                if (status.equals(SPONSOR_PENDING)) {
+                    Address wallet = contributorAddress.at(proposalPrefix).get();
+                    if (wallet.equals(walletAddress)) {
+                        proposalsList.add(proposalDetails);
+                    }
+                } else if (propStatus.equals(status)) {
                     proposalsList.add(proposalDetails);
                 }
-            } else if (propStatus.equals(status)) {
-                proposalsList.add(proposalDetails);
-            }
 
+            }
         }
         return Map.of(DATA, proposalsList, COUNT, count);
 
