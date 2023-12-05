@@ -2644,7 +2644,7 @@ public class CPSCore implements CPSCoreInterface {
         addDataToProposalDB(newProposal, newIpfsHashPrefix);
 
         for (MilestonesAttributes milestone : milestones) {
-            String milestonePrefix = mileStonePrefix(newIpfsHashPrefix, milestone.id);
+            String milestonePrefix = mileStonePrefix(newHash, milestone.id);
             addDataToMilestoneDb(milestone, milestonePrefix);
             milestoneIds.at(newIpfsHashPrefix).add(milestone.id);
         }
