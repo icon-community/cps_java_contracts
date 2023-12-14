@@ -62,13 +62,6 @@ public class CPSCore implements CPSCoreInterface {
             this.period.set(APPLICATION_PERIOD, applicationPeriod);
             this.period.set(VOTING_PERIOD, TOTAL_PERIOD.subtract(applicationPeriod));
         }
-
-        Address walletAddress = Address.fromString("hx8604b06142757bae15fe2fb889baf8ff3cf08083");
-        ArrayDB<String> contributedProjects = contributorProjects.at(walletAddress);
-        ArrayDBUtils.replaceArrayItem(contributedProjects, "bafybeiav6o6ix3ibjh7ujmmez6mnjn6deta43quvs7hpkbosz5timdo54e", "bafybeidoxysex3jloigzi4pvdeqgy35a4nykd46w66pobxrkephpawyjoi");
-
-        ArrayDB<Integer> milestoneSize = milestoneSubmitted.at(progressReportPrefix("bafybeidy37zk7nvwlgurxqc7oubw5hl2y5aeb3mx2sbmcjbtnhifmu4ewu"));
-        ArrayDBUtils.removeArrayItem(milestoneSize, 572093);
     }
 
     @Override
@@ -1691,12 +1684,11 @@ public class CPSCore implements CPSCoreInterface {
             Map<String, Object> proposalDetails = new HashMap<>();
             if (proposalKeyExists(proposalKey)) {
                 String proposalPrefix = proposalPrefix(proposalKey);
-                proposalDetails.put(IPFS_HASH,ProposalDataDb.ipfsHash.at(proposalPrefix).getOrDefault(""));
-                proposalDetails.put(PROJECT_TITLE,ProposalDataDb.projectTitle.at(proposalPrefix).getOrDefault(""));
+                proposalDetails.put(IPFS_HASH, ProposalDataDb.ipfsHash.at(proposalPrefix).getOrDefault(""));
+                proposalDetails.put(PROJECT_TITLE, ProposalDataDb.projectTitle.at(proposalPrefix).getOrDefault(""));
                 proposalDetails.put(TOTAL_BUDGET, totalBudget.at(proposalPrefix).getOrDefault(BigInteger.ZERO));
                 proposalDetails.put(TOKEN, token.at(proposalPrefix).getOrDefault(""));
                 proposalDetails.put(PERCENTAGE_COMPLETED, percentageCompleted.at(proposalPrefix).getOrDefault(0));
-
 
                 proposalDetails.put(TOTAL_VOTES, ProposalDataDb.totalVotes.at(proposalPrefix).getOrDefault(BigInteger.ZERO));
                 proposalDetails.put(APPROVED_VOTES, ProposalDataDb.approvedVotes.at(proposalPrefix).getOrDefault(BigInteger.ZERO));
@@ -1709,7 +1701,7 @@ public class CPSCore implements CPSCoreInterface {
                 proposalDetails.put(TOTAL_VOTERS, ProposalDataDb.totalVoters.at(proposalPrefix).getOrDefault(0));
 
                 String propStatus = ProposalDataDb.status.at(proposalPrefix).getOrDefault("");
-                proposalDetails.put(STATUS,propStatus);
+                proposalDetails.put(STATUS, propStatus);
 
                 if (status.equals(SPONSOR_PENDING)) {
                     Address wallet = contributorAddress.at(proposalPrefix).get();
@@ -1950,24 +1942,24 @@ public class CPSCore implements CPSCoreInterface {
 
                     ArrayDB<Integer> milestoneSubmittedOf = milestoneSubmitted.at(prefix);
 
-                    Map<String, Object> progressReportDetails = new HashMap<>();
-                    progressReportDetails.putAll(getProgressReportDetails(reportHash));
                     for (int j = 0; j < milestoneSubmittedOf.size(); j++) {
                         int milestoneID = milestoneSubmittedOf.get(j);
                         String milestonePrefix = mileStonePrefix(ipfsHash, milestoneID);
 
                         ArrayDB<Address> voterList = MilestoneDb.votersList.at(milestonePrefix);
                         if (!containsInArrayDb(walletAddress, voterList)) {
+                            Map<String, Object> progressReportDetails = new HashMap<>();
+                            progressReportDetails.putAll(getProgressReportDetails(reportHash));
                             progressReportDetails.putAll(getMilestoneReport(reportHash, ipfsHash));
+                            _remaining_progress_report.add(progressReportDetails);
                         }
                     }
-                    _remaining_progress_report.add(progressReportDetails);
 
                 } else {
                     if (!containsInArrayDb(walletAddress, ProgressReportDataDb.votersList.at(prefix))) {
                         Map<String, Object> progressReportDetails = new HashMap<>();
                         progressReportDetails.putAll(getProgressReportDetails(reportHash));
-                        progressReportDetails.putAll(getVoteResultsFromProgressReportDB(reportHash));
+                        progressReportDetails.putAll(getVoteResultsFromProgressReportDB(prefix));
                         _remaining_progress_report.add(progressReportDetails);
                     }
                 }
@@ -2605,226 +2597,16 @@ public class CPSCore implements CPSCoreInterface {
         ArrayDBUtils.removeArrayItem(milestoneSize, MilestoneId);
     }
 
-    @External
-    public void submitProposalMock(ProposalAttributes newProposal, String oldHash, MilestonesAttributes[] milestones) {
-        String newHash = newProposal.ipfs_hash;
-        if (!containsInArrayDb(oldHash, activeProposals)) {
-            Context.revert(TAG + ": Proposal cannot be migrated.");
-        }
-        Context.require(proposalKeyExists(oldHash), TAG + ": Proposal key should exist on proposal db.");
-        Context.require(!proposalKeyExists(newHash), TAG + ": Proposal key already exists.");
-
-        Address caller = Context.getCaller();
-        Context.require(!caller.isContract(), TAG + ": Contract Address not supported.");
-
-        String newIpfsHashPrefix = proposalPrefix(newHash);
-        String oldIpfsHashPrefix = proposalPrefix(oldHash);
-
-        Address contributorAddr = contributorAddress.at(oldIpfsHashPrefix).get();
-        List<Address> callers = ArrayDBUtils.arrayDBtoList(admins);
-        callers.add(contributorAddr);
-        Context.require(callers.contains(caller), "Caller should be same as old proposal");
-
-        Address sponsorAddr = sponsorAddress.at(oldIpfsHashPrefix).get();
-        Context.require(sponsorAddr.equals(newProposal.sponsor_address), "Sponsor should be same as old proposal");
-
-        int project_duration = projectDuration.at(oldIpfsHashPrefix).getOrDefault(0);
-        Context.require(newProposal.project_duration == project_duration,
-                TAG + ": Project Duration should be same as old proposal");
-
-        BigInteger projectBudget = newProposal.total_budget.multiply(EXA);
-        BigInteger budget = totalBudget.at(oldIpfsHashPrefix).getOrDefault(BigInteger.ZERO);
-        Context.require(budget.equals(projectBudget),
-                TAG + ": Project Budget should be same as old proposal");
-
-        String tokenFlag = token.at(oldIpfsHashPrefix).getOrDefault("ICX");
-        Context.require(newProposal.token.equals(tokenFlag),
-                TAG + ": Token should be same as old proposal");
-
-        addDataToProposalDB(newProposal, newIpfsHashPrefix);
-
-        for (MilestonesAttributes milestone : milestones) {
-            String milestonePrefix = mileStonePrefix(newHash, milestone.id);
-            addDataToMilestoneDb(milestone, milestonePrefix);
-            milestoneIds.at(newIpfsHashPrefix).add(milestone.id);
-        }
-
-
-        BigInteger timestamp = ProposalDataDb.timestamp.at(oldIpfsHashPrefix).getOrDefault(BigInteger.ZERO);
-        ProposalDataDb.timestamp.at(newIpfsHashPrefix).set(timestamp);
-        proposalPeriod.at(newIpfsHashPrefix).set(31);
-
-        int perCompleted = percentageCompleted.at(oldIpfsHashPrefix).getOrDefault(0);
-        percentageCompleted.at(newIpfsHashPrefix).set(perCompleted);
-
-        BigInteger totalVotes = ProposalDataDb.totalVotes.at(oldIpfsHashPrefix).getOrDefault(BigInteger.ZERO);
-        int totalVoters = ProposalDataDb.totalVoters.at(oldIpfsHashPrefix).getOrDefault(0);
-        BigInteger approvedVotes = ProposalDataDb.approvedVotes.at(oldIpfsHashPrefix).getOrDefault(BigInteger.ZERO);
-        BigInteger rejectedVotes = ProposalDataDb.rejectedVotes.at(oldIpfsHashPrefix).getOrDefault(BigInteger.ZERO);
-        BigInteger abstainedVotes = ProposalDataDb.abstainedVotes.at(oldIpfsHashPrefix).getOrDefault(BigInteger.ZERO);
-        int approvedReports = ProposalDataDb.approvedReports.at(oldIpfsHashPrefix).getOrDefault(0);
-
-        ProposalDataDb.totalVotes.at(newIpfsHashPrefix).set(totalVotes);
-        ProposalDataDb.totalVoters.at(newIpfsHashPrefix).set(totalVoters);
-        ProposalDataDb.approvedVotes.at(newIpfsHashPrefix).set(approvedVotes);
-        ProposalDataDb.rejectedVotes.at(newIpfsHashPrefix).set(rejectedVotes);
-        ProposalDataDb.abstainedVotes.at(newIpfsHashPrefix).set(abstainedVotes);
-        ProposalDataDb.approvedReports.at(newIpfsHashPrefix).set(approvedReports);
-
-
-        ArrayDB<Address> votersList = ProposalDataDb.votersList.at(oldIpfsHashPrefix);
-        List<Address> voterList = ArrayDBUtils.arrayDBtoList(votersList);
-        for (Address voter : voterList) {
-            ProposalDataDb.votersList.at(newIpfsHashPrefix).add(voter);
-        }
-
-        ArrayDB<Address> approveVoters = ProposalDataDb.approveVoters.at(oldIpfsHashPrefix);
-        List<Address> appVoters = ArrayDBUtils.arrayDBtoList(approveVoters);
-        for (Address voters : appVoters) {
-            ProposalDataDb.approveVoters.at(newIpfsHashPrefix).add(voters);
-        }
-
-        ArrayDB<Address> rejectVoters = ProposalDataDb.rejectVoters.at(oldIpfsHashPrefix);
-        List<Address> rejVoters = ArrayDBUtils.arrayDBtoList(rejectVoters);
-        for (Address voters : rejVoters) {
-            ProposalDataDb.rejectVoters.at(newIpfsHashPrefix).add(voters);
-        }
-
-        ArrayDB<Address> abstainVoters = ProposalDataDb.abstainVoters.at(oldIpfsHashPrefix);
-        List<Address> absVoters = ArrayDBUtils.arrayDBtoList(abstainVoters);
-        for (Address voters : absVoters) {
-            ProposalDataDb.abstainVoters.at(newIpfsHashPrefix).add(voters);
-        }
-
-        ArrayDB<String> votersReasons = ProposalDataDb.votersReasons.at(oldIpfsHashPrefix);
-        List<String> reasons = ArrayDBUtils.arrayDBtoList(votersReasons);
-        for (String reason : reasons) {
-            ProposalDataDb.votersReasons.at(newIpfsHashPrefix).add(reason);
-        }
-
-        Boolean progressSubmitted = ProposalDataDb.submitProgressReport.at(oldIpfsHashPrefix).get();
-        submitProgressReport.at(newIpfsHashPrefix).set(progressSubmitted);
-
-        ArrayDB<String> progReports = ProposalDataDb.progressReports.at(oldIpfsHashPrefix);
-        List<String> progressReportsList = ArrayDBUtils.arrayDBtoList(progReports);
-        for (int i = 0; i < progressReportsList.size(); i++) {
-            String report = progressReportsList.get(i);
-            String progressHashPrefix = progressReportPrefix(report);
-            ProgressReportDataDb.ipfsHash.at(progressHashPrefix).set(newHash);
-
-            // add to milestone db
-            String progressReportStatus = ProgressReportDataDb.status.at(progressHashPrefix).getOrDefault("");
-
-            if (progressReportStatus.equals(APPROVED)) {
-                milestoneSubmitted.at(progressHashPrefix).add(milestones[i].id);
-            }
-            String milestonePrefix = mileStonePrefix(newHash, milestones[i].id);
-            MilestoneDb.status.at(milestonePrefix).set(MILESTONE_REPORT_APPROVED);
-            MilestoneDb.progressReportHash.at(milestonePrefix).set(report);
-
-            approvedVotes = ProgressReportDataDb.approvedVotes.at(progressHashPrefix).getOrDefault(BigInteger.ZERO);
-            MilestoneDb.approvedVotes.at(milestonePrefix).set(approvedVotes);
-            rejectedVotes = ProgressReportDataDb.rejectedVotes.at(progressHashPrefix).getOrDefault(BigInteger.ZERO);
-            MilestoneDb.rejectedVotes.at(milestonePrefix).set(rejectedVotes);
-
-            approveVoters = ProgressReportDataDb.approveVoters.at(progressHashPrefix);
-            appVoters = ArrayDBUtils.arrayDBtoList(approveVoters);
-            for (Address voters : appVoters) {
-                MilestoneDb.approveVoters.at(milestonePrefix).add(voters);
-            }
-
-            rejectVoters = ProgressReportDataDb.rejectVoters.at(progressHashPrefix);
-            rejVoters = ArrayDBUtils.arrayDBtoList(rejectVoters);
-            for (Address voters : rejVoters) {
-                MilestoneDb.rejectVoters.at(milestonePrefix).add(voters);
-            }
-
-            votersList = ProgressReportDataDb.votersList.at(progressHashPrefix);
-            voterList = ArrayDBUtils.arrayDBtoList(votersList);
-            for (Address voter : voterList) {
-                MilestoneDb.votersList.at(milestonePrefix).add(voter);
-            }
-
-            BranchDB<Address, DictDB<String, Integer>> votersListIndex = ProgressReportDataDb.votersListIndices.at(progressHashPrefix);
-            List<Address> preps = arrayDBtoList(votersList);
-            for (Address prep : preps) {
-                DictDB<String, Integer> votersVote = votersListIndex.at(prep);
-                int voteData = votersVote.get(VOTE);
-                int indexData = votersVote.get(INDEX);
-                int changeVoteData = votersVote.getOrDefault(CHANGE_VOTE, 0);
-
-                MilestoneDb.votersListIndices.at(milestonePrefix).at(prep).set(VOTE, voteData);
-                MilestoneDb.votersListIndices.at(milestonePrefix).at(prep).set(INDEX, indexData);
-                voteChange.at(progressHashPrefix).set(prep, changeVoteData);
-            }
-
-            ProposalDataDb.progressReports.at(newIpfsHashPrefix).add(report);
-        }
-
-        BigInteger sponsorDepositAmount = ProposalDataDb.sponsorDepositAmount.at(oldIpfsHashPrefix).getOrDefault(BigInteger.ZERO);
-        BigInteger sponsoredTimestamp = ProposalDataDb.sponsoredTimestamp.at(oldIpfsHashPrefix).getOrDefault(BigInteger.ZERO);
-        String sponsorDepositStatus = ProposalDataDb.sponsorDepositStatus.at(oldIpfsHashPrefix).getOrDefault("");
-        String sponsorVoteReason = ProposalDataDb.sponsorVoteReason.at(oldIpfsHashPrefix).getOrDefault("");
-
-        ProposalDataDb.sponsorDepositAmount.at(newIpfsHashPrefix).set(sponsorDepositAmount);
-        ProposalDataDb.sponsoredTimestamp.at(newIpfsHashPrefix).set(sponsoredTimestamp);
-        ProposalDataDb.sponsorDepositStatus.at(newIpfsHashPrefix).set(sponsorDepositStatus);
-        ProposalDataDb.sponsorVoteReason.at(newIpfsHashPrefix).set(sponsorVoteReason);
-
-        ArrayDBUtils.replaceArrayItem(proposalsKeyList, oldHash, newHash);
-        int getIndex = proposalsKeyListIndex.get(oldHash);
-        proposalsKeyListIndex.set(oldHash, null);
-        proposalsKeyListIndex.set(newHash, getIndex);
-
-        String oldStatus = ProposalDataDb.status.at(oldIpfsHashPrefix).getOrDefault(SPONSOR_PENDING);
-        Status statusOb = new Status();
-        ArrayDBUtils.replaceArrayItem(statusOb.proposalStatus.get(oldStatus), oldHash, newHash);
-        ProposalDataDb.status.at(newIpfsHashPrefix).set(oldStatus);
-
-        ArrayDB<String> contributedProjects = contributorProjects.at(caller);
-        ArrayDBUtils.replaceArrayItem(contributedProjects, oldHash, newHash);
-
-        ArrayDB<String> sponsoredProjects = sponsorProjects.at(sponsorAddr);
-        ArrayDBUtils.replaceArrayItem(sponsoredProjects, oldHash, newHash);
-        removeArrayItem(activeProposals, oldHash);
-        ProposalSubmitted(caller, "Successfully submitted a Proposal.");
-    }
 
     @External
-    public void updateProposalKeyIndex(String oldHash, String newHash) {
+    public void milestoneDbMigration(String ipfsHash) {
         validateAdmins();
-        String oldIpfsHashPrefix = proposalPrefix(oldHash);
-        String newIpfsHashPrefix = proposalPrefix(newHash);
-        BranchDB<Address, DictDB<String, Integer>> votersListIndex = ProposalDataDb.votersListIndex.at(oldIpfsHashPrefix);
-        List<Address> preps = arrayDBtoList(ProposalDataDb.votersList.at(oldIpfsHashPrefix));
-        int milestoneNumber = milestoneCount.at(newIpfsHashPrefix).get();
-        for (Address prep : preps) {
-            DictDB<String, Integer> votersVote = votersListIndex.at(prep);
-            int voteData = votersVote.get(VOTE);
-            int indexData = votersVote.get(INDEX);
-            int changeVoteData = votersVote.getOrDefault(CHANGE_VOTE, 0);
-
-            ProposalDataDb.votersListIndex.at(newIpfsHashPrefix).at(prep).set(VOTE, voteData);
-            ProposalDataDb.votersListIndex.at(newIpfsHashPrefix).at(prep).set(INDEX, indexData);
-            ProposalDataDb.votersListIndex.at(newIpfsHashPrefix).at(prep).set(CHANGE_VOTE, changeVoteData);
-        }
-
-        callScore(getCpfTreasuryScore(), "migrateOldHashToNewHash", oldHash, newHash);
-        callScore(getCpsTreasuryScore(), "updateNewProjects", oldHash, newHash, milestoneNumber);
-    }
-
-
-    //    =====================================TEMPORARY MIGRATIONS METHODS===============================================
-
-    @External
-    public void milestoneDbMigration(String ipfsHash){
-        onlyOwner();
         String proposalPrefix = proposalPrefix(ipfsHash);
-        ArrayDB<Integer> milestoneId =  milestoneIds.at(proposalPrefix);
+        ArrayDB<Integer> milestoneId = milestoneIds.at(proposalPrefix);
         int size = milestoneId.size();
         for (int i = 0; i < size; i++) {
-            String migration_milestonePrefix = mileStonePrefix(proposalPrefix,milestoneId.get(i));
-            String actual_milestonePrefix = mileStonePrefix(ipfsHash,milestoneId.get(i));
+            String migration_milestonePrefix = mileStonePrefix(proposalPrefix, milestoneId.get(i));
+            String actual_milestonePrefix = mileStonePrefix(ipfsHash, milestoneId.get(i));
 
             MilestonesAttributes milestonesAttributes = new MilestonesAttributes();
             milestonesAttributes.id = MilestoneDb.id.at(migration_milestonePrefix).get();
@@ -2834,6 +2616,10 @@ public class CPSCore implements CPSCoreInterface {
 
         }
     }
+
+
+    //    =====================================TEMPORARY MIGRATIONS METHODS===============================================
+
     //    =====================================EventLogs===============================================
     @Override
     @EventLog(indexed = 1)
