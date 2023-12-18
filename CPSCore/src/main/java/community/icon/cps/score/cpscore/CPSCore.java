@@ -505,39 +505,32 @@ public class CPSCore implements CPSCoreInterface {
     @External(readonly = true)
     public Map<String, BigInteger> loginPrep(Address address) {
         Map<String, BigInteger> loginData = new HashMap<>();
-        List<Address> allPreps = getPrepsAddress();
+        PeriodController period = new PeriodController();
+        List<Address> allPreps;
         PReps pReps = new PReps();
+        if (period.periodName.get().equals(APPLICATION_PERIOD)) {
+            allPreps = getPrepsAddress();
+        } else {
+            allPreps = ArrayDBUtils.arrayDBtoList(pReps.validPreps);
+        }
+
+        loginData.put(IS_PREP, BigInteger.ZERO);
+        loginData.put(IS_REGISTERED, BigInteger.ZERO);
+        loginData.put(PAY_PENALTY, BigInteger.ZERO);
+        loginData.put(VOTING_PREP, BigInteger.ZERO);
+
         if (allPreps.contains(address)) {
             loginData.put(IS_PREP, BigInteger.ONE);
-            if (ArrayDBUtils.containsInArrayDb(address, pReps.unregisteredPreps)) {
-                loginData.put(IS_REGISTERED, BigInteger.ZERO);
-                loginData.put(PAY_PENALTY, BigInteger.ZERO);
-                loginData.put(VOTING_PREP, BigInteger.ZERO);
-
-            } else if (ArrayDBUtils.containsInArrayDb(address, pReps.denylist)) {
-                loginData.put(IS_REGISTERED, BigInteger.ZERO);
+            if (ArrayDBUtils.containsInArrayDb(address, pReps.denylist)) {
                 loginData.put(PAY_PENALTY, BigInteger.ONE);
-                loginData.put(VOTING_PREP, BigInteger.ZERO);
                 loginData.put(PENALTY_AMOUNT1, getPenaltyAmount(address));
             } else if (ArrayDBUtils.containsInArrayDb(address, pReps.registeredPreps)) {
                 loginData.put(IS_REGISTERED, BigInteger.ONE);
-                loginData.put(PAY_PENALTY, BigInteger.ZERO);
-                loginData.put(VOTING_PREP, BigInteger.ZERO);
 
                 if (ArrayDBUtils.containsInArrayDb(address, pReps.validPreps)) {
                     loginData.put(VOTING_PREP, BigInteger.ONE);
                 }
-            } else {
-                loginData.put(IS_REGISTERED, BigInteger.ZERO);
-                loginData.put(PAY_PENALTY, BigInteger.ZERO);
-                loginData.put(VOTING_PREP, BigInteger.ZERO);
             }
-
-        } else {
-            loginData.put(IS_PREP, BigInteger.ZERO);
-            loginData.put(IS_REGISTERED, BigInteger.ZERO);
-            loginData.put(PAY_PENALTY, BigInteger.ZERO);
-            loginData.put(VOTING_PREP, BigInteger.ZERO);
 
         }
         return loginData;
