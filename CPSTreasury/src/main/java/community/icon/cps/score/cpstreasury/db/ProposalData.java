@@ -145,4 +145,8 @@ public class ProposalData {
     public String getToken(String prefix){
         return token.at(prefix).get();
     }
+
+    public void setContributorAddress(String prefix, Address newContributorAddress){
+        this.contributorAddress.at(prefix).set(newContributorAddress);
+    }
 }

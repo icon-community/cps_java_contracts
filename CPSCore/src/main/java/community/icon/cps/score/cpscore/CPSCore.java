@@ -396,6 +396,7 @@ public class CPSCore implements CPSCoreInterface {
         ArrayDBUtils.removeArrayItem(sponsorProjects.at(address), ipfsHash);
     }
 
+    // 0xGojo
     private void removeContributor(Address address, String ipfsHash) {
         Context.require(ArrayDBUtils.containsInArrayDb(address, contributors),
                 address + " not on contributor list.");
@@ -1060,6 +1061,27 @@ public class CPSCore implements CPSCoreInterface {
         } else {
             return 0;
         }
+    }
+
+    @Override
+    @External
+    public void updateContributor(String _ipfs_hash, Address _new_contributor) {
+        Map<String, Object> _proposal_details = getProposalDetails(_ipfs_hash);
+        String _proposal_status = (String) _proposal_details.get(STATUS);
+        Context.require(_proposal_status.equals(ACTIVE), TAG + ": Proposal must be active");
+        // check sender must be current contributor
+        Address _contributor_address = (Address) _proposal_details.get(CONTRIBUTOR_ADDRESS);
+        Context.require(Context.getCaller().equals(_contributor_address), TAG + ": Caller must be current contributor");
+        removeContributor(_contributor_address, _ipfs_hash);
+        // update contributor's address
+        contributors.add(_new_contributor);
+        contributorProjects.at(_new_contributor).add(_ipfs_hash);
+
+        // request update contributor address to cps treasury
+        callScore(getCpsTreasuryScore(), "update_contributor_address", _ipfs_hash, _new_contributor);
+
+        // emit event
+        UpdateContributor(_contributor_address, _new_contributor);
     }
 
     @Override
@@ -2377,6 +2399,11 @@ public class CPSCore implements CPSCoreInterface {
     @Override
     @EventLog(indexed = 1)
     public void PriorityVote(Address _address, String note) {
+    }
+
+    @Override
+    @EventLog(indexed = 1)
+    public void UpdateContributor(Address _old, Address _new) {
     }
 
     public <T> T callScore(Class<T> t, Address address, String method, Object... params) {

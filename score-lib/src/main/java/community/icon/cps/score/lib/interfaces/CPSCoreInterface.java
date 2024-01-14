@@ -252,6 +252,9 @@ public interface CPSCoreInterface {
     @External
     void updateNextBlock(int blockCount);
 
+    @External
+    void updateContributor(String _ipfs_key, Address _new_contributor);
+
 
     @External(readonly = true)
     Map<String, Object> getActiveProposalsList(@Optional int startIndex);
@@ -298,6 +301,9 @@ public interface CPSCoreInterface {
 
     @EventLog(indexed = 1)
     void PriorityVote(Address _address, String note);
+
+    @EventLog(indexed = 1)
+    void UpdateContributor(Address _old, Address _new);
 
     @External(readonly = true)
     int getPeriodCount();

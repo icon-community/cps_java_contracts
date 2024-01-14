@@ -481,6 +481,23 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
         }
     }
 
+    @Override
+    @External
+    public void update_contributor_address(String _ipfs_key, Address _new_contributor_address) {
+        validateCpsScore();
+        Context.require(proposalExists(_ipfs_key), TAG + ": This project not exists");
+
+        String prefix = proposalPrefix(_ipfs_key);
+        Map<String, ?> proposalData = getDataFromProposalDB(prefix);
+        Address contributorAddress = (Address) proposalData.get(consts.CONTRIBUTOR_ADDRESS);
+
+        // remove
+        contributorProjects.at(_new_contributor_address.toString()).add(_ipfs_key);
+        ArrayDBUtils.remove_array_item_string(contributorProjects.at(contributorAddress.toString()), _ipfs_key);
+
+        // update contributor address
+        setContributorAddress(prefix, _new_contributor_address);
+    }
 
         public <T> T callScore(Class<T> t, Address address, String method, Object... params) {
         return Context.call(t, address, method, params);
