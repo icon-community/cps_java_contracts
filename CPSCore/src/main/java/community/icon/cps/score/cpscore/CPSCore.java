@@ -1065,6 +1065,8 @@ public class CPSCore implements CPSCoreInterface {
     @Override
     @External
     public void updateContributor(String _ipfs_hash, Address _new_contributor) {
+        Context.require(!_new_contributor.isContract(), TAG + ": Contract Address not supported.");
+
         Map<String, Object> _proposal_details = getProposalDetails(_ipfs_hash);
         String _proposal_status = (String) _proposal_details.get(STATUS);
         Context.require(_proposal_status.equals(ACTIVE), TAG + ": Proposal must be active");
