@@ -396,7 +396,6 @@ public class CPSCore implements CPSCoreInterface {
         ArrayDBUtils.removeArrayItem(sponsorProjects.at(address), ipfsHash);
     }
 
-    // 0xGojo
     private void removeContributor(Address address, String ipfsHash) {
         Context.require(ArrayDBUtils.containsInArrayDb(address, contributors),
                 address + " not on contributor list.");
