@@ -481,10 +481,13 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
     }
 
 
+
     @Override
     @External
     public void claimReward() {
         Address caller = Context.getCaller();
+        List<Address> blockAddresses = callScore(List.class, getCpsScore(), "getBlockedAddresses");
+        Context.require(!blockAddresses.contains(caller), TAG + ": Address is blocked");
         DictDB<String, BigInteger> installmentFundRecord = this.installmentFundRecord.at(caller.toString());
         BigInteger availableAmountICX = installmentFundRecord.getOrDefault(consts.ICX, BigInteger.ZERO);
         BigInteger availableAmountbnUSD = installmentFundRecord.getOrDefault(consts.bnUSD, BigInteger.ZERO);
