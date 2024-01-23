@@ -1093,6 +1093,36 @@ public class CPSCore implements CPSCoreInterface {
     }
 
     @Override
+    @External
+    public void updateContributor(String _ipfs_hash, Address _new_contributor) {
+        Context.require(!_new_contributor.isContract(), TAG + ": Contract Address not supported.");
+
+        Map<String, Object> _proposal_details = getProposalDetails(_ipfs_hash);
+        String _proposal_status = (String) _proposal_details.get(STATUS);
+        Context.require(_proposal_status.equals(ACTIVE), TAG + ": Proposal must be active");
+        // check sender must be current contributor
+        Address _contributor_address = (Address) _proposal_details.get(CONTRIBUTOR_ADDRESS);
+        Context.require(Context.getCaller().equals(_contributor_address), TAG + ": Caller must be current contributor");
+        removeContributor(_contributor_address, _ipfs_hash);
+        // update contributor's address
+        contributors.add(_new_contributor);
+        contributorProjects.at(_new_contributor).add(_ipfs_hash);
+
+        // request update contributor address to cps treasury
+        callScore(getCpsTreasuryScore(), "update_contributor_address", _ipfs_hash, _new_contributor);
+
+        // emit event
+        UpdateContributor(_contributor_address, _new_contributor);
+    }
+
+    @Override
+    @Deprecated(since = "JAVA translation", forRemoval = true)
+    @External(readonly = true)
+    public int check_change_vote(Address _address, String _ipfs_hash, String _proposal_type) {
+        return checkChangeVote(_address, _ipfs_hash, _proposal_type);
+    }
+
+
     @External(readonly = true)
     public Map<String, Object> getProjectAmounts() {
         List<String> statusList = List.of(PENDING, ACTIVE, PAUSED, COMPLETED, DISQUALIFIED);
@@ -2672,6 +2702,12 @@ public class CPSCore implements CPSCoreInterface {
     @Override
     @EventLog(indexed = 1)
     public void PriorityVote(Address _address, String note) {
+    }
+
+
+    @Override
+    @EventLog(indexed = 1)
+    public void UpdateContributor(Address _old, Address _new) {
     }
 
     //    =====================================EventLogs===============================================
