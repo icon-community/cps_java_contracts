@@ -1,18 +1,23 @@
 package community.icon.cps.score.cpftreasury;
 
 import score.Address;
+import score.Context;
 import score.annotation.External;
+
+import java.math.BigInteger;
+
+import static community.icon.cps.score.cpftreasury.Validations.validateGovernanceContract;
 
 public class SetterGetter {
     /**
      * Sets the cps score address. Only owner can set the method
      *
-     * @param _score: Score address of cps score
+     * @param score: Score address of cps score
      */
     @External
-    public void setCpsScore(Address _score) {
-        Validations.validateAdminScore(_score);
-        CPFTreasury.cpsScore.set(_score);
+    public void setCpsScore(Address score) {
+        Validations.validateAdminScore(score);
+        CPFTreasury.cpsScore.set(score);
     }
 
     /**
@@ -28,12 +33,12 @@ public class SetterGetter {
     /**
      * Sets the cps treasury score address. Only cps admins can set the method
      *
-     * @param _score: Score address of cps treasury score
+     * @param score: Score address of cps treasury score
      */
     @External
-    public void setCpsTreasuryScore(Address _score) {
-        Validations.validateAdminScore(_score);
-        CPFTreasury.cpsTreasuryScore.set(_score);
+    public void setCpsTreasuryScore(Address score) {
+        Validations.validateAdminScore(score);
+        CPFTreasury.cpsTreasuryScore.set(score);
     }
 
     /**
@@ -49,12 +54,12 @@ public class SetterGetter {
     /**
      * Sets the bnUSD score address. Only cps admins can set the method
      *
-     * @param _score: Score address of bnUSD score
+     * @param score: Score address of bnUSD score
      */
     @External
-    public void setBnUSDScore(Address _score) {
-        Validations.validateAdminScore(_score);
-        CPFTreasury.balancedDollar.set(_score);
+    public void setBnUSDScore(Address score) {
+        Validations.validateAdminScore(score);
+        CPFTreasury.balancedDollar.set(score);
     }
 
     /**
@@ -70,12 +75,12 @@ public class SetterGetter {
     /**
      * Sets the sicx score address. Only cps admins can set the method
      *
-     * @param _score: Score address of sicx score
+     * @param score: Score address of sicx score
      */
     @External
-    public void setSicxScore(Address _score) {
-        Validations.validateAdminScore(_score);
-        CPFTreasury.sICXScore.set(_score);
+    public void setSicxScore(Address score) {
+        Validations.validateAdminScore(score);
+        CPFTreasury.sICXScore.set(score);
     }
 
     /**
@@ -91,12 +96,12 @@ public class SetterGetter {
     /**
      * Sets the dex score address. Only owner can set the method
      *
-     * @param _score: Score address of dex score
+     * @param score: Score address of dex score
      */
     @External
-    public void setDexScore(Address _score) {
-        Validations.validateAdminScore(_score);
-        CPFTreasury.dexScore.set(_score);
+    public void setDexScore(Address score) {
+        Validations.validateAdminScore(score);
+        CPFTreasury.dexScore.set(score);
     }
 
     /**
@@ -112,12 +117,12 @@ public class SetterGetter {
     /**
      * Sets the router score address. Only owner can set the method
      *
-     * @param _score: Score address of router score
+     * @param score: Score address of router score
      */
     @External
-    public void setRouterScore(Address _score) {
-        Validations.validateAdminScore(_score);
-        CPFTreasury.routerScore.set(_score);
+    public void setRouterScore(Address score) {
+        Validations.validateAdminScore(score);
+        CPFTreasury.routerScore.set(score);
     }
 
     /**
@@ -131,9 +136,9 @@ public class SetterGetter {
     }
 
     @External
-    public void setOracleAddress(Address _score) {
-        Validations.validateAdminScore(_score);
-        CPFTreasury.oracleAddress.set(_score);
+    public void setOracleAddress(Address score) {
+        Validations.validateAdminScore(score);
+        CPFTreasury.oracleAddress.set(score);
     }
 
     /**
@@ -144,6 +149,24 @@ public class SetterGetter {
     @External(readonly = true)
     public Address getOracleAddress() {
         return CPFTreasury.oracleAddress.get();
+    }
+
+    @External
+    public void setSponsorBondPercentage(BigInteger bondValue) {
+        validateGovernanceContract();
+        Context.call( getCpsScore(), "setSponsorBondPercentage",bondValue);
+    }
+
+    @External
+    public void setPeriod(BigInteger applicationPeriod) {
+        validateGovernanceContract();
+        Context.call(getCpsScore(), "setPeriod",applicationPeriod);
+    }
+
+    @External
+    public void setOnsetPayment(BigInteger paymentPercentage) {
+        validateGovernanceContract();
+        Context.call(getCpsTreasuryScore(), "setOnsetPayment",paymentPercentage);
     }
 
 }

@@ -98,6 +98,17 @@ public final class ArrayDBUtils {
         return list;
     }
 
+    public static <T> void replaceArrayItem(ArrayDB<T> array_db, Object target, Object newTarget) {
+        int size = array_db.size();
+
+        for (int i = 0; i < size; i++) {
+            if (array_db.get(i).equals(target)) {
+                array_db.set(i, (T) newTarget);
+                return;
+            }
+        }
+    }
+
     public static void mergeSort(String[] array, int left, int right, Map<String, Integer> priorityVoteResult) {
         if (left < right) {
 

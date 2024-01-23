@@ -17,7 +17,6 @@ import score.DictDB;
 import score.VarDB;
 
 import java.math.BigInteger;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -27,19 +26,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 
 public class CPFTTreasuryTest extends TestBase {
-    private static final Address ZERO_ADDRESS = new Address(new byte[Address.LENGTH]);
-    private static final Address treasury_score = new Address(new byte[Address.LENGTH]);
     private static final Address score_address = Address.fromString("cx0000000000000000000000000000000000000000");
     private static final Address sicxScore = Address.fromString("cx0000000000000000000000000000000000000001");
     private static final Address bnUSDScore = Address.fromString("cx0000000000000000000000000000000000000002");
     private static final Address dexScore = Address.fromString("cx0000000000000000000000000000000000000003");
-    private static final Address oracleAddress = Address.fromString("cx0000000000000000000000000000000000000005");
     private static final Address cpsTreasuryScore = Address.fromString("cx0000000000000000000000000000000000000004");
 
     private static final String name = "CPF_TREASURY";
-    private static final String symbol = "CPF_TREASURY";
     public static final String TAG = "CPF_TREASURY";
-    CPFTreasury cpfTreasury;
     private static final BigInteger MULTIPLIER = new BigInteger("1000000000000000000");
 
 
@@ -49,11 +43,8 @@ public class CPFTTreasuryTest extends TestBase {
     private static final Account testing_account2 = sm.createAccount();
 
     private Score tokenScore;
-    private final SecureRandom secureRandom = new SecureRandom();
 
     DictDB<String, BigInteger> proposalBudgets = Mockito.mock(DictDB.class);
-    VarDB<Integer> swapState = Mockito.mock(VarDB.class);
-    VarDB<Integer> swapCount = Mockito.mock(VarDB.class);
     VarDB<Boolean> swapFlag = Mockito.mock(VarDB.class);
 
     @BeforeEach
@@ -193,11 +184,15 @@ public class CPFTTreasuryTest extends TestBase {
         }
     }
 
-//    @Test
-//    void setCPSScoreNotAdmin() {
-//        Executable setCPSScoreNotOwner = () -> setCPSScoreExceptions(testing_account, score_address);
-//        expectErrorMessage(setCPSScoreNotOwner, TAG + ": Only owner can call this method");
-//    }
+    @Test
+    void setCPSScoreNotAdmin() {
+        VarDB<Address> cpsScore = mock(VarDB.class);
+        try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
+            theMock.when(() -> Context.call(cpsScore.get(), "isAdmin", Context.getCaller())).thenReturn(false);
+            tokenScore.invoke(testing_account, "setCpsScore", score_address);
+            theMock.verify(() -> Context.require(false,TAG + ": Only Admins can call this method"));
+        }
+    }
 //
 //    @Test
 //    void setCPSTreasuryScoreNotAdmin() {
@@ -230,7 +225,7 @@ public class CPFTTreasuryTest extends TestBase {
 //    }
 
     @Test
-    void transferProposalFundToCPSTreasury() {
+    void transfer_proposal_fund_to_cps_treasury() {
 
         setBNUSDScoreMethod(bnUSDScore);
         setCPSTreasuryScoreMetod(cpsTreasuryScore);
@@ -243,20 +238,21 @@ public class CPFTTreasuryTest extends TestBase {
             Mockito.when(proposalBudgets.getOrDefault("Proposal 1", null)).thenReturn(BigInteger.valueOf(10));
             theMock.when(() -> Context.getAddress()).thenReturn(tokenScore.getAddress());
             theMock.when(() -> Context.call(BigInteger.class, bnUSDScore, "balanceOf", tokenScore.getAddress())).thenReturn(BigInteger.valueOf(1000).multiply(MULTIPLIER));
-            tokenScore.invoke(owner, "transfer_proposal_fund_to_cps_treasury", "Proposal 1", 2, testing_account.getAddress(), testing_account2.getAddress(), "bnUSD", BigInteger.valueOf(100).multiply(MULTIPLIER));
+            tokenScore.invoke(owner, "transferProposalFundToCpsTreasury", "Proposal 1",3, testing_account.getAddress(), testing_account2.getAddress(), "bnUSD", BigInteger.valueOf(100).multiply(MULTIPLIER));
 
             JsonObject depositProposal = new JsonObject();
-            depositProposal.add("method", "deposit_proposal_fund");
+            depositProposal.add("method", "depositProposalFund");
             JsonObject params = new JsonObject();
             params.add("ipfs_hash", "Proposal 1");
-            params.add("project_duration", 2);
+            params.add("project_duration", 3);
             params.add("sponsor_address", testing_account.getAddress().toString());
             params.add("contributor_address", testing_account2.getAddress().toString());
             params.add("total_budget", BigInteger.valueOf(100).multiply(MULTIPLIER).toString(16));
             params.add("sponsor_reward", BigInteger.valueOf(2).multiply(MULTIPLIER).toString(16));
             params.add("token", "bnUSD");
             depositProposal.add("params", params);
-            theMock.verify(() -> Context.call(bnUSDScore, "transfer", cpsTreasuryScore, BigInteger.valueOf(102).multiply(MULTIPLIER), depositProposal.toString().getBytes()), times(1));
+            theMock.verify(() -> Context.call(bnUSDScore, "transfer",
+                    cpsTreasuryScore, BigInteger.valueOf(102).multiply(MULTIPLIER), depositProposal.toString().getBytes()), times(1));
         } catch (Exception e) {
             throw e;
         }
@@ -272,8 +268,8 @@ public class CPFTTreasuryTest extends TestBase {
             theMock.when(() -> Context.getCaller()).thenReturn(score_address);
             theMock.when(() -> Context.getBalance(Context.getAddress())).thenReturn(BigInteger.valueOf(1000).multiply(MULTIPLIER));
             theMock.when(() -> Context.call(balancedDollar.get(), "balanceOf", Context.getAddress())).thenReturn(BigInteger.valueOf(1000).multiply(MULTIPLIER));
-            tokenScore.invoke(owner, "update_proposal_fund", "Proposal 1", "bnUSD", BigInteger.valueOf(100).multiply(MULTIPLIER), 1);
-            Map<String, Object> details = (Map<String, Object>) tokenScore.call("get_proposal_details", 0, 5);
+            tokenScore.invoke(owner, "updateProposalFund", "Proposal 1", "bnUSD", BigInteger.valueOf(100).multiply(MULTIPLIER), 1);
+            Map<String, Object> details = (Map<String, Object>) tokenScore.call("getProposalDetails", 0, 5);
             List<Map<String, Object>> proposalsList = new ArrayList<>();
             proposalsList.add(Map.of("_ipfs_hash", "Proposal 1", "_budget_transfer", BigInteger.valueOf(204).multiply(MULTIPLIER).toString()));
             proposalsList.add(Map.of("_ipfs_hash", "Proposal 2", "_budget_transfer", BigInteger.valueOf(1122).multiply(MULTIPLIER).divide(BigInteger.TEN).toString()));
@@ -281,7 +277,7 @@ public class CPFTTreasuryTest extends TestBase {
             assertEquals(details, expectedDetails);
 
             JsonObject budgetAdjustmentData = new JsonObject();
-            budgetAdjustmentData.add("method", "budget_adjustment");
+            budgetAdjustmentData.add("method", "budgetAdjustment");
             JsonObject params = new JsonObject();
             params.add("_ipfs_key", "Proposal 1");
             params.add("_added_budget", BigInteger.valueOf(100).multiply(MULTIPLIER).toString(16));
@@ -343,8 +339,8 @@ public class CPFTTreasuryTest extends TestBase {
             theMock.when(() -> Context.call(dexScore.get(), "getPrice", 2)).thenReturn(BigInteger.valueOf(8).multiply(MULTIPLIER).divide(BigInteger.TEN));
             theMock.when(() -> Context.call(balancedDollar.get(), "balanceOf", Context.getAddress())).thenReturn(BigInteger.valueOf(1995).multiply(MULTIPLIER));
             theMock.when(() -> Context.getBalance(Context.getAddress())).thenReturn(BigInteger.valueOf(10000).multiply(MULTIPLIER));
-            tokenScore.invoke(owner, "swap_tokens", 10);
-            assertEquals(tokenScore.call("get_swap_state_status"), Map.of("count", 0, "state", 1));
+            tokenScore.invoke(owner, "swapTokens", 10);
+            assertEquals(tokenScore.call("getSwapStateStatus"), Map.of("count", 0, "state", 1));
         }
     }
 
@@ -361,8 +357,8 @@ public class CPFTTreasuryTest extends TestBase {
             theMock.when(() -> Context.call(dexScore.get(), "getPrice", 2)).thenReturn(BigInteger.valueOf(8).multiply(MULTIPLIER).divide(BigInteger.TEN));
             theMock.when(() -> Context.call(balancedDollar.get(), "balanceOf", Context.getAddress())).thenReturn(BigInteger.valueOf(1000).multiply(MULTIPLIER));
             theMock.when(() -> Context.getBalance(Context.getAddress())).thenReturn(BigInteger.valueOf(2000).multiply(MULTIPLIER));
-            tokenScore.invoke(owner, "swap_tokens", 10);
-            assertEquals(tokenScore.call("get_swap_state_status"), Map.of("count", 1, "state", 0));
+            tokenScore.invoke(owner, "swapTokens", 10);
+            assertEquals(tokenScore.call("getSwapStateStatus"), Map.of("count", 1, "state", 0));
         }
     }
 
@@ -379,8 +375,8 @@ public class CPFTTreasuryTest extends TestBase {
             theMock.when(() -> Context.call(dexScore.get(), "getPrice", 2)).thenReturn(BigInteger.valueOf(8).multiply(MULTIPLIER).divide(BigInteger.TEN));
             theMock.when(() -> Context.call(balancedDollar.get(), "balanceOf", Context.getAddress())).thenReturn(BigInteger.valueOf(1000).multiply(MULTIPLIER));
             theMock.when(() -> Context.getBalance(Context.getAddress())).thenReturn(BigInteger.valueOf(2000).multiply(MULTIPLIER));
-            tokenScore.invoke(owner, "swap_tokens", 0);
-            assertEquals(tokenScore.call("get_swap_state_status"), Map.of("count", 0, "state", 1));
+            tokenScore.invoke(owner, "swapTokens", 0);
+            assertEquals(tokenScore.call("getSwapStateStatus"), Map.of("count", 0, "state", 1));
         }
     }
 
@@ -393,8 +389,8 @@ public class CPFTTreasuryTest extends TestBase {
         try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
             theMock.when(() -> Context.getCaller()).thenReturn(testing_account.getAddress());
             theMock.when(() -> Context.call(score_address, "isAdmin", Context.getCaller())).thenReturn(true);
-            tokenScore.invoke(owner, "reset_swap_state");
-            assertEquals(tokenScore.call("get_swap_state_status"), Map.of("state", 0, "count", 0));
+            tokenScore.invoke(owner, "resetSwapState");
+            assertEquals(tokenScore.call("getSwapStateStatus"), Map.of("state", 0, "count", 0));
         }
     }
 
@@ -404,8 +400,8 @@ public class CPFTTreasuryTest extends TestBase {
         try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
             theMock.when(() -> Context.getCaller()).thenReturn(score_address);
             theMock.when(() -> Context.call(BigInteger.class, balancedDollar.get(), "balanceOf", Context.getAddress())).thenReturn(BigInteger.valueOf(1000).multiply(MULTIPLIER));
-            tokenScore.invoke(owner, "transfer_proposal_fund_to_cps_treasury", "Proposal 1", 2, testing_account.getAddress(), testing_account2.getAddress(), "bnUSD", BigInteger.valueOf(100).multiply(MULTIPLIER));
-            tokenScore.invoke(owner, "transfer_proposal_fund_to_cps_treasury", "Proposal 2", 2, testing_account.getAddress(), testing_account2.getAddress(), "bnUSD", BigInteger.valueOf(110).multiply(MULTIPLIER));
+            tokenScore.invoke(owner, "transferProposalFundToCpsTreasury", "Proposal 1", 3, testing_account.getAddress(), testing_account2.getAddress(), "bnUSD", BigInteger.valueOf(100).multiply(MULTIPLIER));
+            tokenScore.invoke(owner, "transferProposalFundToCpsTreasury", "Proposal 2", 3, testing_account.getAddress(), testing_account2.getAddress(), "bnUSD", BigInteger.valueOf(110).multiply(MULTIPLIER));
 
 
         }
@@ -423,7 +419,7 @@ public class CPFTTreasuryTest extends TestBase {
         try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
             theMock.when(() -> Context.getBalance(Context.getAddress())).thenReturn(BigInteger.valueOf(2001).multiply(MULTIPLIER));
             theMock.when(() -> Context.call(bnUSDScore, "balanceOf", Context.getAddress())).thenReturn(BigInteger.valueOf(2000).multiply(MULTIPLIER));
-            tokenScore.invoke(owner, "add_fund");
+            tokenScore.invoke(owner, "addFund");
             theMock.verify(() -> Context.call(BigInteger.valueOf(1).multiply(MULTIPLIER), score_address, "burn"), times(1));
 
         }
@@ -445,7 +441,7 @@ public class CPFTTreasuryTest extends TestBase {
         try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
             theMock.when(() -> Context.getBalance(Context.getAddress())).thenReturn(BigInteger.valueOf(2000).multiply(MULTIPLIER));
             theMock.when(() -> Context.call(bnUSDScore, "balanceOf", Context.getAddress())).thenReturn(BigInteger.valueOf(2001).multiply(MULTIPLIER));
-            tokenScore.invoke(owner, "add_fund");
+            tokenScore.invoke(owner, "addFund");
             JsonObject swapData = new JsonObject();
             swapData.add("method", "_swap");
             JsonObject params = new JsonObject();
@@ -530,7 +526,7 @@ public class CPFTTreasuryTest extends TestBase {
             theMock.when(() -> Context.getBalance(Context.getAddress())).thenReturn(BigInteger.valueOf(2000).multiply(MULTIPLIER));
             theMock.when(() -> Context.call(bnUSDScore, "balanceOf", Context.getAddress())).thenReturn(BigInteger.valueOf(2001).multiply(MULTIPLIER));
             JsonObject jsonObject = new JsonObject();
-            jsonObject.add("method", "return_fund_amount");
+            jsonObject.add("method", "returnFundAmount");
             JsonObject params = new JsonObject();
             params.add("sponsor_address", testing_account.getAddress().toString());
             jsonObject.add("params", params);
@@ -558,7 +554,7 @@ public class CPFTTreasuryTest extends TestBase {
             theMock.when(() -> Context.getBalance(Context.getAddress())).thenReturn(BigInteger.valueOf(2000).multiply(MULTIPLIER));
             theMock.when(() -> Context.call(bnUSDScore, "balanceOf", Context.getAddress())).thenReturn(BigInteger.valueOf(2001).multiply(MULTIPLIER));
             JsonObject jsonObject = new JsonObject();
-            jsonObject.add("method", "burn_amount");
+            jsonObject.add("method", "burnAmount");
             JsonObject params = new JsonObject();
             params.add("sponsor_address", testing_account.getAddress().toString());
             jsonObject.add("params", params);
@@ -584,8 +580,8 @@ public class CPFTTreasuryTest extends TestBase {
         try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
             theMock.when(() -> Context.getCaller()).thenReturn(score_address);
             theMock.when(() -> Context.call(BigInteger.class, bnUSDScore, "balanceOf", Context.getAddress())).thenReturn(BigInteger.valueOf(1000).multiply(MULTIPLIER));
-            tokenScore.invoke(owner, "transfer_proposal_fund_to_cps_treasury", "Proposal 1", 2, testing_account.getAddress(), testing_account2.getAddress(), "bnUSD", BigInteger.valueOf(100).multiply(MULTIPLIER));
-            tokenScore.invoke(owner, "transfer_proposal_fund_to_cps_treasury", "Proposal 2", 2, testing_account.getAddress(), testing_account2.getAddress(), "bnUSD", BigInteger.valueOf(110).multiply(MULTIPLIER));
+            tokenScore.invoke(owner, "transferProposalFundToCpsTreasury", "Proposal 1", 3, testing_account.getAddress(), testing_account2.getAddress(), "bnUSD", BigInteger.valueOf(100).multiply(MULTIPLIER));
+            tokenScore.invoke(owner, "transferProposalFundToCpsTreasury", "Proposal 2", 3, testing_account.getAddress(), testing_account2.getAddress(), "bnUSD", BigInteger.valueOf(110).multiply(MULTIPLIER));
         }
 
         try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
@@ -593,7 +589,7 @@ public class CPFTTreasuryTest extends TestBase {
             theMock.when(() -> Context.getBalance(Context.getAddress())).thenReturn(BigInteger.valueOf(2000).multiply(MULTIPLIER));
             theMock.when(() -> Context.call(bnUSDScore, "balanceOf", Context.getAddress())).thenReturn(BigInteger.valueOf(2001).multiply(MULTIPLIER));
             JsonObject jsonObject = new JsonObject();
-            jsonObject.add("method", "disqualify_project");
+            jsonObject.add("method", "disqualifyProject");
             JsonObject params = new JsonObject();
             params.add("ipfs_key", "Proposal 1");
             jsonObject.add("params", params);
@@ -604,7 +600,7 @@ public class CPFTTreasuryTest extends TestBase {
             params_.add("toToken", sicxScore.toString());
             swapData.add("params", params_);
             theMock.verify(() -> Context.call(bnUSDScore, "transfer", dexScore, BigInteger.ONE.multiply(MULTIPLIER), swapData.toString().getBytes()));
-            Map<String, Object> details = (Map<String, Object>) tokenScore.call("get_proposal_details", 0, 5);
+            Map<String, Object> details = (Map<String, Object>) tokenScore.call("getProposalDetails", 0, 5);
             List<Map<String, Object>> proposalsList = new ArrayList<>();
             proposalsList.add(Map.of("_ipfs_hash", "Proposal 1", "_budget_transfer", BigInteger.valueOf(2).multiply(MULTIPLIER).toString()));
             proposalsList.add(Map.of("_ipfs_hash", "Proposal 2", "_budget_transfer", BigInteger.valueOf(1122).multiply(MULTIPLIER).divide(BigInteger.TEN).toString()));
@@ -649,8 +645,8 @@ public class CPFTTreasuryTest extends TestBase {
         try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
             theMock.when(() -> Context.getCaller()).thenReturn(score_address);
             theMock.when(() -> Context.call(BigInteger.class, bnUSDScore, "balanceOf", Context.getAddress())).thenReturn(BigInteger.valueOf(1000).multiply(MULTIPLIER));
-            tokenScore.invoke(owner, "transfer_proposal_fund_to_cps_treasury", "Proposal 1", 2, testing_account.getAddress(), testing_account2.getAddress(), "bnUSD", BigInteger.valueOf(100).multiply(MULTIPLIER));
-            tokenScore.invoke(owner, "transfer_proposal_fund_to_cps_treasury", "Proposal 2", 2, testing_account.getAddress(), testing_account2.getAddress(), "bnUSD", BigInteger.valueOf(110).multiply(MULTIPLIER));
+            tokenScore.invoke(owner, "transferProposalFundToCpsTreasury", "Proposal 1", 3, testing_account.getAddress(), testing_account2.getAddress(), "bnUSD", BigInteger.valueOf(100).multiply(MULTIPLIER));
+            tokenScore.invoke(owner, "transferProposalFundToCpsTreasury", "Proposal 2", 3, testing_account.getAddress(), testing_account2.getAddress(), "bnUSD", BigInteger.valueOf(110).multiply(MULTIPLIER));
         }
 
         try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
@@ -685,7 +681,61 @@ public class CPFTTreasuryTest extends TestBase {
             theMock.when(() -> Context.getCaller()).thenReturn(sicxScore);
             theMock.when(() -> Context.getValue()).thenReturn(BigInteger.valueOf(1000).multiply(MULTIPLIER));
             tokenScore.invoke(owner, "fallback");
-            theMock.verify(() -> Context.revert(TAG + ": Please send fund using add_fund()."));
+            theMock.verify(() -> Context.revert(TAG + ": Please send fund using addFund()."));
+        }
+    }
+
+    @Test
+    void toggleSwapFlag(){
+        VarDB<Address> cpsScore = mock(VarDB.class);
+        try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
+            theMock.when(() -> Context.call(cpsScore.get(), "isAdmin", Context.getCaller())).thenReturn(true);
+            tokenScore.invoke(owner,"toggleSwapFlag");
+            assertEquals(true,tokenScore.call("getSwapFlag"));
+        }
+    }
+
+    @Test
+    void transferToEmergencyFund(){
+        VarDB<Address> cpsScore = mock(VarDB.class);
+        VarDB<Address> balanceDollar = mock(VarDB.class);
+        BigInteger emergencyFund = BigInteger.valueOf(10).multiply(ICX);
+        try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
+            theMock.when(() -> Context.call(cpsScore.get(), "isAdmin", Context.getCaller())).thenReturn(true);
+            tokenScore.invoke(owner,"allocateEmergencyFund",emergencyFund);
+
+            theMock.when(() -> Context.call(balanceDollar.get(), "balanceOf", Context.getAddress())).thenReturn(BigInteger.valueOf(100).multiply(ICX));
+            assertEquals(emergencyFund,tokenScore.call("getEmergencyFund"));
+        }
+    }
+
+    @Test
+    void withdrawFromEmergencyFund(){
+        transferToEmergencyFund();
+        VarDB<Address> cpsScore = mock(VarDB.class);
+        VarDB<Address> balanceDollar = mock(VarDB.class);
+        BigInteger withdrawAmount = BigInteger.valueOf(4).multiply(ICX);
+        try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)){
+            theMock.when(() -> Context.call(cpsScore.get(), "isAdmin", Context.getCaller())).thenReturn(true);
+            tokenScore.invoke(owner,"withdrawFromEmergencyFund",withdrawAmount,testing_account.getAddress(), "Need fund");
+
+            theMock.when(() -> Context.call(balanceDollar.get(), "balanceOf", Context.getAddress())).thenReturn(BigInteger.valueOf(100).multiply(ICX));
+            assertEquals(BigInteger.valueOf(6).multiply(ICX),tokenScore.call("getEmergencyFund"));
+
+        }
+    }
+
+    @Test
+    void slippagePercentage() {
+        VarDB<Address> cpsScore = mock(VarDB.class);
+        int value = 10;
+        try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
+            theMock.when(() -> Context.call(cpsScore.get(), "isAdmin", Context.getCaller())).thenReturn(true);
+            tokenScore.invoke(owner, "setOraclePercentageDifference",value );
+
+            assertEquals(value,tokenScore.call("getSlippagePercentage"));
+
+
         }
     }
 

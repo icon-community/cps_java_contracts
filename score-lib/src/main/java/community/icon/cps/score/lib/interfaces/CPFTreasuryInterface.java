@@ -18,86 +18,121 @@ public interface CPFTreasuryInterface {
     String name();
 
     @External
-    void setCpsScore(Address _score);
+    void setCpsScore(Address score);
 
     @External(readonly = true)
     Address getCpsScore();
 
     @External
-    void setCpsTreasuryScore(Address _score);
+    void setCpsTreasuryScore(Address score);
 
     @External(readonly = true)
     Address getCpsTreasuryScore();
 
     @External
-    void setBnUSDScore(Address _score);
+    void setBnUSDScore(Address score);
 
     @External(readonly = true)
     Address getBnUSDScore();
 
     @External
-    void setSicxScore(Address _score);
+    void setSicxScore(Address score);
 
     @External(readonly = true)
     Address getSicxScore();
 
     @External
-    void setDexScore(Address _score);
+    void setDexScore(Address score);
 
     @External(readonly = true)
     Address getDexScore();
 
     @External
-    void setRouterScore(Address _score);
+    void setRouterScore(Address score);
 
     @External(readonly = true)
     Address getRouterScore();
 
     @External
-    void setMaximumTreasuryFundIcx(BigInteger _value);
-
-    @External
-    void setMaximumTreasuryFundBnusd(BigInteger _value);
+    void setOracleAddress(Address score);
 
     @External(readonly = true)
-    Map<String, BigInteger> get_total_funds();
+    Address getOracleAddress();
+
+    @External
+    void setSponsorBondPercentage(BigInteger bondValue);
+
+    @External
+    void setPeriod(BigInteger applicationPeriod);
+
+    @External
+    void setOnsetPayment(BigInteger paymentPercentage);
 
     @External(readonly = true)
-    Map<String, BigInteger> get_remaining_swap_amount();
+    int getSlippagePercentage();
+
+    @External(readonly = true)
+    BigInteger getEmergencyFund();
 
     @External
-    void transfer_proposal_fund_to_cps_treasury(String ipfs_key, int total_installment_count,
-                                                Address sponsor_address, Address contributor_address,
-                                                String token_flag, BigInteger _total_budget);
+    void setMaximumTreasuryFundIcx(BigInteger value);
 
     @External
-    void update_proposal_fund(String ipfs_key, @Optional String flag, @Optional BigInteger _added_budget,
-                              @Optional int _total_installment_count);
+    void setMaximumTreasuryFundBnusd(BigInteger value);
+
+    @External
+    void setSwapLimitAmount(BigInteger value);
+
+    @External(readonly = true)
+    Map<String, BigInteger> getTotalFunds();
+
+    @External(readonly = true)
+    Map<String, BigInteger> getRemainingSwapAmount();
+
+    @External
+    void transferProposalFundToCpsTreasury(String ipfsKey, int projectDuration,
+                                           Address sponsorAddress, Address contributorAddress,
+                                           String tokenFlag, BigInteger totalBudget);
+
+    @External
+    void updateProposalFund(String ipfsKey, @Optional String flag, @Optional BigInteger addedBudget,
+                            @Optional int totalInstallmentCount);
+
+    @External
+    void withdrawFromEmergencyFund(BigInteger value, Address address, String purpose);
+
+    @External
+    void allocateEmergencyFund(BigInteger value);
+
+    @External
+    void setOraclePercentageDifference(int value);
 
     @External
     @Payable
-    void add_fund();
+    void addFund();
 
     @External
     void swapICXToBnUSD(BigInteger amount, @Optional BigInteger _minReceive);
 
     @External
-    void swap_tokens(int _count);
+    void swapTokens(int _count);
 
     @External(readonly = true)
-    Map<String, Integer> get_swap_state_status();
+    Map<String, Integer> getSwapStateStatus();
 
     @External
-    void reset_swap_state();
+    void resetSwapState();
 
     @External(readonly = true)
-    Map<String, Object> get_proposal_details(@Optional int start_index, @Optional int end_index);
+    Map<String, Object> getProposalDetails(@Optional int startIndex, @Optional int endIndex);
 
     @External
     void tokenFallback(Address from, BigInteger value, byte[] _data);
 
     @Payable
     void fallback();
+    @External
+    void toggleSwapFlag();
 
     //EventLogs
     @EventLog(indexed = 1)
@@ -111,4 +146,7 @@ public interface CPFTreasuryInterface {
 
     @EventLog(indexed = 1)
     void FundReceived(Address _sponsor_address, String note);
+
+    @EventLog(indexed = 1)
+    void EmergencyFundTransferred(Address _address, BigInteger _value, String _purpose);
 }
