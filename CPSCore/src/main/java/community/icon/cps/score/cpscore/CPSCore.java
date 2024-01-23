@@ -849,9 +849,10 @@ public class CPSCore implements CPSCoreInterface {
                     TAG + ":: Submitted milestone is greater than recorded on proposal.");
 
             for (MilestoneSubmission milestoneAttr : milestoneSubmissions) {
-                if (getMilestoneDeadline(ipfsHash).size() > 0) {
-                    Context.require(getMilestoneDeadline(ipfsHash).contains(milestoneAttr.id), TAG +
-                            ": Submit milestone report for milestone id " + getMilestoneDeadline(ipfsHash));
+                List<Integer> milestoneDeadlineIDs = getMilestoneDeadline(ipfsHash);
+                if (!milestoneDeadlineIDs.isEmpty()) {
+                    Context.require(milestoneDeadlineIDs.contains(milestoneAttr.id), TAG +
+                            ": Submit milestone report for milestone id " + milestoneDeadlineIDs);
                 }
                 int milestoneStatus = getMileststoneStatusOf(ipfsHash, milestoneAttr.id);
                 if (milestoneStatus == MILESTONE_REPORT_APPROVED || milestoneStatus == MILESTONE_REPORT_COMPLETED) {
@@ -1447,30 +1448,46 @@ public class CPSCore implements CPSCoreInterface {
             String _ipfs_hash = activeProposals.get(i);
             String proposalPrefix = proposalPrefix(_ipfs_hash);
 
-            Map<String, Object> _proposal_details = getProposalDetails(_ipfs_hash);
-            String _proposal_status = (String) _proposal_details.get(STATUS);
-            Address _sponsor_address = (Address) _proposal_details.get(SPONSOR_ADDRESS);
-            Address _contributor_address = (Address) _proposal_details.get(CONTRIBUTOR_ADDRESS);
-            String flag = (String) _proposal_details.get(TOKEN);
+            boolean submitProgressReport = ProposalDataDb.submitProgressReport.at(proposalPrefix).getOrDefault(Boolean.FALSE);
 
-            if (!ProposalDataDb.submitProgressReport.at(proposalPrefix).getOrDefault(Boolean.FALSE)) {
-                if (_proposal_status.equals(ACTIVE)) {
-                    updateProposalStatus(_ipfs_hash, PAUSED);
-                } else if (_proposal_status.equals(PAUSED)) {
-                    updateProposalStatus(_ipfs_hash, DISQUALIFIED);
-                    callScore(getCpsTreasuryScore(), "disqualifyProject", _ipfs_hash);
+            if (!submitProgressReport) {
+                checkProgressReportStatus(_ipfs_hash, proposalPrefix);
+            } else {
+                ArrayDB<String> progressReports = ProposalDataDb.progressReports.at(proposalPrefix);
+                int submittedProgressReports = progressReports.size();
+                String lastProgressKey = progressReports.get(submittedProgressReports - 1);
+                int milestoneCount = ProgressReportDataDb.milestoneSubmitted.at(progressReportPrefix(lastProgressKey)).size();
+                if (milestoneCount == 0) {
+                    Status status = new Status();
+                    removeArrayItem(status.waitingProgressReports, lastProgressKey);
+                    checkProgressReportStatus(_ipfs_hash, proposalPrefix);
 
-
-                    removeContributor(_contributor_address, _ipfs_hash);
-                    removeSponsor(_sponsor_address, _ipfs_hash);
-
-                    sponsorDepositStatus.at(proposalPrefix).set(BOND_CANCELLED);
-                    BigInteger _sponsor_deposit_amount = (BigInteger) _proposal_details.get(SPONSOR_DEPOSIT_AMOUNT);
-
-//              Transferring the sponsor bond deposit to CPF after the project being disqualified
-                    disqualifyProject(_sponsor_address, _sponsor_deposit_amount, flag);
                 }
             }
+        }
+    }
+
+    private void checkProgressReportStatus(String _ipfs_hash, String proposalPrefix) {
+        Map<String, Object> _proposal_details = getProposalDetails(_ipfs_hash);
+        String _proposal_status = (String) _proposal_details.get(STATUS);
+        Address _sponsor_address = (Address) _proposal_details.get(SPONSOR_ADDRESS);
+        Address _contributor_address = (Address) _proposal_details.get(CONTRIBUTOR_ADDRESS);
+        String flag = (String) _proposal_details.get(TOKEN);
+
+        if (_proposal_status.equals(ACTIVE)) {
+            updateProposalStatus(_ipfs_hash, PAUSED);
+        } else if (_proposal_status.equals(PAUSED)) {
+            updateProposalStatus(_ipfs_hash, DISQUALIFIED);
+            callScore(getCpsTreasuryScore(), "disqualifyProject", _ipfs_hash);
+
+            removeContributor(_contributor_address, _ipfs_hash);
+            removeSponsor(_sponsor_address, _ipfs_hash);
+
+            sponsorDepositStatus.at(proposalPrefix).set(BOND_CANCELLED);
+            BigInteger _sponsor_deposit_amount = (BigInteger) _proposal_details.get(SPONSOR_DEPOSIT_AMOUNT);
+
+//              Transferring the sponsor bond deposit to CPF after the project being disqualified
+            disqualifyProject(_sponsor_address, _sponsor_deposit_amount, flag);
         }
     }
 
