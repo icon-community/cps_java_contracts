@@ -3,6 +3,7 @@ package community.icon.cps.score.cpstreasury;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 import community.icon.cps.score.cpstreasury.db.ProposalData;
+import community.icon.cps.score.cpstreasury.utils.ArrayDBUtils;
 import community.icon.cps.score.cpstreasury.utils.consts;
 import community.icon.cps.score.lib.interfaces.CPSTreasuryInterface;
 import score.*;
@@ -602,13 +603,15 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
 
     @Override
     @External
-    public void update_contributor_address(String _ipfs_key, Address _new_contributor_address) {
+    public void update_contributor_sponsor_address(String _ipfs_key, Address _new_contributor_address,
+                                                   Address _new_sponsor_address) {
         validateCpsScore();
         Context.require(proposalExists(_ipfs_key), TAG + ": This project not exists");
 
         String prefix = proposalPrefix(_ipfs_key);
         Map<String, ?> proposalData = getDataFromProposalDB(prefix);
         Address contributorAddress = (Address) proposalData.get(consts.CONTRIBUTOR_ADDRESS);
+        Address sponsorAddress = (Address) proposalData.get(consts.SPONSOR_ADDRESS);
 
         // remove
         contributorProjects.at(_new_contributor_address.toString()).add(_ipfs_key);
@@ -616,6 +619,13 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
 
         // update contributor address
         setContributorAddress(prefix, _new_contributor_address);
+
+        // remove
+        sponsorProjects.at(_new_sponsor_address.toString()).add(_ipfs_key);
+        ArrayDBUtils.remove_array_item_string(sponsorProjects.at(sponsorAddress.toString()),_ipfs_key);
+
+        // update sponsor address
+        this.sponsorAddress.at(prefix).set(_new_sponsor_address);
     }
 
     public <T> T callScore(Class<T> t, Address address, String method, Object... params) {

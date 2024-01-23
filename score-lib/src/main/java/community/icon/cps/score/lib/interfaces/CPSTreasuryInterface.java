@@ -77,7 +77,8 @@ public interface CPSTreasuryInterface {
     BigInteger getOnsetPayment();
 
     @External
-    void update_contributor_address(String _ipfs_key, Address _new_contributor_address);
+    void update_contributor_sponsor_address(String _ipfs_key, Address _new_contributor_address,
+                                            Address _new_sponsor_address);
 
     @EventLog(indexed = 1)
     void ProposalDisqualified(String _ipfs_key, String note);

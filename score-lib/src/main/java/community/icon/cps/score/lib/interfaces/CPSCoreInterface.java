@@ -256,7 +256,7 @@ public interface CPSCoreInterface {
     void updateNextBlock(int blockCount);
 
     @External
-    void updateContributor(String _ipfs_key, Address _new_contributor);
+    void updateContributor(String _ipfs_key, Address _new_contributor, Address _new_sponsor);
 
 
     @External(readonly = true)
@@ -306,7 +306,10 @@ public interface CPSCoreInterface {
     void PriorityVote(Address _address, String note);
 
     @EventLog(indexed = 1)
-    void UpdateContributor(Address _old, Address _new);
+    void UpdateContributorAddress(Address _old, Address _new);
+
+    @EventLog(indexed = 1)
+    void UpdateSponsorAddress(Address _old, Address _new);
 
     @External(readonly = true)
     int getPeriodCount();

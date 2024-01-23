@@ -1094,34 +1094,34 @@ public class CPSCore implements CPSCoreInterface {
 
     @Override
     @External
-    public void updateContributor(String _ipfs_hash, Address _new_contributor) {
+    public void updateContributor(String _ipfs_hash, Address _new_contributor, Address _new_sponsor) {
+        validateAdmins();
         Context.require(!_new_contributor.isContract(), TAG + ": Contract Address not supported.");
-
         Map<String, Object> _proposal_details = getProposalDetails(_ipfs_hash);
         String _proposal_status = (String) _proposal_details.get(STATUS);
         Context.require(_proposal_status.equals(ACTIVE), TAG + ": Proposal must be active");
-        // check sender must be current contributor
-        Address _contributor_address = (Address) _proposal_details.get(CONTRIBUTOR_ADDRESS);
-        Context.require(Context.getCaller().equals(_contributor_address), TAG + ": Caller must be current contributor");
-        removeContributor(_contributor_address, _ipfs_hash);
+
         // update contributor's address
+        Address _contributor_address = (Address) _proposal_details.get(CONTRIBUTOR_ADDRESS);
+        removeContributor(_contributor_address, _ipfs_hash);
+
         contributors.add(_new_contributor);
         contributorProjects.at(_new_contributor).add(_ipfs_hash);
 
-        // request update contributor address to cps treasury
-        callScore(getCpsTreasuryScore(), "update_contributor_address", _ipfs_hash, _new_contributor);
+        // update sponsor's address
+        Address _sponsor_address = (Address) _proposal_details.get(SPONSOR_ADDRESS);
+        removeSponsor(_sponsor_address, _ipfs_hash);
+
+        sponsors.add(_new_sponsor);
+        sponsorProjects.at(_new_sponsor).add(_ipfs_hash);
+
+        // request update contributor address and sponsor address to cps treasury
+        callScore(getCpsTreasuryScore(), "update_contributor_sponsor_address", _ipfs_hash, _new_contributor,_new_sponsor);
 
         // emit event
-        UpdateContributor(_contributor_address, _new_contributor);
+        UpdateContributorAddress(_contributor_address, _new_contributor);
+        UpdateSponsorAddress(_sponsor_address, _new_sponsor);
     }
-
-    @Override
-    @Deprecated(since = "JAVA translation", forRemoval = true)
-    @External(readonly = true)
-    public int check_change_vote(Address _address, String _ipfs_hash, String _proposal_type) {
-        return checkChangeVote(_address, _ipfs_hash, _proposal_type);
-    }
-
 
     @External(readonly = true)
     public Map<String, Object> getProjectAmounts() {
@@ -1683,7 +1683,6 @@ public class CPSCore implements CPSCoreInterface {
         }
     }
 
-    @Override
     @External(readonly = true)
     public Map<String, ?> getProposalDetails(String status, @Optional Address walletAddress, @Optional int startIndex) {
         if (!STATUS_TYPE.contains(status)) {
@@ -2705,9 +2704,12 @@ public class CPSCore implements CPSCoreInterface {
     }
 
 
-    @Override
     @EventLog(indexed = 1)
-    public void UpdateContributor(Address _old, Address _new) {
+    public void UpdateContributorAddress(Address _old, Address _new) {
+    }
+
+    @EventLog(indexed = 1)
+    public void UpdateSponsorAddress(Address _old, Address _new) {
     }
 
     //    =====================================EventLogs===============================================
