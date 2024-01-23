@@ -2397,6 +2397,7 @@ public class CPSCore implements CPSCoreInterface {
     @Override
     @External
     public void claimSponsorBond() {
+        checkMaintenance();
         Address caller = Context.getCaller();
         Context.require(!ArrayDBUtils.containsInArrayDb(caller, blockAddresses), TAG + ": Address is blocked");
         DictDB<String, BigInteger> userAmounts = sponsorBondReturn.at(caller.toString());

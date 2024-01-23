@@ -339,11 +339,11 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
         Address contributorAddress = (Address) proposalData.get(consts.CONTRIBUTOR_ADDRESS);
         String flag = (String) proposalData.get(consts.TOKEN);
 
-        Context.require(milestoneBudget.compareTo(remainingAmount)<= 0,TAG+"Requested budget is greater than remaining amount.");
+        Context.require(milestoneBudget.compareTo(remainingAmount) <= 0, TAG + "Requested budget is greater than remaining amount.");
 //        installmentAmount = remainingAmount.subtract(milestoneBudget);
 
         installmentAmount = milestoneBudget;
-        Context.println("yhe installment is "+ installmentAmount);
+        Context.println("yhe installment is " + installmentAmount);
 
 //        if (_installmentCount == 1) {
 //            installmentAmount = remainingAmount;
@@ -481,10 +481,11 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
     }
 
 
-
     @Override
     @External
     public void claimReward() {
+        boolean checkMaintainance = callScore(Boolean.class, getCpsScore(), "getMaintenanceMode");
+        Context.require(!checkMaintainance, TAG + ": CPS is in maintenance mode");
         Address caller = Context.getCaller();
         List<Address> blockAddresses = callScore(List.class, getCpsScore(), "getBlockedAddresses");
         Context.require(!blockAddresses.contains(caller), TAG + ": Address is blocked");
