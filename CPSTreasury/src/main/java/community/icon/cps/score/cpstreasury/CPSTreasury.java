@@ -255,7 +255,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
                     String flag = (String) proposal_details.get(consts.TOKEN);
                     BigInteger totalBudget = (BigInteger) proposal_details.get(consts.SPONSOR_REWARD);
                     BigInteger totalPaidAmount = (BigInteger) proposal_details.get(consts.SPONSOR_WITHDRAW_AMOUNT);
-                    BigInteger depositedSponsorBond = ((BigInteger) proposal_details.get(consts.TOTAL_BUDGET)).divide(bondPercentage);// todo-donw
+                    BigInteger depositedSponsorBond = ((BigInteger) proposal_details.get(consts.TOTAL_BUDGET)).divide(bondPercentage);
                     BigInteger remainingAmount = totalBudget.subtract(totalPaidAmount);
                     int remainingCount = totalInstallment - totalPaidCount;
 
@@ -342,8 +342,6 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
         Context.require(milestoneBudget.compareTo(remainingAmount)<= 0,TAG+"Requested budget is greater than remaining amount.");
 
         installmentAmount = milestoneBudget;
-        Context.println("yhe installment is "+ installmentAmount);
-
 
         setRemainingAmount(prefix, remainingAmount.subtract(installmentAmount));
         setWithdrawAmount(prefix, withdrawAmount.add(installmentAmount));
