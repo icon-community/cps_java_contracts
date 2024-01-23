@@ -16,21 +16,22 @@ public class ProposalData {
         public String contributor_address;
         public String sponsor_address;
         public String status;
+        public int milestoneCount;
     }
-    private final BranchDB<String, VarDB<String>> ipfsHash = Context.newBranchDB(consts.IPFS_HASH, String.class);
-    private final BranchDB<String, VarDB<BigInteger>> totalBudget = Context.newBranchDB(consts.TOTAL_BUDGET, BigInteger.class);
-    private final BranchDB<String, VarDB<BigInteger>> sponsorReward = Context.newBranchDB(consts.SPONSOR_REWARD, BigInteger.class);
-    private final BranchDB<String, VarDB<Integer>> projectDuration = Context.newBranchDB(consts.PROJECT_DURATION, Integer.class);
-    private final BranchDB<String, VarDB<Address>> sponsorAddress = Context.newBranchDB(consts.SPONSOR_ADDRESS, Address.class);
-    private final BranchDB<String, VarDB<Address>> contributorAddress = Context.newBranchDB(consts.CONTRIBUTOR_ADDRESS, Address.class);
-    private final BranchDB<String, VarDB<String>> token = Context.newBranchDB(consts.TOKEN, String.class);
-    private final BranchDB<String, VarDB<BigInteger>> withdrawAmount = Context.newBranchDB(consts.WITHDRAW_AMOUNT, BigInteger.class);
-    private final BranchDB<String, VarDB<BigInteger>> sponsorWithdrawAmount = Context.newBranchDB(consts.SPONSOR_WITHDRAW_AMOUNT, BigInteger.class);
-    private final BranchDB<String, VarDB<BigInteger>> remainingAmount = Context.newBranchDB(consts.REMAINING_AMOUNT, BigInteger.class);
-    private final BranchDB<String, VarDB<BigInteger>> sponsorRemainingAmount = Context.newBranchDB(consts.SPONSOR_REMAINING_AMOUNT, BigInteger.class);
-    private final BranchDB<String, VarDB<Integer>> installmentCount = Context.newBranchDB(consts.INSTALLMENT_COUNT, Integer.class);
-    private final BranchDB<String, VarDB<Integer>> sponsorRewardCount = Context.newBranchDB(consts.SPONSOR_REWARD_COUNT, Integer.class);
-    private final BranchDB<String, VarDB<String>> status = Context.newBranchDB(consts.STATUS, String.class);
+    public final BranchDB<String, VarDB<String>> ipfsHash = Context.newBranchDB(consts.IPFS_HASH, String.class);
+    public final BranchDB<String, VarDB<BigInteger>> totalBudget = Context.newBranchDB(consts.TOTAL_BUDGET, BigInteger.class);
+    public final BranchDB<String, VarDB<BigInteger>> sponsorReward = Context.newBranchDB(consts.SPONSOR_REWARD, BigInteger.class);
+    public final BranchDB<String, VarDB<Integer>> projectDuration = Context.newBranchDB(consts.PROJECT_DURATION, Integer.class);
+    public final BranchDB<String, VarDB<Address>> sponsorAddress = Context.newBranchDB(consts.SPONSOR_ADDRESS, Address.class);
+    public final BranchDB<String, VarDB<Address>> contributorAddress = Context.newBranchDB(consts.CONTRIBUTOR_ADDRESS, Address.class);
+    public final BranchDB<String, VarDB<String>> token = Context.newBranchDB(consts.TOKEN, String.class);
+    public final BranchDB<String, VarDB<BigInteger>> withdrawAmount = Context.newBranchDB(consts.WITHDRAW_AMOUNT, BigInteger.class);
+    public final BranchDB<String, VarDB<BigInteger>> sponsorWithdrawAmount = Context.newBranchDB(consts.SPONSOR_WITHDRAW_AMOUNT, BigInteger.class);
+    public final BranchDB<String, VarDB<BigInteger>> remainingAmount = Context.newBranchDB(consts.REMAINING_AMOUNT, BigInteger.class);
+    public final BranchDB<String, VarDB<BigInteger>> sponsorRemainingAmount = Context.newBranchDB(consts.SPONSOR_REMAINING_AMOUNT, BigInteger.class);
+    public final BranchDB<String, VarDB<Integer>> installmentCount = Context.newBranchDB(consts.INSTALLMENT_COUNT, Integer.class);
+    public final BranchDB<String, VarDB<Integer>> sponsorRewardCount = Context.newBranchDB(consts.SPONSOR_REWARD_COUNT, Integer.class);
+    public final BranchDB<String, VarDB<String>> status = Context.newBranchDB(consts.STATUS, String.class);
 
 
 
@@ -39,15 +40,15 @@ public class ProposalData {
         ipfsHash.at(prefix).set(_proposals.ipfs_hash);
         totalBudget.at(prefix).set(_proposals.total_budget);
         sponsorReward.at(prefix).set(_proposals.sponsor_reward);
-        projectDuration.at(prefix).set(_proposals.project_duration);
+        projectDuration.at(prefix).set(_proposals.milestoneCount);
         sponsorAddress.at(prefix).set(Address.fromString(_proposals.sponsor_address));
         contributorAddress.at(prefix).set(Address.fromString(_proposals.contributor_address));
         withdrawAmount.at(prefix).set(BigInteger.ZERO);
         sponsorWithdrawAmount.at(prefix).set(BigInteger.ZERO);
         remainingAmount.at(prefix).set(_proposals.total_budget);
         sponsorRemainingAmount.at(prefix).set(_proposals.sponsor_reward);
-        installmentCount.at(prefix).set(_proposals.project_duration);
-        sponsorRewardCount.at(prefix).set(_proposals.project_duration);
+        installmentCount.at(prefix).set(_proposals.milestoneCount);
+        sponsorRewardCount.at(prefix).set(_proposals.milestoneCount);
         token.at(prefix).set(_proposals.token);
         status.at(prefix).set(_proposals.status);
     }

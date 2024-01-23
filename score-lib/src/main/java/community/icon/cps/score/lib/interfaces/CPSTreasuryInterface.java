@@ -2,11 +2,9 @@ package community.icon.cps.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
-
 import score.Address;
 import score.annotation.EventLog;
 import score.annotation.External;
-import score.annotation.Optional;
 import score.annotation.Payable;
 
 import java.math.BigInteger;
@@ -23,26 +21,25 @@ public interface CPSTreasuryInterface {
     void fallback();
 
     @External
-    void setCpsScore(Address _score);
+    void setCpsScore(Address score);
 
     @External(readonly = true)
-        //Todo java convention in get methods??
     Address getCpsScore();
 
     @External
-    void setCpfTreasuryScore(Address _score);
+    void setCpfTreasuryScore(Address score);
 
     @External(readonly = true)
     Address getCpfTreasuryScore();
 
     @External
-    void setBnUSDScore(Address _score);
+    void setBnUSDScore(Address score);
 
     @External(readonly = true)
     Address getBnUSDScore();
 
     @External(readonly = true)
-    Map<String, ?> get_contributor_projected_fund(Address _wallet_address);
+    Map<String, ?> getContributorProjectedFund(Address walletAddress);
 
     @External(readonly = true)
     List<String> getContributorProjects(Address address);
@@ -51,31 +48,33 @@ public interface CPSTreasuryInterface {
     List<String> getSponsorProjects(Address address);
 
     @External(readonly = true)
-    Map<String, ?> get_sponsor_projected_fund(Address _wallet_address);
+    Map<String, ?> getSponsorProjectedFund(Address walletAddress);
 
     @External
     @Payable
-    void update_proposal_fund(String ipfs_key, BigInteger added_budget, BigInteger _added_sponsor_reward,
-                              int _added_installment_count);
+    void updateProposalFund(String ipfsKey, BigInteger addedBudget, BigInteger addedSponsorReward,
+                            int addedInstallmentCount);
 
     @External
-    void send_installment_to_contributor(String _ipfs_key);
+    void sendInstallmentToContributor(String ipfsKey, BigInteger milestoneBudget);
 
     @External
-    void send_reward_to_sponsor(String _ipfs_key);
+    void sendRewardToSponsor(String ipfsKey, int installmentCount);
 
     @External
-    void disqualify_project(String _ipfs_key);
+    void disqualifyProject(String ipfsKey);
 
     @External
-    void claim_reward();
+    void claimReward();
 
     @External
     void tokenFallback(Address from, BigInteger value, byte[] _data);
 
-    //    for migration into java contract
     @External
-    void updateSponsorAndContributorProjects();
+    void setOnsetPayment(BigInteger paymentPercentage);
+
+    @External(readonly = true)
+    BigInteger getOnsetPayment();
 
     @EventLog(indexed = 1)
     void ProposalDisqualified(String _ipfs_key, String note);

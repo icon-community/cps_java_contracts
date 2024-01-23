@@ -15,6 +15,7 @@ public class ProposalDataDb {
     public static final BranchDB<String, VarDB<BigInteger>> timestamp = Context.newBranchDB(TIMESTAMP, BigInteger.class);
     public static final BranchDB<String, VarDB<BigInteger>> totalBudget = Context.newBranchDB(TOTAL_BUDGET, BigInteger.class);
     public static final BranchDB<String, VarDB<Integer>> projectDuration = Context.newBranchDB(PROJECT_DURATION, Integer.class);
+    public static final BranchDB<String, VarDB<Integer>> milestoneCount = Context.newBranchDB(MILESTONE_COUNT, Integer.class);
     public static final BranchDB<String, VarDB<Integer>> approvedReports = Context.newBranchDB(APPROVED_REPORTS, Integer.class);
     public static final BranchDB<String, VarDB<Address>> sponsorAddress = Context.newBranchDB(SPONSOR_ADDRESS, Address.class);
     public static final BranchDB<String, VarDB<Address>> contributorAddress = Context.newBranchDB(CONTRIBUTOR_ADDRESS, Address.class);
@@ -41,6 +42,9 @@ public class ProposalDataDb {
     public static final BranchDB<String, ArrayDB<String>> progressReports = Context.newBranchDB(PROGRESS_REPORTS, String.class);
     public static final BranchDB<String, VarDB<Boolean>> budgetAdjustment = Context.newBranchDB(BUDGET_ADJUSTMENT, Boolean.class);
     public static final BranchDB<String, VarDB<Boolean>> submitProgressReport = Context.newBranchDB(SUBMIT_PROGRESS_REPORT, Boolean.class);
+    public static final BranchDB<String, VarDB<Boolean>> isMilestone = Context.newBranchDB(IS_MILESTONE, Boolean.class);
+    public static final BranchDB<String, VarDB<Integer>> proposalPeriod = Context.newBranchDB(PROPOSAL_PERIOD, Integer.class);
+    public static final BranchDB<String, ArrayDB<Integer>> milestoneIds = Context.newBranchDB("milestoneIds", Integer.class);
 
     public static void addDataToProposalDB(ProposalAttributes proposalData, String prefix) {
         ipfsHash.at(prefix).set(proposalData.ipfs_hash);
@@ -62,43 +66,41 @@ public class ProposalDataDb {
         budgetAdjustment.at(prefix).set(false);
         submitProgressReport.at(prefix).set(false);
         token.at(prefix).set(proposalData.token);
+        milestoneCount.at(prefix).set(proposalData.milestoneCount);
+        isMilestone.at(prefix).set(true);
+
+    }
+
+    public static void updatePercentageCompleted(String prefix, int percentage) {
+        percentageCompleted.at(prefix).set(percentage);
     }
 
     public static Map<String, Object> getDataFromProposalDB(String prefix) {
-        String reason = sponsorVoteReason.at(prefix).getOrDefault("");
-        if (reason.equalsIgnoreCase("none")) {
-            reason = "";
-        } else {
-            reason = reason.toString();
-        }
+        return Map.ofEntries(
+                Map.entry(IPFS_HASH, ipfsHash.at(prefix).getOrDefault("")),
+                Map.entry(PROJECT_TITLE, projectTitle.at(prefix).getOrDefault("")),
+                Map.entry(TIMESTAMP, timestamp.at(prefix).getOrDefault(BigInteger.ZERO)),
+                Map.entry(TOTAL_BUDGET, totalBudget.at(prefix).getOrDefault(BigInteger.ZERO)),
+                Map.entry(PROJECT_DURATION, projectDuration.at(prefix).getOrDefault(0)),
+                Map.entry(APPROVED_REPORTS, approvedReports.at(prefix).getOrDefault(0)),
+                Map.entry(SPONSOR_ADDRESS, sponsorAddress.at(prefix).get()),
+                Map.entry(CONTRIBUTOR_ADDRESS, contributorAddress.at(prefix).get()),
+                Map.entry(STATUS, status.at(prefix).getOrDefault("")),
+                Map.entry(TX_HASH, txHash.at(prefix).getOrDefault("")),
+                Map.entry(TOKEN, token.at(prefix).getOrDefault("")),
+                Map.entry(SPONSOR_DEPOSIT_AMOUNT, sponsorDepositAmount.at(prefix).getOrDefault(BigInteger.ZERO)),
+                Map.entry(SPONSORED_TIMESTAMP, sponsoredTimestamp.at(prefix).getOrDefault(BigInteger.ZERO)),
+                Map.entry(SPONSOR_DEPOSIT_STATUS, sponsorDepositStatus.at(prefix).getOrDefault("")),
+                Map.entry(BUDGET_ADJUSTMENT, budgetAdjustment.at(prefix).getOrDefault(false)),
+                Map.entry(MILESTONE_COUNT,milestoneCount.at(prefix).getOrDefault(0)),
+                Map.entry(IS_MILESTONE,isMilestone.at(prefix).getOrDefault(false)),
+                Map.entry(PERCENTAGE_COMPLETED,percentageCompleted.at(prefix).getOrDefault(0)),
+                Map.entry(SUBMIT_PROGRESS_REPORT, submitProgressReport.at(prefix).getOrDefault(false)),
+                Map.entry(PROPOSAL_PERIOD,proposalPeriod.at(prefix).getOrDefault(0)));
+    }
 
-        Map<String, Object> entryMap = Map.ofEntries(
-        Map.entry(IPFS_HASH, ipfsHash.at(prefix).getOrDefault("")),
-        Map.entry(PROJECT_TITLE, projectTitle.at(prefix).getOrDefault("")),
-        Map.entry(TIMESTAMP, timestamp.at(prefix).getOrDefault(BigInteger.ZERO)),
-        Map.entry(TOTAL_BUDGET, totalBudget.at(prefix).getOrDefault(BigInteger.ZERO)),
-        Map.entry(PROJECT_DURATION, projectDuration.at(prefix).getOrDefault(0)),
-        Map.entry(APPROVED_REPORTS, approvedReports.at(prefix).getOrDefault(0)),
-        Map.entry(SPONSOR_ADDRESS, sponsorAddress.at(prefix).get()),
-        Map.entry(CONTRIBUTOR_ADDRESS, contributorAddress.at(prefix).get()),
-        Map.entry(STATUS, status.at(prefix).getOrDefault("")),
-        Map.entry(TX_HASH, txHash.at(prefix).getOrDefault("")),
-        Map.entry(PERCENTAGE_COMPLETED, percentageCompleted.at(prefix).getOrDefault(0)),
-        Map.entry(TOKEN, token.at(prefix).getOrDefault("")),
-        Map.entry(TOTAL_VOTES, totalVotes.at(prefix).getOrDefault(BigInteger.ZERO)),
-        Map.entry(TOTAL_VOTERS, totalVoters.at(prefix).getOrDefault(0)),
-        Map.entry(APPROVED_VOTES, approvedVotes.at(prefix).getOrDefault(BigInteger.ZERO)),
-        Map.entry(REJECTED_VOTES, rejectedVotes.at(prefix).getOrDefault(BigInteger.ZERO)),
-        Map.entry(ABSTAINED_VOTES, abstainedVotes.at(prefix).getOrDefault(BigInteger.ZERO)),
-        Map.entry(SPONSOR_DEPOSIT_AMOUNT, sponsorDepositAmount.at(prefix).getOrDefault(BigInteger.ZERO)),
-        Map.entry(SPONSORED_TIMESTAMP, sponsoredTimestamp.at(prefix).getOrDefault(BigInteger.ZERO)),
-        Map.entry(SPONSOR_DEPOSIT_STATUS, sponsorDepositStatus.at(prefix).getOrDefault("")),
-        Map.entry(APPROVE_VOTERS, approveVoters.at(prefix).size()),
-        Map.entry(REJECT_VOTERS, rejectVoters.at(prefix).size()),
-        Map.entry(ABSTAIN_VOTERS, abstainVoters.at(prefix).size()),
-        Map.entry(BUDGET_ADJUSTMENT, budgetAdjustment.at(prefix).getOrDefault(false)),
-        Map.entry(SUBMIT_PROGRESS_REPORT, submitProgressReport.at(prefix).getOrDefault(false)));
-        return entryMap;
+    public static int getMilestoneCount(String prefix) {
+        return milestoneCount.at(prefix).getOrDefault(0);
     }
 
 
