@@ -255,7 +255,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
                     String flag = (String) proposal_details.get(consts.TOKEN);
                     BigInteger totalBudget = (BigInteger) proposal_details.get(consts.SPONSOR_REWARD);
                     BigInteger totalPaidAmount = (BigInteger) proposal_details.get(consts.SPONSOR_WITHDRAW_AMOUNT);
-                    BigInteger depositedSponsorBond = ((BigInteger) proposal_details.get(consts.TOTAL_BUDGET)).divide(bondPercentage);
+                    BigInteger depositedSponsorBond = ((BigInteger) proposal_details.get(consts.TOTAL_BUDGET)).multiply(bondPercentage).divide(BigInteger.valueOf(100));
                     BigInteger remainingAmount = totalBudget.subtract(totalPaidAmount);
                     int remainingCount = totalInstallment - totalPaidCount;
 
