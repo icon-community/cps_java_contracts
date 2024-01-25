@@ -2665,7 +2665,7 @@ public class CPSCore implements CPSCoreInterface {
         blockAddresses.add(walletAddress);
     }
 
-    @External
+    @External(readonly = true)
     public List<Address> getBlockedAddresses() {
         return ArrayDBUtils.arrayDBtoList(blockAddresses);
     }
