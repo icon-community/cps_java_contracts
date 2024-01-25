@@ -2562,6 +2562,32 @@ public class CPSCore implements CPSCoreInterface {
         return Map.of(DATA, proposalHistory, COUNT, size);
     }
 
+    @Override
+    @External(readonly = true)
+    public List<Integer> getRemainingMilestones(String ipfsHash){
+        String ipfsHashPrefix = proposalPrefix(ipfsHash);
+        ArrayDB<Integer> milestoneIDs = milestoneIds.at(ipfsHashPrefix);
+
+        List<Integer> milestoneIdList = new ArrayList<>();
+        for (int i = 0; i < milestoneIDs.size(); i++) {
+            int milestoneId = milestoneIDs.get(i);
+            String milestonePrefix = mileStonePrefix(ipfsHash, milestoneId);
+            int proposalTotalPeriod = proposalPeriod.at(ipfsHashPrefix).getOrDefault(0);
+            int completionPeriod = MilestoneDb.completionPeriod.at(milestonePrefix).getOrDefault(0);
+
+            int computedCompletionPeriod = proposalTotalPeriod + completionPeriod;
+
+            int currentPeriod = getPeriodCount();
+            if (computedCompletionPeriod > currentPeriod) {
+                int status = MilestoneDb.status.at(milestonePrefix).getOrDefault(0);
+                if (status != MILESTONE_REPORT_APPROVED ){
+                    milestoneIdList.add(milestoneId);
+                }
+            }
+        }
+        return milestoneIdList;
+    }
+
     //    =====================================TEMPORARY MIGRATIONS METHODS===============================================
 
     @External
