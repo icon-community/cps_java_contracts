@@ -2662,6 +2662,10 @@ public class CPSCore implements CPSCoreInterface {
         validateAdmins();
         Context.require(!ArrayDBUtils.containsInArrayDb(walletAddress, blockAddresses),
                 TAG + ": Address already blocked");
+        PReps pReps = new PReps();
+        if (ArrayDBUtils.containsInArrayDb(walletAddress, pReps.validPreps)) {
+            ArrayDBUtils.removeArrayItem(pReps.validPreps, walletAddress);
+        }
         blockAddresses.add(walletAddress);
     }
 
