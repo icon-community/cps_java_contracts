@@ -187,7 +187,9 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
                     BigInteger totalBudget = (BigInteger) proposal_details.get(consts.TOTAL_BUDGET);
                     BigInteger totalPaidAmount = (BigInteger) proposal_details.get(consts.WITHDRAW_AMOUNT);
 
-                    BigInteger remainingAmount = totalBudget.subtract(totalPaidAmount);
+
+                    BigInteger installmentAmount = getInstallmetAmount(_ipfs_key);
+
                     Map<String, ?> project_details = Map.of(
                             consts.IPFS_HASH, _ipfs_key,
                             consts.TOKEN, flag,
@@ -195,11 +197,11 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
                             consts.TOTAL_INSTALLMENT_PAID, totalPaidAmount,
                             consts.TOTAL_INSTALLMENT_COUNT, totalInstallment,
                             consts.TOTAL_TIMES_INSTALLMENT_PAID, totalPaidCount,
-                            consts.INSTALLMENT_AMOUNT, remainingAmount.divide(BigInteger.valueOf(totalInstallment - totalPaidCount)));
+
+                            consts.INSTALLMENT_AMOUNT, installmentAmount);
 
                     projectDetails.add(project_details);
-
-                    totalAmountToBePaidbnUSD = totalAmountToBePaidbnUSD.add(totalBudget.divide(BigInteger.valueOf(totalInstallment)));
+                    totalAmountToBePaidbnUSD = totalAmountToBePaidbnUSD.add(installmentAmount);
 
                 }
 
@@ -242,6 +244,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
         List<Map<String, ?>> projectDetails = new ArrayList<>();
         ArrayDB<String> proposalKeysArray = sponsorProjects.at(walletAddress.toString());
         int proposalKeysSize = proposalKeysArray.size();
+        BigInteger bondPercentage = callScore(BigInteger.class, getCpsScore(), "getSponsorBondPercentage");
         for (int i = 0; i < proposalKeysSize; i++) {
             String _ipfs_key = proposalKeysArray.get(i);
             String proposalPrefix = proposalPrefix(_ipfs_key);
@@ -254,8 +257,9 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
                     String flag = (String) proposal_details.get(consts.TOKEN);
                     BigInteger totalBudget = (BigInteger) proposal_details.get(consts.SPONSOR_REWARD);
                     BigInteger totalPaidAmount = (BigInteger) proposal_details.get(consts.SPONSOR_WITHDRAW_AMOUNT);
-                    BigInteger depositedSponsorBond = ((BigInteger) proposal_details.get(consts.TOTAL_BUDGET)).divide(BigInteger.TEN);
+                    BigInteger depositedSponsorBond = ((BigInteger) proposal_details.get(consts.TOTAL_BUDGET)).multiply(bondPercentage).divide(BigInteger.valueOf(100));
                     BigInteger remainingAmount = totalBudget.subtract(totalPaidAmount);
+                    int remainingCount = totalInstallment - totalPaidCount;
 
                     Map<String, ?> project_details = Map.of(
                             consts.IPFS_HASH, _ipfs_key,
@@ -264,13 +268,12 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
                             consts.TOTAL_INSTALLMENT_PAID, totalPaidAmount,
                             consts.TOTAL_INSTALLMENT_COUNT, totalInstallment,
                             consts.TOTAL_TIMES_INSTALLMENT_PAID, totalPaidCount,
-                            consts.INSTALLMENT_AMOUNT, remainingAmount.divide(BigInteger.valueOf(totalInstallment - totalPaidCount)),
+                            consts.INSTALLMENT_AMOUNT, remainingAmount.divide(BigInteger.valueOf(remainingCount)),
                             consts.SPONSOR_BOND_AMOUNT, depositedSponsorBond);
 
                     projectDetails.add(project_details);
 
-
-                    totalAmountToBePaidbnUSD = totalAmountToBePaidbnUSD.add(totalBudget.divide(BigInteger.valueOf(totalInstallment)));
+                    totalAmountToBePaidbnUSD = totalAmountToBePaidbnUSD.add(remainingAmount.divide(BigInteger.valueOf(remainingCount)));
                     totalSponsorBondbnUSD = totalSponsorBondbnUSD.add(depositedSponsorBond);
 
                 }
@@ -333,26 +336,17 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
         String prefix = proposalPrefix(ipfsKey);
         Map<String, ?> proposalData = getDataFromProposalDB(prefix);
 
-        int _installmentCount = (int) proposalData.get(consts.INSTALLMENT_COUNT);
         BigInteger withdrawAmount = (BigInteger) proposalData.get(consts.WITHDRAW_AMOUNT);
         BigInteger remainingAmount = (BigInteger) proposalData.get(consts.REMAINING_AMOUNT);
         Address contributorAddress = (Address) proposalData.get(consts.CONTRIBUTOR_ADDRESS);
         String flag = (String) proposalData.get(consts.TOKEN);
 
+
         Context.require(milestoneBudget.compareTo(remainingAmount) <= 0, TAG + "Requested budget is greater than remaining amount.");
-//        installmentAmount = remainingAmount.subtract(milestoneBudget);
 
         installmentAmount = milestoneBudget;
-        Context.println("yhe installment is " + installmentAmount);
 
-//        if (_installmentCount == 1) {
-//            installmentAmount = remainingAmount;
-//        } else {
-//            installmentAmount = remainingAmount.subtract(milestoneBudget);
-//        }
-//        int newInstallmentCount = _installmentCount - milestoneApproved;
 
-//        setInstallmentCount(prefix, newInstallmentCount);
         setRemainingAmount(prefix, remainingAmount.subtract(installmentAmount));
         setWithdrawAmount(prefix, withdrawAmount.add(installmentAmount));
         DictDB<String, BigInteger> installmentFund = this.installmentFundRecord.at(contributorAddress.toString());
@@ -412,6 +406,8 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
         int newSponsorRewardCount = sponsorRewardCount - installmentCount;
 
         setSponsorRewardCount(prefix, newSponsorRewardCount);
+        // the contributor installment count is set here
+        setInstallmentCount(prefix, newSponsorRewardCount);
         setSponsorWithdrawAmount(prefix, sponsorWithdrawAmount.add(installmentAmount));
         setSponsorRemainingAmount(prefix, sponsorRemainingAmount.subtract(installmentAmount));
         DictDB<String, BigInteger> installmentFunds = installmentFundRecord.at(sponsorAddress.toString());
@@ -604,6 +600,11 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
 
     }
 
+    private BigInteger getInstallmetAmount(String ipfsHash){
+        List<Map<String,?>> remainingMilestones = callScore(List.class,getCpsScore(),"getRemainingMilestones",ipfsHash);
+        BigInteger installmentAmount = (BigInteger) remainingMilestones.get(0).get(consts.BUDGET);
+        return installmentAmount;
+    }
 
     public <T> T callScore(Class<T> t, Address address, String method, Object... params) {
         return Context.call(t, address, method, params);
