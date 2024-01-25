@@ -2711,8 +2711,8 @@ public class CPSCore implements CPSCoreInterface {
             UpdateSponsorAddress(_sponsor_address, _new_sponsor);
         } else {
             callScore(getCpsTreasuryScore(), "updateContributorSponsorAddress", _ipfs_hash, _new_contributor);
-            UpdateContributorAddress(_contributor_address, _new_contributor);
         }
+        UpdateContributorAddress(_contributor_address, _new_contributor);
 
     }
 
