@@ -187,7 +187,9 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
                     BigInteger totalBudget = (BigInteger) proposal_details.get(consts.TOTAL_BUDGET);
                     BigInteger totalPaidAmount = (BigInteger) proposal_details.get(consts.WITHDRAW_AMOUNT);
 
+
                     BigInteger installmentAmount = getInstallmetAmount(_ipfs_key);
+
                     Map<String, ?> project_details = Map.of(
                             consts.IPFS_HASH, _ipfs_key,
                             consts.TOKEN, flag,
@@ -195,6 +197,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
                             consts.TOTAL_INSTALLMENT_PAID, totalPaidAmount,
                             consts.TOTAL_INSTALLMENT_COUNT, totalInstallment,
                             consts.TOTAL_TIMES_INSTALLMENT_PAID, totalPaidCount,
+
                             consts.INSTALLMENT_AMOUNT, installmentAmount);
 
                     projectDetails.add(project_details);
