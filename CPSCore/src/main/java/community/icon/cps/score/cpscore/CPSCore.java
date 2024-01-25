@@ -2564,25 +2564,27 @@ public class CPSCore implements CPSCoreInterface {
 
     @Override
     @External(readonly = true)
-    public List<Integer> getRemainingMilestones(String ipfsHash){
+    public List<Map<String,?>> getRemainingMilestones(String ipfsHash){
         String ipfsHashPrefix = proposalPrefix(ipfsHash);
         ArrayDB<Integer> milestoneIDs = milestoneIds.at(ipfsHashPrefix);
 
-        List<Integer> milestoneIdList = new ArrayList<>();
-        for (int i = 0; i < milestoneIDs.size(); i++) {
+        int size = milestoneIDs.size();
+        List<Map<String,?>> milestoneIdList = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
             int milestoneId = milestoneIDs.get(i);
             String milestonePrefix = mileStonePrefix(ipfsHash, milestoneId);
-            int proposalTotalPeriod = proposalPeriod.at(ipfsHashPrefix).getOrDefault(0);
+            int proposalPeriod = ProposalDataDb.proposalPeriod.at(ipfsHashPrefix).getOrDefault(0);
             int completionPeriod = MilestoneDb.completionPeriod.at(milestonePrefix).getOrDefault(0);
 
-            int computedCompletionPeriod = proposalTotalPeriod + completionPeriod;
+            int computedCompletionPeriod = proposalPeriod + completionPeriod;
 
-            int currentPeriod = getPeriodCount();
-            if (computedCompletionPeriod > currentPeriod) {
-                int status = MilestoneDb.status.at(milestonePrefix).getOrDefault(0);
-                if (status != MILESTONE_REPORT_APPROVED ){
-                    milestoneIdList.add(milestoneId);
-                }
+            int status = MilestoneDb.status.at(milestonePrefix).getOrDefault(0);
+
+            if (status != MILESTONE_REPORT_APPROVED ){
+                milestoneIdList.add(Map.of(MILESTONE_ID,milestoneId,
+                        COMPLETION_PERIOD,computedCompletionPeriod,
+                        BUDGET,MilestoneDb.budget.at(milestonePrefix).getOrDefault(BigInteger.ZERO))
+                        );
             }
         }
         return milestoneIdList;

@@ -266,7 +266,7 @@ public interface CPSCoreInterface {
     Map<String, Object> getProposalsHistory(@Optional int startIndex);
 
     @External(readonly = true)
-    List<Integer> getRemainingMilestones(String ipfsHash);
+    List<Map<String,?>> getRemainingMilestones(String ipfsHash);
 
     //    EventLogs
     @EventLog(indexed = 1)
