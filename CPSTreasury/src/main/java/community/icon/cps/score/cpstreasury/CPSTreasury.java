@@ -343,9 +343,11 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
         Address contributorAddress = (Address) proposalData.get(consts.CONTRIBUTOR_ADDRESS);
         String flag = (String) proposalData.get(consts.TOKEN);
 
-        Context.require(milestoneBudget.compareTo(remainingAmount)<= 0,TAG+"Requested budget is greater than remaining amount.");
+
+        Context.require(milestoneBudget.compareTo(remainingAmount) <= 0, TAG + "Requested budget is greater than remaining amount.");
 
         installmentAmount = milestoneBudget;
+
 
         setRemainingAmount(prefix, remainingAmount.subtract(installmentAmount));
         setWithdrawAmount(prefix, withdrawAmount.add(installmentAmount));
@@ -480,7 +482,11 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
     @Override
     @External
     public void claimReward() {
+        boolean checkMaintainance = callScore(Boolean.class, getCpsScore(), "getMaintenanceMode");
+        Context.require(!checkMaintainance, TAG + ": CPS is in maintenance mode");
         Address caller = Context.getCaller();
+        List<Address> blockAddresses = callScore(List.class, getCpsScore(), "getBlockedAddresses");
+        Context.require(!blockAddresses.contains(caller), TAG + ": Address is blocked");
         DictDB<String, BigInteger> installmentFundRecord = this.installmentFundRecord.at(caller.toString());
         BigInteger availableAmountICX = installmentFundRecord.getOrDefault(consts.ICX, BigInteger.ZERO);
         BigInteger availableAmountbnUSD = installmentFundRecord.getOrDefault(consts.bnUSD, BigInteger.ZERO);

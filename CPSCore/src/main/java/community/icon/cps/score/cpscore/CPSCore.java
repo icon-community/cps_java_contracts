@@ -54,6 +54,7 @@ public class CPSCore implements CPSCoreInterface {
     private final ArrayDB<Address> priorityVotedPreps = Context.newArrayDB(PRIORITY_VOTED_PREPS, Address.class);
     private final BranchDB<Address, ArrayDB<String>> sponsorProjects = Context.newBranchDB(SPONSOR_PROJECTS, String.class);
     private final BranchDB<Address, ArrayDB<String>> contributorProjects = Context.newBranchDB(CONTRIBUTOR_PROJECTS, String.class);
+    private final ArrayDB<Address> blockAddresses = Context.newArrayDB(BLOCKED_ADDRESSES, Address.class);
     private static final BigInteger HUNDRED = BigInteger.valueOf(100);
 
     public CPSCore(@Optional BigInteger bondValue, @Optional BigInteger applicationPeriod) {
@@ -2382,7 +2383,9 @@ public class CPSCore implements CPSCoreInterface {
     @Override
     @External
     public void claimSponsorBond() {
+        checkMaintenance();
         Address caller = Context.getCaller();
+        Context.require(!ArrayDBUtils.containsInArrayDb(caller, blockAddresses), TAG + ": Address is blocked");
         DictDB<String, BigInteger> userAmounts = sponsorBondReturn.at(caller.toString());
         BigInteger amountIcx = userAmounts.getOrDefault(ICX, BigInteger.ZERO);
         BigInteger amountBNUsd = userAmounts.getOrDefault(bnUSD, BigInteger.ZERO);
@@ -2624,6 +2627,18 @@ public class CPSCore implements CPSCoreInterface {
         }
     }
 
+    @External
+    public void blockAddress(Address walletAddress) {
+        validateAdmins();
+        Context.require(!ArrayDBUtils.containsInArrayDb(walletAddress, blockAddresses),
+                TAG + ": Address already blocked");
+        blockAddresses.add(walletAddress);
+    }
+
+    @External
+    public List<Address> getBlockedAddresses() {
+        return ArrayDBUtils.arrayDBtoList(blockAddresses);
+    }
     @Override
     @External
     public void updateContributor(String _ipfs_hash, Address _new_contributor, @Optional Address _new_sponsor) {
