@@ -1095,7 +1095,6 @@ public class CPSCore implements CPSCoreInterface {
         }
     }
 
-    @Override
     @External(readonly = true)
     public Map<String, Object> getProjectAmounts() {
         List<String> statusList = List.of(PENDING, ACTIVE, PAUSED, COMPLETED, DISQUALIFIED);
@@ -1557,6 +1556,7 @@ public class CPSCore implements CPSCoreInterface {
                     sponsors.add(sponsorAddress);
                     sponsorProjects.at(sponsorAddress).add(proposal);
                     ProposalDataDb.sponsorDepositStatus.at(proposalPrefix).set(BOND_APPROVED);
+                    proposalPeriod.at(proposalPrefix).set(getPeriodCount());
                     callScore(getCpfTreasuryScore(), "transferProposalFundToCpsTreasury",
                             proposal, projectDuration, sponsorAddress, contributorAddress, flag, totalBudget);
                     distributionAmount = distributionAmount.subtract(totalBudget);
@@ -1656,7 +1656,6 @@ public class CPSCore implements CPSCoreInterface {
         }
     }
 
-    @Override
     @External(readonly = true)
     public Map<String, ?> getProposalDetails(String status, @Optional Address walletAddress, @Optional int startIndex) {
         if (!STATUS_TYPE.contains(status)) {
@@ -2353,7 +2352,6 @@ public class CPSCore implements CPSCoreInterface {
             sponsoredTimestamp.at(proposalPrefix).set(BigInteger.valueOf(Context.getBlockTimestamp()));
             sponsorDepositStatus.at(proposalPrefix).set(BOND_RECEIVED);
             sponsorVoteReason.at(proposalPrefix).set(voteReason);
-            proposalPeriod.at(proposalPrefix).set(getPeriodCount());
 
             SponsorBondReceived(from, "Sponsor Bond " + value + " " + token + " Received.");
         } else {
@@ -2626,6 +2624,41 @@ public class CPSCore implements CPSCoreInterface {
         }
     }
 
+    @Override
+    @External
+    public void updateContributor(String _ipfs_hash, Address _new_contributor, @Optional Address _new_sponsor) {
+        validateAdmins();
+
+        Context.require(!_new_contributor.isContract(), TAG + ": Contract Address not supported.");
+        Map<String, Object> _proposal_details = getProposalDetails(_ipfs_hash);
+        String _proposal_status = (String) _proposal_details.get(STATUS);
+        Context.require(List.of(ACTIVE, PAUSED).contains(_proposal_status), TAG + ": Proposal must be in active or paused state.");
+
+        // update contributor's address
+        Address _contributor_address = (Address) _proposal_details.get(CONTRIBUTOR_ADDRESS);
+        removeContributor(_contributor_address, _ipfs_hash);
+
+        contributors.add(_new_contributor);
+        contributorProjects.at(_new_contributor).add(_ipfs_hash);
+
+        // update sponsor's address
+        // request update contributor address and sponsor address to cps treasury
+        if (_new_sponsor != null) {
+            Address _sponsor_address = (Address) _proposal_details.get(SPONSOR_ADDRESS);
+            removeSponsor(_sponsor_address, _ipfs_hash);
+
+            sponsors.add(_new_sponsor);
+            sponsorProjects.at(_new_sponsor).add(_ipfs_hash);
+
+            callScore(getCpsTreasuryScore(), "updateContributorSponsorAddress", _ipfs_hash, _new_contributor, _new_sponsor);
+            UpdateSponsorAddress(_sponsor_address, _new_sponsor);
+        } else {
+            callScore(getCpsTreasuryScore(), "updateContributorSponsorAddress", _ipfs_hash, _new_contributor);
+            UpdateContributorAddress(_contributor_address, _new_contributor);
+        }
+
+    }
+
 
     //    =====================================TEMPORARY MIGRATIONS METHODS===============================================
 
@@ -2688,6 +2721,15 @@ public class CPSCore implements CPSCoreInterface {
     @Override
     @EventLog(indexed = 1)
     public void PriorityVote(Address _address, String note) {
+    }
+
+
+    @EventLog(indexed = 1)
+    public void UpdateContributorAddress(Address _old, Address _new) {
+    }
+
+    @EventLog(indexed = 1)
+    public void UpdateSponsorAddress(Address _old, Address _new) {
     }
 
     //    =====================================EventLogs===============================================
