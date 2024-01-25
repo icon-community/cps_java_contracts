@@ -17,8 +17,6 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-import static community.icon.cps.score.cpstreasury.utils.ArrayDBUtils.replaceArrayItem;
-
 public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
     private static final String TAG = "CPS_TREASURY";
     private static final String PROPOSAL_DB_PREFIX = "proposal";
@@ -544,62 +542,6 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
         } else {
             Context.revert(TAG + methodName + " Not a valid method.");
         }
-    }
-
-    @External
-    public void updateNewProjects(String oldHash, String newHash, int milestoneCount) {
-        validateCpsScore();
-
-        String newIpfsHashPrefix = proposalPrefix(newHash);
-        String oldProposalPrefix = proposalPrefix(oldHash);
-
-        Address _contributorAddress = getContributorAddress(oldProposalPrefix);
-        Address _sponsorAddress = getSponsorAddress(oldProposalPrefix);
-
-        ArrayDB<String> contributedProjects = contributorProjects.at(_contributorAddress.toString());
-        replaceArrayItem(contributedProjects, oldHash, newHash);
-
-        ArrayDB<String> sponsoredProjects = sponsorProjects.at(_sponsorAddress.toString());
-        replaceArrayItem(sponsoredProjects, oldHash, newHash);
-
-        replaceArrayItem(proposalsKeys, oldHash, newHash);
-        int getIndex = proposalsKeyListIndex.get(oldHash);
-        proposalsKeyListIndex.set(oldHash, null);
-        proposalsKeyListIndex.set(newHash, getIndex);
-
-        ipfsHash.at(newIpfsHashPrefix).set(newHash);
-        projectDuration.at(newIpfsHashPrefix).set(milestoneCount);
-        sponsorAddress.at(newIpfsHashPrefix).set(_sponsorAddress);
-        contributorAddress.at(newIpfsHashPrefix).set(_contributorAddress);
-        installmentCount.at(newIpfsHashPrefix).set(milestoneCount);
-
-        BigInteger _totalBudget = totalBudget.at(oldProposalPrefix).get();
-        totalBudget.at(newIpfsHashPrefix).set(_totalBudget);
-
-        BigInteger _sponsorReward = sponsorReward.at(oldProposalPrefix).get();
-        sponsorReward.at(newIpfsHashPrefix).set(_sponsorReward);
-
-        String _token = token.at(oldProposalPrefix).get();
-        token.at(newIpfsHashPrefix).set(_token);
-
-        BigInteger _withdrawAmount = withdrawAmount.at(oldProposalPrefix).get();
-        withdrawAmount.at(newIpfsHashPrefix).set(_withdrawAmount);
-
-        BigInteger _sponsorWithdrawAmount = sponsorWithdrawAmount.at(oldProposalPrefix).get();
-        sponsorWithdrawAmount.at(newIpfsHashPrefix).set(_sponsorWithdrawAmount);
-
-        String _status = status.at(oldProposalPrefix).get();
-        status.at(newIpfsHashPrefix).set(_status);
-
-        BigInteger _remainingAmount = remainingAmount.at(oldProposalPrefix).get();
-        remainingAmount.at(newIpfsHashPrefix).set(_remainingAmount);
-
-        BigInteger _sponsorRemainingAmount = sponsorRemainingAmount.at(oldProposalPrefix).get();
-        sponsorRemainingAmount.at(newIpfsHashPrefix).set(_sponsorRemainingAmount);
-
-        int _sponsorRewardCount = sponsorRewardCount.at(oldProposalPrefix).get();
-        sponsorRewardCount.at(newIpfsHashPrefix).set(_sponsorRewardCount);
-
     }
 
     @Override
