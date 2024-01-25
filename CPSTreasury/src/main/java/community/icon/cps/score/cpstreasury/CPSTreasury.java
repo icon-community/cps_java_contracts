@@ -219,8 +219,9 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
     @External(readonly = true)
     public List<String> getContributorProjects(Address address) {
         List<String> contributorProjects = new ArrayList<>();
-        for (int i = 0; i < this.contributorProjects.at(address.toString()).size(); i++) {
-            contributorProjects.add(this.contributorProjects.at(address.toString()).get(i));
+        ArrayDB<String> contributorProjectsArray = this.contributorProjects.at(address.toString());
+        for (int i = 0; i < contributorProjectsArray.size(); i++) {
+            contributorProjects.add(contributorProjectsArray.get(i));
         }
         return contributorProjects;
     }
@@ -229,8 +230,9 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
     @External(readonly = true)
     public List<String> getSponsorProjects(Address address) {
         List<String> sponsorProjects = new ArrayList<>();
-        for (int i = 0; i < this.sponsorProjects.at(address.toString()).size(); i++) {
-            sponsorProjects.add(this.sponsorProjects.at(address.toString()).get(i));
+        ArrayDB<String> sponsorProjectsArray = this.sponsorProjects.at(address.toString());
+        for (int i = 0; i < sponsorProjectsArray.size(); i++) {
+            sponsorProjects.add(sponsorProjectsArray.get(i));
         }
         return sponsorProjects;
     }
