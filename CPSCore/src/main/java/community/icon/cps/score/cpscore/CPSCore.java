@@ -791,7 +791,7 @@ public class CPSCore implements CPSCoreInterface {
             int currentPeriod = getPeriodCount();
             if (currentPeriod >= computedCompletionPeriod) {
                 int status = MilestoneDb.status.at(milestonePrefix).getOrDefault(0);
-                if (status == MILESTONE_REPORT_REJECTED || status == 0 ){
+                if (status != MILESTONE_REPORT_APPROVED ){
                     milestoneIdList.add(milestoneId);
                 }
             }
