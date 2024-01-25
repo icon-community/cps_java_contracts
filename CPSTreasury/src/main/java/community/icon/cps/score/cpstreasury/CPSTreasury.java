@@ -629,6 +629,8 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
             // update sponsor address
             setSponsorAddress(prefix, _new_sponsor_address);
         }
+    }
+
     private BigInteger getInstallmetAmount(String ipfsHash){
         List<Map<String,?>> remainingMilestones = callScore(List.class,getCpsScore(),"getRemainingMilestones",ipfsHash);
         BigInteger installmentAmount = (BigInteger) remainingMilestones.get(0).get(consts.BUDGET);
