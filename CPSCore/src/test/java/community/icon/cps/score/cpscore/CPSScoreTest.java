@@ -2049,7 +2049,11 @@ public class CPSScoreTest extends TestBase{
         assertEquals(proposalDetails.get("contributor_address"),owner.getAddress());
         assertEquals(proposalDetails.get("sponsor_address"),testingAccount.getAddress());
 
+
         doNothing().when(scoreSpy).callScore(cpsTreasury, "updateContributorSponsorAddress", ipfsHash, testingAccount1.getAddress(), testingAccount2.getAddress());
+        cpsScore.invoke(owner, "blockAddress", owner.getAddress());
+        cpsScore.invoke(owner, "blockAddress", testingAccount.getAddress());
+
         /* changing contributor to testAccount1
         * changing sponsor to testAccount 2*/
         cpsScore.invoke(owner,"updateContributor", ipfsHash, testingAccount1.getAddress(),testingAccount2.getAddress());
@@ -2078,7 +2082,6 @@ public class CPSScoreTest extends TestBase{
 
         CPSCoreInterface.MilestoneSubmission[] milestoneSubmission = new CPSCoreInterface.MilestoneSubmission[]{
                 milestoneSubmission1};
-
 
         Executable call = () -> cpsScore.invoke(owner, "submitProgressReport", progressReport,milestoneSubmission);
         expectErrorMessage(call, "Reverted(0): CPS Score: Sorry, You are not the contributor for this project.");
