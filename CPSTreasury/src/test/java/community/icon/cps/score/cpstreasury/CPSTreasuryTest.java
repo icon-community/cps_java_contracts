@@ -520,9 +520,12 @@ public class CPSTreasuryTest extends TestBase {
          * initial payment = 10%
          * 10 % of 2 = 0.2 */
         setScoresMethod();
+        setCpsScoreMethod();
         depositProposalFundMethod();
         setBnUSDScoreMethod();
         BigInteger reward = BigInteger.valueOf(2).multiply(MULTIPLIER).divide(BigInteger.valueOf(10));
+        doReturn(false).when(scoreSpy).callScore(eq(Boolean.class),any(), eq("getMaintenanceMode"));
+        doReturn(List.of()).when(scoreSpy).callScore(List.class, score_address, "getBlockedAddresses");
         doNothing().when(scoreSpy).callScore(eq(bnUSDScore),eq("transfer"),eq(testing_account.getAddress()),eq(reward));
         contextMock.when(caller()).thenReturn(testing_account.getAddress());
 

@@ -860,9 +860,6 @@ public class CPSScoreTest extends TestBase{
         progressReport.budget_adjustment = true;
         progressReport.additional_budget = BigInteger.valueOf(10);
         progressReport.additional_month = 1;
-//        progressReport.isMilestone = true;
-//        progressReport.milestoneCompleted = new int[]{1,2};
-//        progressReport.percentage_completed = 50;
 
         CPSCoreInterface.MilestoneSubmission milestoneSubmission1 = new CPSCoreInterface.MilestoneSubmission();
         milestoneSubmission1.id = 1;
@@ -2038,6 +2035,111 @@ public class CPSScoreTest extends TestBase{
 
         BigInteger votingPeriod = (BigInteger) cpsScore.call("getVotingPeriod");
         assertEquals(votingPeriod,BigInteger.valueOf(10));
+    }
+
+    @Test
+    void updateContributorAddress(){
+
+        doReturn(1).when(scoreSpy).getPeriodCount();
+        updatePeriodAfterProposalVoting();
+
+        String ipfsHash = "Proposal 1";
+        Map<String,Object> proposalDetails = getProposalDetailsByHash(ipfsHash);
+
+        assertEquals(proposalDetails.get("contributor_address"),owner.getAddress());
+        assertEquals(proposalDetails.get("sponsor_address"),testingAccount.getAddress());
+
+        doNothing().when(scoreSpy).callScore(cpsTreasury, "updateContributorSponsorAddress", ipfsHash, testingAccount1.getAddress(), testingAccount2.getAddress());
+        /* changing contributor to testAccount1
+        * changing sponsor to testAccount 2*/
+        cpsScore.invoke(owner,"updateContributor", ipfsHash, testingAccount1.getAddress(),testingAccount2.getAddress());
+
+        proposalDetails = getProposalDetailsByHash(ipfsHash);
+
+        assertEquals(proposalDetails.get("contributor_address"),testingAccount1.getAddress());
+        assertEquals(proposalDetails.get("sponsor_address"),testingAccount2.getAddress());
+
+
+        /* the new contributor submits progress report */
+        getPeriodStatusMethod();
+
+        ProgressReportAttributes progressReport = new ProgressReportAttributes();
+        progressReport.ipfs_hash = "Proposal 1";
+        progressReport.report_hash = "Report 1";
+        progressReport.ipfs_link = "Link";
+        progressReport.progress_report_title = "Progress Report Title";
+        progressReport.budget_adjustment = false;
+        progressReport.additional_budget = BigInteger.ZERO;
+        progressReport.additional_month = 0;
+
+        CPSCoreInterface.MilestoneSubmission milestoneSubmission1 = new CPSCoreInterface.MilestoneSubmission();
+        milestoneSubmission1.id = 1;
+        milestoneSubmission1.status = true;
+
+        CPSCoreInterface.MilestoneSubmission[] milestoneSubmission = new CPSCoreInterface.MilestoneSubmission[]{
+                milestoneSubmission1};
+
+
+        Executable call = () -> cpsScore.invoke(owner, "submitProgressReport", progressReport,milestoneSubmission);
+        expectErrorMessage(call, "Reverted(0): CPS Score: Sorry, You are not the contributor for this project.");
+
+        contextMock.when(caller()).thenReturn(testingAccount1.getAddress());
+        cpsScore.invoke(testingAccount1, "submitProgressReport", progressReport,milestoneSubmission);
+
+        /* update period to voting */
+        contextMock.when(caller()).thenReturn(owner.getAddress());
+        updateNextBlock();
+        cpsScore.invoke(owner, "updatePeriod");
+
+
+        CPSCoreInterface.MilestoneVoteAttributes milestoneVoteAttributes= new CPSCoreInterface.MilestoneVoteAttributes();
+        milestoneVoteAttributes.vote = APPROVE;
+        milestoneVoteAttributes.id = 1;
+
+        CPSCoreInterface.MilestoneVoteAttributes[] milestoneVoteAttributesList = new CPSCoreInterface.MilestoneVoteAttributes[]{
+                milestoneVoteAttributes};
+        doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("swapTokens"), eq(8));
+        cpsScore.invoke(owner, "voteProgressReport",  "Report 1", "reason", milestoneVoteAttributesList ,"_reject",false);
+        contextMock.when(caller()).thenReturn(testingAccount.getAddress());
+        cpsScore.invoke(testingAccount, "voteProgressReport",  "Report 1", "reason", (Object)milestoneVoteAttributesList ,"_reject",false);
+        contextMock.when(caller()).thenReturn(testingAccount1.getAddress());
+        cpsScore.invoke(testingAccount1, "voteProgressReport",  "Report 1", "reason", milestoneVoteAttributesList ,"_reject",false);
+        contextMock.when(caller()).thenReturn(testingAccount2.getAddress());
+        cpsScore.invoke(testingAccount2, "voteProgressReport",  "Report 1", "reason", (Object)milestoneVoteAttributesList ,"_reject",false);
+        contextMock.when(caller()).thenReturn(testingAccount3.getAddress());
+        cpsScore.invoke(testingAccount3, "voteProgressReport",  "Report 1", "reason", (Object)milestoneVoteAttributesList ,"_reject",false);
+        contextMock.when(caller()).thenReturn(testingAccount4.getAddress());
+        cpsScore.invoke(testingAccount4, "voteProgressReport",  "Report 1", "reason", (Object)milestoneVoteAttributesList ,"_reject",false);
+        contextMock.when(caller()).thenReturn(testingAccount5.getAddress());
+        cpsScore.invoke(testingAccount5, "voteProgressReport",  "Report 1", "reason", (Object)milestoneVoteAttributesList ,"_reject",false);
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> progressReportVoteDetails = (Map<String, Object>) cpsScore.call("getProgressReportVoteDetails", "Report 1");
+
+        assertEquals(7, progressReportVoteDetails.get(TOTAL_VOTERS));
+        Map<String, Object> milestoneReport = (Map<String, Object>) cpsScore.call("getMilestonesReport", "Proposal 1", 1);
+        assertEquals(7, milestoneReport.get(APPROVE_VOTERS));
+        assertEquals(MILESTONE_REPORT_COMPLETED, milestoneReport.get(STATUS));
+
+
+        /* update period to application */
+        contextMock.when(caller()).thenReturn(owner.getAddress());
+        updateNextBlock();
+
+        // mocks for updating periods
+        doNothing().when(scoreSpy).callScore(eq(cpsTreasury), eq("sendInstallmentToContributor"), eq("Proposal 1"),any(BigInteger.class));
+        doNothing().when(scoreSpy).callScore(eq(cpsTreasury), eq("sendRewardToSponsor"), eq("Proposal 1"),eq(1));
+        doNothing().when(scoreSpy).callScore(eq(BigInteger.ZERO), eq(SYSTEM_ADDRESS), eq("burn"));
+
+        updatePeriods();
+
+        proposalDetails = getProposalDetailsByHash(ipfsHash);
+        assertEquals(proposalDetails.get("approved_reports"),1);
+
+        milestoneReport = (Map<String, Object>) cpsScore.call("getMilestonesReport", "Proposal 1", 1);
+        assertEquals(MILESTONE_REPORT_APPROVED, milestoneReport.get(STATUS));
+
+
     }
 
 
