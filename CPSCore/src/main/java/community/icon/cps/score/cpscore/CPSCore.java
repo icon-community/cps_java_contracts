@@ -54,6 +54,7 @@ public class CPSCore implements CPSCoreInterface {
     private final ArrayDB<Address> priorityVotedPreps = Context.newArrayDB(PRIORITY_VOTED_PREPS, Address.class);
     private final BranchDB<Address, ArrayDB<String>> sponsorProjects = Context.newBranchDB(SPONSOR_PROJECTS, String.class);
     private final BranchDB<Address, ArrayDB<String>> contributorProjects = Context.newBranchDB(CONTRIBUTOR_PROJECTS, String.class);
+    private final ArrayDB<Address> blockAddresses = Context.newArrayDB(BLOCKED_ADDRESSES, Address.class);
     private static final BigInteger HUNDRED = BigInteger.valueOf(100);
 
     public CPSCore(@Optional BigInteger bondValue, @Optional BigInteger applicationPeriod) {
@@ -632,7 +633,10 @@ public class CPSCore implements CPSCoreInterface {
         Context.require(period.periodName.get().equals(APPLICATION_PERIOD),
                 TAG + ": Proposals can only be submitted on Application Period ");
         Context.require(!proposalKeyExists(proposals.ipfs_hash), TAG + ": Proposal key already exists.");
-        Context.require(!Context.getCaller().isContract(), TAG + ": Contract Address not supported.");
+        Address caller = Context.getCaller();
+        Context.require(!caller.isContract(), TAG + ": Contract Address not supported.");
+        Context.require(!ArrayDBUtils.containsInArrayDb(caller, blockAddresses),
+                TAG + ": You are blocked from CPS.");
         Context.require(proposals.project_duration <= MAX_PROJECT_PERIOD,
                 TAG + ": Maximum Project Duration exceeds " + MAX_PROJECT_PERIOD + " months.");
         Context.require(proposals.milestoneCount == milestones.length, TAG + ": Milestone count mismatch");
@@ -671,9 +675,9 @@ public class CPSCore implements CPSCoreInterface {
         proposalsKeyListIndex.set(ipfsHash, proposalsKeyList.size() - 1);
         Status status = new Status();
         status.sponsorPending.add(ipfsHash);
-        contributors.add(Context.getCaller());
-        contributorProjects.at(Context.getCaller()).add(ipfsHash);
-        ProposalSubmitted(Context.getCaller(), "Successfully submitted a Proposal.");
+        contributors.add(caller);
+        contributorProjects.at(caller).add(ipfsHash);
+        ProposalSubmitted(caller, "Successfully submitted a Proposal.");
 
         BigInteger totalFund = proposalFees.getOrDefault(BigInteger.ZERO);
         BigInteger halfProposalFee = Context.getValue().divide(BigInteger.TWO);
@@ -703,6 +707,9 @@ public class CPSCore implements CPSCoreInterface {
         String status = (String) proposalDetails.get(STATUS);
 
         ArrayDB<Address> voterList = ProposalDataDb.votersList.at(proposalPrefix);
+
+        Context.require(!ArrayDBUtils.containsInArrayDb(caller, blockAddresses),
+                TAG + ": You are blocked from CPS.");
 
         if (!voteChange && (ArrayDBUtils.containsInArrayDb(caller, voterList))) {
             Context.revert(TAG + ":: Already Voted");
@@ -790,7 +797,10 @@ public class CPSCore implements CPSCoreInterface {
 
             int currentPeriod = getPeriodCount();
             if (currentPeriod >= computedCompletionPeriod) {
-                milestoneIdList.add(milestoneId);
+                int status = MilestoneDb.status.at(milestonePrefix).getOrDefault(0);
+                if (status != MILESTONE_REPORT_APPROVED) {
+                    milestoneIdList.add(milestoneId);
+                }
             }
         }
         return milestoneIdList;
@@ -847,12 +857,13 @@ public class CPSCore implements CPSCoreInterface {
 
             Context.require(milestoneSubmissions.length + approvedReports <= totalMilestoneCount,
                     TAG + ":: Submitted milestone is greater than recorded on proposal.");
+            List<Integer> milestoneDeadlineIDs = getMilestoneDeadline(ipfsHash);
+            if (!milestoneDeadlineIDs.isEmpty()) {
+                boolean isMilestoneSubmitted = checkContainsMilestone(milestoneSubmissions, milestoneDeadlineIDs);
+                Context.require(isMilestoneSubmitted, TAG + ": Submit milestone report for milestone id. " + milestoneDeadlineIDs);
+            }
 
             for (MilestoneSubmission milestoneAttr : milestoneSubmissions) {
-                if (getMilestoneDeadline(ipfsHash).size() > 0) {
-                    Context.require(getMilestoneDeadline(ipfsHash).contains(milestoneAttr.id), TAG +
-                            ": Submit milestone report for milestone id " + getMilestoneDeadline(ipfsHash));
-                }
                 int milestoneStatus = getMileststoneStatusOf(ipfsHash, milestoneAttr.id);
                 if (milestoneStatus == MILESTONE_REPORT_APPROVED || milestoneStatus == MILESTONE_REPORT_COMPLETED) {
                     Context.revert(TAG + " Milestone already completed/submitted " + milestoneStatus);
@@ -896,6 +907,17 @@ public class CPSCore implements CPSCoreInterface {
                 " --> Progress Report Submitted Successfully.");
     }
 
+    public boolean checkContainsMilestone(MilestoneSubmission[] milestoneSubmissions, List<Integer> milestoneDeadlineIDs) {
+        boolean contains = false;
+        for (MilestoneSubmission milestone : milestoneSubmissions) {
+            if (milestoneDeadlineIDs.contains(milestone.id)) {
+                contains = true;
+                break;
+            }
+        }
+        return contains;
+    }
+
     public boolean isAllElementPresent(MilestoneVoteAttributes[] vote, ArrayDB<Integer> submitted) {
         for (int i = 0; i < submitted.size(); i++) {
             boolean found = false;
@@ -928,6 +950,8 @@ public class CPSCore implements CPSCoreInterface {
                 TAG + ": Progress Reports can be voted only on Voting Period.");
         Address caller = Context.getCaller();
         PReps pReps = new PReps();
+        Context.require(!ArrayDBUtils.containsInArrayDb(caller, blockAddresses),
+                TAG + ": You are blocked from CPS.");
         Context.require(ArrayDBUtils.containsInArrayDb(caller, pReps.validPreps),
                 TAG + ": Voting can only be done by registered P-Reps.");
         String progressReportPrefix = progressReportPrefix(reportKey);
@@ -1447,30 +1471,46 @@ public class CPSCore implements CPSCoreInterface {
             String _ipfs_hash = activeProposals.get(i);
             String proposalPrefix = proposalPrefix(_ipfs_hash);
 
-            Map<String, Object> _proposal_details = getProposalDetails(_ipfs_hash);
-            String _proposal_status = (String) _proposal_details.get(STATUS);
-            Address _sponsor_address = (Address) _proposal_details.get(SPONSOR_ADDRESS);
-            Address _contributor_address = (Address) _proposal_details.get(CONTRIBUTOR_ADDRESS);
-            String flag = (String) _proposal_details.get(TOKEN);
+            boolean submitProgressReport = ProposalDataDb.submitProgressReport.at(proposalPrefix).getOrDefault(Boolean.FALSE);
 
-            if (!ProposalDataDb.submitProgressReport.at(proposalPrefix).getOrDefault(Boolean.FALSE)) {
-                if (_proposal_status.equals(ACTIVE)) {
-                    updateProposalStatus(_ipfs_hash, PAUSED);
-                } else if (_proposal_status.equals(PAUSED)) {
-                    updateProposalStatus(_ipfs_hash, DISQUALIFIED);
-                    callScore(getCpsTreasuryScore(), "disqualifyProject", _ipfs_hash);
+            if (!submitProgressReport) {
+                checkProgressReportStatus(_ipfs_hash, proposalPrefix);
+            } else {
+                ArrayDB<String> progressReports = ProposalDataDb.progressReports.at(proposalPrefix);
+                int submittedProgressReports = progressReports.size();
+                String lastProgressKey = progressReports.get(submittedProgressReports - 1);
+                int milestoneCount = ProgressReportDataDb.milestoneSubmitted.at(progressReportPrefix(lastProgressKey)).size();
+                if (milestoneCount == 0) {
+                    Status status = new Status();
+                    removeArrayItem(status.waitingProgressReports, lastProgressKey);
+                    checkProgressReportStatus(_ipfs_hash, proposalPrefix);
 
-
-                    removeContributor(_contributor_address, _ipfs_hash);
-                    removeSponsor(_sponsor_address, _ipfs_hash);
-
-                    sponsorDepositStatus.at(proposalPrefix).set(BOND_CANCELLED);
-                    BigInteger _sponsor_deposit_amount = (BigInteger) _proposal_details.get(SPONSOR_DEPOSIT_AMOUNT);
-
-//              Transferring the sponsor bond deposit to CPF after the project being disqualified
-                    disqualifyProject(_sponsor_address, _sponsor_deposit_amount, flag);
                 }
             }
+        }
+    }
+
+    private void checkProgressReportStatus(String _ipfs_hash, String proposalPrefix) {
+        Map<String, Object> _proposal_details = getProposalDetails(_ipfs_hash);
+        String _proposal_status = (String) _proposal_details.get(STATUS);
+        Address _sponsor_address = (Address) _proposal_details.get(SPONSOR_ADDRESS);
+        Address _contributor_address = (Address) _proposal_details.get(CONTRIBUTOR_ADDRESS);
+        String flag = (String) _proposal_details.get(TOKEN);
+
+        if (_proposal_status.equals(ACTIVE)) {
+            updateProposalStatus(_ipfs_hash, PAUSED);
+        } else if (_proposal_status.equals(PAUSED)) {
+            updateProposalStatus(_ipfs_hash, DISQUALIFIED);
+            callScore(getCpsTreasuryScore(), "disqualifyProject", _ipfs_hash);
+
+            removeContributor(_contributor_address, _ipfs_hash);
+            removeSponsor(_sponsor_address, _ipfs_hash);
+
+            sponsorDepositStatus.at(proposalPrefix).set(BOND_CANCELLED);
+            BigInteger _sponsor_deposit_amount = (BigInteger) _proposal_details.get(SPONSOR_DEPOSIT_AMOUNT);
+
+//              Transferring the sponsor bond deposit to CPF after the project being disqualified
+            disqualifyProject(_sponsor_address, _sponsor_deposit_amount, flag);
         }
     }
 
@@ -1554,6 +1594,7 @@ public class CPSCore implements CPSCoreInterface {
                     sponsors.add(sponsorAddress);
                     sponsorProjects.at(sponsorAddress).add(proposal);
                     ProposalDataDb.sponsorDepositStatus.at(proposalPrefix).set(BOND_APPROVED);
+                    proposalPeriod.at(proposalPrefix).set(getPeriodCount());
                     callScore(getCpfTreasuryScore(), "transferProposalFundToCpsTreasury",
                             proposal, projectDuration, sponsorAddress, contributorAddress, flag, totalBudget);
                     distributionAmount = distributionAmount.subtract(totalBudget);
@@ -1929,37 +1970,22 @@ public class CPSCore implements CPSCoreInterface {
                 String prefix = progressReportPrefix(reportHash);
 
                 String ipfsHash = ProgressReportDataDb.ipfsHash.at(prefix).get();
-                int milestoneCount = getMilestoneCount(ipfsHash);
+                ArrayDB<Integer> milestoneSubmittedOf = milestoneSubmitted.at(prefix);
+                for (int j = 0; j < milestoneSubmittedOf.size(); j++) {
+                    int milestoneID = milestoneSubmittedOf.get(j);
+                    String milestonePrefix = mileStonePrefix(ipfsHash, milestoneID);
 
-                if (milestoneCount > 0) {
-
-                    ArrayDB<Integer> milestoneSubmittedOf = milestoneSubmitted.at(prefix);
-
-                    for (int j = 0; j < milestoneSubmittedOf.size(); j++) {
-                        int milestoneID = milestoneSubmittedOf.get(j);
-                        String milestonePrefix = mileStonePrefix(ipfsHash, milestoneID);
-
-                        ArrayDB<Address> voterList = MilestoneDb.votersList.at(milestonePrefix);
-                        if (!containsInArrayDb(walletAddress, voterList)) {
-                            Map<String, Object> progressReportDetails = new HashMap<>();
-                            progressReportDetails.putAll(getProgressReportDetails(reportHash));
-                            progressReportDetails.putAll(getMilestoneReport(reportHash, ipfsHash));
-                            _remaining_progress_report.add(progressReportDetails);
-                        }
-                    }
-
-                } else {
-                    if (!containsInArrayDb(walletAddress, ProgressReportDataDb.votersList.at(prefix))) {
+                    ArrayDB<Address> voterList = MilestoneDb.votersList.at(milestonePrefix);
+                    if (!containsInArrayDb(walletAddress, voterList)) {
                         Map<String, Object> progressReportDetails = new HashMap<>();
                         progressReportDetails.putAll(getProgressReportDetails(reportHash));
-                        progressReportDetails.putAll(getVoteResultsFromProgressReportDB(prefix));
                         _remaining_progress_report.add(progressReportDetails);
                     }
                 }
             }
             return _remaining_progress_report;
         }
-        return List.of(Map.of("", ""));
+        return List.of(Map.of("Error", "Please provide valid project type"));
     }
 
 
@@ -2337,6 +2363,8 @@ public class CPSCore implements CPSCoreInterface {
         Context.require(period.periodName.get().equals(APPLICATION_PERIOD),
                 TAG + " Sponsor Vote can only be done on Application Period");
         PReps pReps = new PReps();
+        Context.require(!ArrayDBUtils.containsInArrayDb(from, blockAddresses),
+                TAG + ": You are blocked from CPS.");
         Context.require(ArrayDBUtils.containsInArrayDb(from, pReps.validPreps), TAG + ": Not a P-Rep");
 
         swapBNUsdToken();
@@ -2365,7 +2393,6 @@ public class CPSCore implements CPSCoreInterface {
             sponsoredTimestamp.at(proposalPrefix).set(BigInteger.valueOf(Context.getBlockTimestamp()));
             sponsorDepositStatus.at(proposalPrefix).set(BOND_RECEIVED);
             sponsorVoteReason.at(proposalPrefix).set(voteReason);
-            proposalPeriod.at(proposalPrefix).set(getPeriodCount());
 
             SponsorBondReceived(from, "Sponsor Bond " + value + " " + token + " Received.");
         } else {
@@ -2396,7 +2423,9 @@ public class CPSCore implements CPSCoreInterface {
     @Override
     @External
     public void claimSponsorBond() {
+        checkMaintenance();
         Address caller = Context.getCaller();
+        Context.require(!ArrayDBUtils.containsInArrayDb(caller, blockAddresses), TAG + ": Address is blocked");
         DictDB<String, BigInteger> userAmounts = sponsorBondReturn.at(caller.toString());
         BigInteger amountIcx = userAmounts.getOrDefault(ICX, BigInteger.ZERO);
         BigInteger amountBNUsd = userAmounts.getOrDefault(bnUSD, BigInteger.ZERO);
@@ -2574,6 +2603,34 @@ public class CPSCore implements CPSCoreInterface {
         return Map.of(DATA, proposalHistory, COUNT, size);
     }
 
+    @Override
+    @External(readonly = true)
+    public List<Map<String, ?>> getRemainingMilestones(String ipfsHash) {
+        String ipfsHashPrefix = proposalPrefix(ipfsHash);
+        ArrayDB<Integer> milestoneIDs = milestoneIds.at(ipfsHashPrefix);
+
+        int size = milestoneIDs.size();
+        List<Map<String, ?>> milestoneIdList = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            int milestoneId = milestoneIDs.get(i);
+            String milestonePrefix = mileStonePrefix(ipfsHash, milestoneId);
+            int proposalPeriod = ProposalDataDb.proposalPeriod.at(ipfsHashPrefix).getOrDefault(0);
+            int completionPeriod = MilestoneDb.completionPeriod.at(milestonePrefix).getOrDefault(0);
+
+            int computedCompletionPeriod = proposalPeriod + completionPeriod;
+
+            int status = MilestoneDb.status.at(milestonePrefix).getOrDefault(0);
+
+            if (status != MILESTONE_REPORT_APPROVED) {
+                milestoneIdList.add(Map.of(MILESTONE_ID, milestoneId,
+                        COMPLETION_PERIOD, computedCompletionPeriod,
+                        BUDGET, MilestoneDb.budget.at(milestonePrefix).getOrDefault(BigInteger.ZERO))
+                );
+            }
+        }
+        return milestoneIdList;
+    }
+
     //    =====================================TEMPORARY MIGRATIONS METHODS===============================================
 
     @External
@@ -2608,6 +2665,69 @@ public class CPSCore implements CPSCoreInterface {
             addDataToMilestoneDb(milestonesAttributes, actual_milestonePrefix);
 
         }
+    }
+
+    @External
+    public void blockAddress(Address walletAddress) {
+        validateAdmins();
+        Context.require(!ArrayDBUtils.containsInArrayDb(walletAddress, blockAddresses),
+                TAG + ": Address already blocked");
+        PReps pReps = new PReps();
+        if (ArrayDBUtils.containsInArrayDb(walletAddress, pReps.validPreps)) {
+            ArrayDBUtils.removeArrayItem(pReps.validPreps, walletAddress);
+        }
+        blockAddresses.add(walletAddress);
+    }
+
+    @External(readonly = true)
+    public List<Address> getBlockedAddresses() {
+        return ArrayDBUtils.arrayDBtoList(blockAddresses);
+    }
+
+    @Override
+    @External
+    public void updateContributor(String _ipfs_hash, Address _new_contributor, @Optional Address _new_sponsor) {
+        validateAdmins();
+
+        Context.require(!_new_contributor.isContract(), TAG + ": Contract Address not supported.");
+        Map<String, Object> _proposal_details = getProposalDetails(_ipfs_hash);
+        String _proposal_status = (String) _proposal_details.get(STATUS);
+        Context.require(List.of(ACTIVE, PAUSED).contains(_proposal_status), TAG + ": Proposal must be in active or paused state.");
+
+        // changes to proposal db
+        String proposalPrefix = proposalPrefix(_ipfs_hash);
+        contributorAddress.at(proposalPrefix).set(_new_contributor);
+
+        // update contributor's address
+        Address _contributor_address = (Address) _proposal_details.get(CONTRIBUTOR_ADDRESS);
+        Context.require(ArrayDBUtils.containsInArrayDb(_contributor_address, blockAddresses),
+                TAG + ": Old address must be blocked before migration.");
+        removeContributor(_contributor_address, _ipfs_hash);
+
+        contributors.add(_new_contributor);
+        contributorProjects.at(_new_contributor).add(_ipfs_hash);
+
+        // update sponsor's address
+        // request update contributor address and sponsor address to cps treasury
+        if (_new_sponsor != null) {
+            Context.require(!_new_sponsor.isContract(), TAG + ": Sponsor address cannot be contract address.");
+            sponsorAddress.at(proposalPrefix).set(_new_sponsor);
+
+            Address _sponsor_address = (Address) _proposal_details.get(SPONSOR_ADDRESS);
+            Context.require(ArrayDBUtils.containsInArrayDb(_sponsor_address, blockAddresses),
+                    TAG + ": Old sponsorAddress must be blocked before migration.");
+            removeSponsor(_sponsor_address, _ipfs_hash);
+
+            sponsors.add(_new_sponsor);
+            sponsorProjects.at(_new_sponsor).add(_ipfs_hash);
+
+            callScore(getCpsTreasuryScore(), "updateContributorSponsorAddress", _ipfs_hash, _new_contributor, _new_sponsor);
+            UpdateSponsorAddress(_sponsor_address, _new_sponsor);
+        } else {
+            callScore(getCpsTreasuryScore(), "updateContributorSponsorAddress", _ipfs_hash, _new_contributor);
+        }
+        UpdateContributorAddress(_contributor_address, _new_contributor);
+
     }
 
 
@@ -2672,6 +2792,15 @@ public class CPSCore implements CPSCoreInterface {
     @Override
     @EventLog(indexed = 1)
     public void PriorityVote(Address _address, String note) {
+    }
+
+
+    @EventLog(indexed = 1)
+    public void UpdateContributorAddress(Address _old, Address _new) {
+    }
+
+    @EventLog(indexed = 1)
+    public void UpdateSponsorAddress(Address _old, Address _new) {
     }
 
     //    =====================================EventLogs===============================================
