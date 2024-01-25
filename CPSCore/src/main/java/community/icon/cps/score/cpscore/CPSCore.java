@@ -633,7 +633,10 @@ public class CPSCore implements CPSCoreInterface {
         Context.require(period.periodName.get().equals(APPLICATION_PERIOD),
                 TAG + ": Proposals can only be submitted on Application Period ");
         Context.require(!proposalKeyExists(proposals.ipfs_hash), TAG + ": Proposal key already exists.");
-        Context.require(!Context.getCaller().isContract(), TAG + ": Contract Address not supported.");
+        Address caller = Context.getCaller();
+        Context.require(!caller.isContract(), TAG + ": Contract Address not supported.");
+        Context.require(!ArrayDBUtils.containsInArrayDb(caller, blockAddresses),
+                TAG + ": You are blocked from CPS.");
         Context.require(proposals.project_duration <= MAX_PROJECT_PERIOD,
                 TAG + ": Maximum Project Duration exceeds " + MAX_PROJECT_PERIOD + " months.");
         Context.require(proposals.milestoneCount == milestones.length, TAG + ": Milestone count mismatch");
@@ -672,9 +675,9 @@ public class CPSCore implements CPSCoreInterface {
         proposalsKeyListIndex.set(ipfsHash, proposalsKeyList.size() - 1);
         Status status = new Status();
         status.sponsorPending.add(ipfsHash);
-        contributors.add(Context.getCaller());
-        contributorProjects.at(Context.getCaller()).add(ipfsHash);
-        ProposalSubmitted(Context.getCaller(), "Successfully submitted a Proposal.");
+        contributors.add(caller);
+        contributorProjects.at(caller).add(ipfsHash);
+        ProposalSubmitted(caller, "Successfully submitted a Proposal.");
 
         BigInteger totalFund = proposalFees.getOrDefault(BigInteger.ZERO);
         BigInteger halfProposalFee = Context.getValue().divide(BigInteger.TWO);
@@ -704,6 +707,9 @@ public class CPSCore implements CPSCoreInterface {
         String status = (String) proposalDetails.get(STATUS);
 
         ArrayDB<Address> voterList = ProposalDataDb.votersList.at(proposalPrefix);
+
+        Context.require(!ArrayDBUtils.containsInArrayDb(caller, blockAddresses),
+                TAG + ": You are blocked from CPS.");
 
         if (!voteChange && (ArrayDBUtils.containsInArrayDb(caller, voterList))) {
             Context.revert(TAG + ":: Already Voted");
@@ -944,6 +950,8 @@ public class CPSCore implements CPSCoreInterface {
                 TAG + ": Progress Reports can be voted only on Voting Period.");
         Address caller = Context.getCaller();
         PReps pReps = new PReps();
+        Context.require(!ArrayDBUtils.containsInArrayDb(caller, blockAddresses),
+                TAG + ": You are blocked from CPS.");
         Context.require(ArrayDBUtils.containsInArrayDb(caller, pReps.validPreps),
                 TAG + ": Voting can only be done by registered P-Reps.");
         String progressReportPrefix = progressReportPrefix(reportKey);
@@ -2355,6 +2363,8 @@ public class CPSCore implements CPSCoreInterface {
         Context.require(period.periodName.get().equals(APPLICATION_PERIOD),
                 TAG + " Sponsor Vote can only be done on Application Period");
         PReps pReps = new PReps();
+        Context.require(!ArrayDBUtils.containsInArrayDb(from, blockAddresses),
+                TAG + ": You are blocked from CPS.");
         Context.require(ArrayDBUtils.containsInArrayDb(from, pReps.validPreps), TAG + ": Not a P-Rep");
 
         swapBNUsdToken();
