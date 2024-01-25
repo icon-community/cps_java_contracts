@@ -17,6 +17,7 @@ import score.Address;
 import score.Context;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -205,10 +206,17 @@ public class CPSTreasuryTest extends TestBase {
     void depositProposalFund() {
         /* totalBudget = 100, onsetPayment = 10% installmentCount = 2
          * remainingBudgetAfter onsetPayment = 90
-         * installMentAmount = 90/2 =45
+         * installMentAmount = 50 and 40
          */
         setOnsetPayment();
+        setCpsScoreMethod();
+
         depositProposalFundMethod();
+
+        List<Map<String,?>> remainingMilestone = new ArrayList<>();
+        remainingMilestone.add(Map.of(BUDGET,BigInteger.valueOf(50).multiply(ICX)));
+        remainingMilestone.add(Map.of(BUDGET,BigInteger.valueOf(40).multiply(ICX)));
+        doReturn(remainingMilestone).when(scoreSpy).callScore(eq(List.class),eq(score_address),eq("getRemainingMilestones"),any());
         @SuppressWarnings("unchecked")
         Map<String, ?> proposalDataDetails = (Map<String, ?>) tokenScore.call("getContributorProjectedFund", testing_account2.getAddress());
         @SuppressWarnings("unchecked")
@@ -220,13 +228,13 @@ public class CPSTreasuryTest extends TestBase {
                 TOTAL_INSTALLMENT_PAID, BigInteger.TEN.multiply(ICX),
                 TOTAL_INSTALLMENT_COUNT, 2,
                 TOTAL_TIMES_INSTALLMENT_PAID, 0,
-                consts.INSTALLMENT_AMOUNT, BigInteger.valueOf(45).multiply(ICX));
+                consts.INSTALLMENT_AMOUNT, BigInteger.valueOf(50).multiply(ICX));
         assertEquals(proposalDetails.get(0), expectedData);
 
         assertEquals(proposalDataDetails.get(PROJECT_COUNT),1);
         assertEquals(proposalDataDetails.get(WITHDRAWN_BNUSD),BigInteger.TEN.multiply(ICX));
 
-        Map<String,BigInteger> totalAmount = Map.of(consts.bnUSD,BigInteger.valueOf(45).multiply(ICX));
+        Map<String,BigInteger> totalAmount = Map.of(consts.bnUSD,BigInteger.valueOf(50).multiply(ICX));
         assertEquals(proposalDataDetails.get(TOTAL_AMOUNT),totalAmount);
 
     }
@@ -270,10 +278,16 @@ public class CPSTreasuryTest extends TestBase {
                     installmentAmount = (100-10)/2 = 45
            after budget adjustment :
                     totalBudget = 200 installCount = 3 onsetPayment = 10
-                    installmentAmount = (200-10)/3 = 63.333
+                    each installmentAmount euqally divided = (200-10)/3 = 63.333
         * */
         setOnsetPayment();
+        setCpsScoreMethod();
         depositProposalFundMethod();
+
+        List<Map<String,?>> remainingMilestone = new ArrayList<>();
+        remainingMilestone.add(Map.of(BUDGET,new BigInteger("63333333333333333333")));
+        doReturn(remainingMilestone).when(scoreSpy).callScore(eq(List.class),eq(score_address),eq("getRemainingMilestones"),any());
+
         JsonObject budgetAdjustmentData = new JsonObject();
         budgetAdjustmentData.add("method", "budgetAdjustment");
         JsonObject params = new JsonObject();
@@ -357,6 +371,10 @@ public class CPSTreasuryTest extends TestBase {
         setOnsetPayment();
         depositProposalFund_MilestoneCheck();
         setCpsScoreMethod();
+
+        List<Map<String,?>> remainingMilestone = new ArrayList<>();
+        remainingMilestone.add(Map.of(BUDGET,BigInteger.valueOf(225).multiply(ICX).divide(BigInteger.valueOf(10))));
+        doReturn(remainingMilestone).when(scoreSpy).callScore(eq(List.class),eq(score_address),eq("getRemainingMilestones"),any());
 
         // proposal details after submission
         Map<String, ?> proposalDataDetails_before = (Map<String, ?>) tokenScore.call("getContributorProjectedFund", testing_account2.getAddress());
