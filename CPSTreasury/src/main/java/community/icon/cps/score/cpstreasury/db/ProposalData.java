@@ -1,7 +1,10 @@
 package community.icon.cps.score.cpstreasury.db;
 
-import score.*;
 import community.icon.cps.score.cpstreasury.utils.consts;
+import score.Address;
+import score.BranchDB;
+import score.Context;
+import score.VarDB;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -149,5 +152,8 @@ public class ProposalData {
 
     public void setContributorAddress(String prefix, Address newContributorAddress){
         this.contributorAddress.at(prefix).set(newContributorAddress);
+    }
+    public void setSponsorAddress(String prefix, Address newSponsorAddress){
+        this.sponsorAddress.at(prefix).set(newSponsorAddress);
     }
 }

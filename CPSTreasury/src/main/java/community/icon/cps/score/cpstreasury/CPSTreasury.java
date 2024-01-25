@@ -603,7 +603,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
 
     @Override
     @External
-    public void update_contributor_sponsor_address(String _ipfs_key, Address _new_contributor_address,
+    public void updateContributorSponsorAddress(String _ipfs_key, Address _new_contributor_address,
                                                    Address _new_sponsor_address) {
         validateCpsScore();
         Context.require(proposalExists(_ipfs_key), TAG + ": This project not exists");
@@ -614,18 +614,18 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
         Address sponsorAddress = (Address) proposalData.get(consts.SPONSOR_ADDRESS);
 
         // remove
-        contributorProjects.at(_new_contributor_address.toString()).add(_ipfs_key);
         ArrayDBUtils.remove_array_item_string(contributorProjects.at(contributorAddress.toString()), _ipfs_key);
+        contributorProjects.at(_new_contributor_address.toString()).add(_ipfs_key);
 
         // update contributor address
         setContributorAddress(prefix, _new_contributor_address);
 
         // remove
-        sponsorProjects.at(_new_sponsor_address.toString()).add(_ipfs_key);
         ArrayDBUtils.remove_array_item_string(sponsorProjects.at(sponsorAddress.toString()),_ipfs_key);
+        sponsorProjects.at(_new_sponsor_address.toString()).add(_ipfs_key);
 
         // update sponsor address
-        this.sponsorAddress.at(prefix).set(_new_sponsor_address);
+        setSponsorAddress(prefix, _new_sponsor_address);
     }
 
     public <T> T callScore(Class<T> t, Address address, String method, Object... params) {
