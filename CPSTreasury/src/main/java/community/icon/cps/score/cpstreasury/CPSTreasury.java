@@ -9,6 +9,7 @@ import community.icon.cps.score.lib.interfaces.CPSTreasuryInterface;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
+import score.annotation.Optional;
 import score.annotation.Payable;
 import scorex.util.ArrayList;
 
@@ -604,14 +605,13 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
     @Override
     @External
     public void updateContributorSponsorAddress(String _ipfs_key, Address _new_contributor_address,
-                                                   Address _new_sponsor_address) {
+                                                   @Optional Address _new_sponsor_address) {
         validateCpsScore();
         Context.require(proposalExists(_ipfs_key), TAG + ": This project not exists");
 
         String prefix = proposalPrefix(_ipfs_key);
         Map<String, ?> proposalData = getDataFromProposalDB(prefix);
         Address contributorAddress = (Address) proposalData.get(consts.CONTRIBUTOR_ADDRESS);
-        Address sponsorAddress = (Address) proposalData.get(consts.SPONSOR_ADDRESS);
 
         // remove
         ArrayDBUtils.remove_array_item_string(contributorProjects.at(contributorAddress.toString()), _ipfs_key);
@@ -621,11 +621,14 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
         setContributorAddress(prefix, _new_contributor_address);
 
         // remove
-        ArrayDBUtils.remove_array_item_string(sponsorProjects.at(sponsorAddress.toString()),_ipfs_key);
-        sponsorProjects.at(_new_sponsor_address.toString()).add(_ipfs_key);
+        if (_new_sponsor_address != null) {
+            Address sponsorAddress = (Address) proposalData.get(consts.SPONSOR_ADDRESS);
+            ArrayDBUtils.remove_array_item_string(sponsorProjects.at(sponsorAddress.toString()),_ipfs_key);
+            sponsorProjects.at(_new_sponsor_address.toString()).add(_ipfs_key);
 
-        // update sponsor address
-        setSponsorAddress(prefix, _new_sponsor_address);
+            // update sponsor address
+            setSponsorAddress(prefix, _new_sponsor_address);
+        }
     }
 
     public <T> T callScore(Class<T> t, Address address, String method, Object... params) {

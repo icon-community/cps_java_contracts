@@ -2610,12 +2610,13 @@ public class CPSCore implements CPSCoreInterface {
 
     @Override
     @External
-    public void updateContributor(String _ipfs_hash, Address _new_contributor, Address _new_sponsor) {
+    public void updateContributor(String _ipfs_hash, Address _new_contributor, @Optional Address _new_sponsor) {
         validateAdmins();
+
         Context.require(!_new_contributor.isContract(), TAG + ": Contract Address not supported.");
         Map<String, Object> _proposal_details = getProposalDetails(_ipfs_hash);
         String _proposal_status = (String) _proposal_details.get(STATUS);
-        Context.require(List.of(ACTIVE,PAUSED).contains(_proposal_status), TAG + ": Proposal must be in active or paused state.");
+        Context.require(List.of(ACTIVE, PAUSED).contains(_proposal_status), TAG + ": Proposal must be in active or paused state.");
 
         // update contributor's address
         Address _contributor_address = (Address) _proposal_details.get(CONTRIBUTOR_ADDRESS);
@@ -2625,18 +2626,21 @@ public class CPSCore implements CPSCoreInterface {
         contributorProjects.at(_new_contributor).add(_ipfs_hash);
 
         // update sponsor's address
-        Address _sponsor_address = (Address) _proposal_details.get(SPONSOR_ADDRESS);
-        removeSponsor(_sponsor_address, _ipfs_hash);
-
-        sponsors.add(_new_sponsor);
-        sponsorProjects.at(_new_sponsor).add(_ipfs_hash);
-
         // request update contributor address and sponsor address to cps treasury
-        callScore(getCpsTreasuryScore(), "updateContributorSponsorAddress", _ipfs_hash, _new_contributor,_new_sponsor);
+        if (_new_sponsor != null) {
+            Address _sponsor_address = (Address) _proposal_details.get(SPONSOR_ADDRESS);
+            removeSponsor(_sponsor_address, _ipfs_hash);
 
-        // emit event
-        UpdateContributorAddress(_contributor_address, _new_contributor);
-        UpdateSponsorAddress(_sponsor_address, _new_sponsor);
+            sponsors.add(_new_sponsor);
+            sponsorProjects.at(_new_sponsor).add(_ipfs_hash);
+
+            callScore(getCpsTreasuryScore(), "updateContributorSponsorAddress", _ipfs_hash, _new_contributor, _new_sponsor);
+            UpdateSponsorAddress(_sponsor_address, _new_sponsor);
+        } else {
+            callScore(getCpsTreasuryScore(), "updateContributorSponsorAddress", _ipfs_hash, _new_contributor);
+            UpdateContributorAddress(_contributor_address, _new_contributor);
+        }
+
     }
 
 
