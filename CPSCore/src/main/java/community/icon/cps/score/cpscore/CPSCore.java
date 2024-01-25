@@ -1932,37 +1932,22 @@ public class CPSCore implements CPSCoreInterface {
                 String prefix = progressReportPrefix(reportHash);
 
                 String ipfsHash = ProgressReportDataDb.ipfsHash.at(prefix).get();
-                int milestoneCount = getMilestoneCount(ipfsHash);
+                ArrayDB<Integer> milestoneSubmittedOf = milestoneSubmitted.at(prefix);
+                for (int j = 0; j < milestoneSubmittedOf.size(); j++) {
+                    int milestoneID = milestoneSubmittedOf.get(j);
+                    String milestonePrefix = mileStonePrefix(ipfsHash, milestoneID);
 
-                if (milestoneCount > 0) {
-
-                    ArrayDB<Integer> milestoneSubmittedOf = milestoneSubmitted.at(prefix);
-
-                    for (int j = 0; j < milestoneSubmittedOf.size(); j++) {
-                        int milestoneID = milestoneSubmittedOf.get(j);
-                        String milestonePrefix = mileStonePrefix(ipfsHash, milestoneID);
-
-                        ArrayDB<Address> voterList = MilestoneDb.votersList.at(milestonePrefix);
-                        if (!containsInArrayDb(walletAddress, voterList)) {
-                            Map<String, Object> progressReportDetails = new HashMap<>();
-                            progressReportDetails.putAll(getProgressReportDetails(reportHash));
-                            progressReportDetails.putAll(getMilestoneReport(reportHash, ipfsHash));
-                            _remaining_progress_report.add(progressReportDetails);
-                        }
-                    }
-
-                } else {
-                    if (!containsInArrayDb(walletAddress, ProgressReportDataDb.votersList.at(prefix))) {
+                    ArrayDB<Address> voterList = MilestoneDb.votersList.at(milestonePrefix);
+                    if (!containsInArrayDb(walletAddress, voterList)) {
                         Map<String, Object> progressReportDetails = new HashMap<>();
                         progressReportDetails.putAll(getProgressReportDetails(reportHash));
-                        progressReportDetails.putAll(getVoteResultsFromProgressReportDB(prefix));
                         _remaining_progress_report.add(progressReportDetails);
                     }
                 }
             }
             return _remaining_progress_report;
         }
-        return List.of(Map.of("", ""));
+        return List.of(Map.of("Error", "Please provide valid project type"));
     }
 
 
