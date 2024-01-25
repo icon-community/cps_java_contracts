@@ -851,13 +851,13 @@ public class CPSCore implements CPSCoreInterface {
 
             Context.require(milestoneSubmissions.length + approvedReports <= totalMilestoneCount,
                     TAG + ":: Submitted milestone is greater than recorded on proposal.");
+            List<Integer> milestoneDeadlineIDs = getMilestoneDeadline(ipfsHash);
+            if (!milestoneDeadlineIDs.isEmpty()) {
+                boolean isMilestoneSubmitted = checkContainsMilestone(milestoneSubmissions,milestoneDeadlineIDs);
+                Context.require(isMilestoneSubmitted,TAG + ":: Submit milestone report for milestone id. "+ milestoneDeadlineIDs);
+            }
 
             for (MilestoneSubmission milestoneAttr : milestoneSubmissions) {
-                List<Integer> milestoneDeadlineIDs = getMilestoneDeadline(ipfsHash);
-                if (!milestoneDeadlineIDs.isEmpty()) {
-                    Context.require(milestoneDeadlineIDs.contains(milestoneAttr.id), TAG +
-                            ": Submit milestone report for milestone id " + milestoneDeadlineIDs);
-                }
                 int milestoneStatus = getMileststoneStatusOf(ipfsHash, milestoneAttr.id);
                 if (milestoneStatus == MILESTONE_REPORT_APPROVED || milestoneStatus == MILESTONE_REPORT_COMPLETED) {
                     Context.revert(TAG + " Milestone already completed/submitted " + milestoneStatus);
@@ -899,6 +899,17 @@ public class CPSCore implements CPSCoreInterface {
         swapBNUsdToken();
         ProgressReportSubmitted(caller, progressReport.progress_report_title +
                 " --> Progress Report Submitted Successfully.");
+    }
+
+    public boolean checkContainsMilestone(MilestoneSubmission[] milestoneSubmissions, List<Integer> milestoneDeadlineIDs){
+        boolean contains = false;
+        for (MilestoneSubmission milestone : milestoneSubmissions){
+            if (milestoneDeadlineIDs.contains(milestone.id)){
+                contains = true;
+                break;
+            }
+        }
+        return contains;
     }
 
     public boolean isAllElementPresent(MilestoneVoteAttributes[] vote, ArrayDB<Integer> submitted) {
@@ -1097,6 +1108,7 @@ public class CPSCore implements CPSCoreInterface {
         }
     }
 
+    @Override
     @External(readonly = true)
     public Map<String, Object> getProjectAmounts() {
         List<String> statusList = List.of(PENDING, ACTIVE, PAUSED, COMPLETED, DISQUALIFIED);
@@ -1674,6 +1686,7 @@ public class CPSCore implements CPSCoreInterface {
         }
     }
 
+    @Override
     @External(readonly = true)
     public Map<String, ?> getProposalDetails(String status, @Optional Address walletAddress, @Optional int startIndex) {
         if (!STATUS_TYPE.contains(status)) {
