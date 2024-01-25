@@ -188,7 +188,7 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
                     BigInteger totalPaidAmount = (BigInteger) proposal_details.get(consts.WITHDRAW_AMOUNT);
 
 
-                    BigInteger installmentAmount = getInstallmetAmount(_ipfs_key);
+                    BigInteger installmentAmount = getInstallmentAmount(_ipfs_key);
 
                     Map<String, ?> project_details = Map.of(
                             consts.IPFS_HASH, _ipfs_key,
@@ -480,8 +480,8 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
     @Override
     @External
     public void claimReward() {
-        boolean checkMaintainance = callScore(Boolean.class, getCpsScore(), "getMaintenanceMode");
-        Context.require(!checkMaintainance, TAG + ": CPS is in maintenance mode");
+        boolean checkMaintenance = callScore(Boolean.class, getCpsScore(), "getMaintenanceMode");
+        Context.require(!checkMaintenance, TAG + ": CPS is in maintenance mode");
         Address caller = Context.getCaller();
         List<Address> blockAddresses = callScore(List.class, getCpsScore(), "getBlockedAddresses");
         Context.require(!blockAddresses.contains(caller), TAG + ": Address is blocked");
@@ -573,10 +573,9 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
         }
     }
 
-    private BigInteger getInstallmetAmount(String ipfsHash){
+    private BigInteger getInstallmentAmount(String ipfsHash){
         List<Map<String,?>> remainingMilestones = callScore(List.class,getCpsScore(),"getRemainingMilestones",ipfsHash);
-        BigInteger installmentAmount = (BigInteger) remainingMilestones.get(0).get(consts.BUDGET);
-        return installmentAmount;
+        return (BigInteger) remainingMilestones.get(0).get(consts.BUDGET);
     }
 
     public <T> T callScore(Class<T> t, Address address, String method, Object... params) {
