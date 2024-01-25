@@ -2679,6 +2679,10 @@ public class CPSCore implements CPSCoreInterface {
         String _proposal_status = (String) _proposal_details.get(STATUS);
         Context.require(List.of(ACTIVE, PAUSED).contains(_proposal_status), TAG + ": Proposal must be in active or paused state.");
 
+        // changes to proposal db
+        String proposalPrefix = proposalPrefix(_ipfs_hash);
+        contributorAddress.at(proposalPrefix).set(_new_contributor);
+
         // update contributor's address
         Address _contributor_address = (Address) _proposal_details.get(CONTRIBUTOR_ADDRESS);
         removeContributor(_contributor_address, _ipfs_hash);
@@ -2689,6 +2693,8 @@ public class CPSCore implements CPSCoreInterface {
         // update sponsor's address
         // request update contributor address and sponsor address to cps treasury
         if (_new_sponsor != null) {
+            sponsorAddress.at(proposalPrefix).set(_new_sponsor);
+
             Address _sponsor_address = (Address) _proposal_details.get(SPONSOR_ADDRESS);
             removeSponsor(_sponsor_address, _ipfs_hash);
 
