@@ -790,7 +790,10 @@ public class CPSCore implements CPSCoreInterface {
 
             int currentPeriod = getPeriodCount();
             if (currentPeriod >= computedCompletionPeriod) {
-                milestoneIdList.add(milestoneId);
+                int status = MilestoneDb.status.at(milestonePrefix).getOrDefault(0);
+                if (status != MILESTONE_REPORT_APPROVED ){
+                    milestoneIdList.add(milestoneId);
+                }
             }
         }
         return milestoneIdList;
@@ -1928,37 +1931,22 @@ public class CPSCore implements CPSCoreInterface {
                 String prefix = progressReportPrefix(reportHash);
 
                 String ipfsHash = ProgressReportDataDb.ipfsHash.at(prefix).get();
-                int milestoneCount = getMilestoneCount(ipfsHash);
+                ArrayDB<Integer> milestoneSubmittedOf = milestoneSubmitted.at(prefix);
+                for (int j = 0; j < milestoneSubmittedOf.size(); j++) {
+                    int milestoneID = milestoneSubmittedOf.get(j);
+                    String milestonePrefix = mileStonePrefix(ipfsHash, milestoneID);
 
-                if (milestoneCount > 0) {
-
-                    ArrayDB<Integer> milestoneSubmittedOf = milestoneSubmitted.at(prefix);
-
-                    for (int j = 0; j < milestoneSubmittedOf.size(); j++) {
-                        int milestoneID = milestoneSubmittedOf.get(j);
-                        String milestonePrefix = mileStonePrefix(ipfsHash, milestoneID);
-
-                        ArrayDB<Address> voterList = MilestoneDb.votersList.at(milestonePrefix);
-                        if (!containsInArrayDb(walletAddress, voterList)) {
-                            Map<String, Object> progressReportDetails = new HashMap<>();
-                            progressReportDetails.putAll(getProgressReportDetails(reportHash));
-                            progressReportDetails.putAll(getMilestoneReport(reportHash, ipfsHash));
-                            _remaining_progress_report.add(progressReportDetails);
-                        }
-                    }
-
-                } else {
-                    if (!containsInArrayDb(walletAddress, ProgressReportDataDb.votersList.at(prefix))) {
+                    ArrayDB<Address> voterList = MilestoneDb.votersList.at(milestonePrefix);
+                    if (!containsInArrayDb(walletAddress, voterList)) {
                         Map<String, Object> progressReportDetails = new HashMap<>();
                         progressReportDetails.putAll(getProgressReportDetails(reportHash));
-                        progressReportDetails.putAll(getVoteResultsFromProgressReportDB(prefix));
                         _remaining_progress_report.add(progressReportDetails);
                     }
                 }
             }
             return _remaining_progress_report;
         }
-        return List.of(Map.of("", ""));
+        return List.of(Map.of("Error", "Please provide valid project type"));
     }
 
 
@@ -2570,6 +2558,34 @@ public class CPSCore implements CPSCoreInterface {
             proposalHistory.add(proposalDetails);
         }
         return Map.of(DATA, proposalHistory, COUNT, size);
+    }
+
+    @Override
+    @External(readonly = true)
+    public List<Map<String,?>> getRemainingMilestones(String ipfsHash){
+        String ipfsHashPrefix = proposalPrefix(ipfsHash);
+        ArrayDB<Integer> milestoneIDs = milestoneIds.at(ipfsHashPrefix);
+
+        int size = milestoneIDs.size();
+        List<Map<String,?>> milestoneIdList = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            int milestoneId = milestoneIDs.get(i);
+            String milestonePrefix = mileStonePrefix(ipfsHash, milestoneId);
+            int proposalPeriod = ProposalDataDb.proposalPeriod.at(ipfsHashPrefix).getOrDefault(0);
+            int completionPeriod = MilestoneDb.completionPeriod.at(milestonePrefix).getOrDefault(0);
+
+            int computedCompletionPeriod = proposalPeriod + completionPeriod;
+
+            int status = MilestoneDb.status.at(milestonePrefix).getOrDefault(0);
+
+            if (status != MILESTONE_REPORT_APPROVED ){
+                milestoneIdList.add(Map.of(MILESTONE_ID,milestoneId,
+                        COMPLETION_PERIOD,computedCompletionPeriod,
+                        BUDGET,MilestoneDb.budget.at(milestonePrefix).getOrDefault(BigInteger.ZERO))
+                        );
+            }
+        }
+        return milestoneIdList;
     }
 
     //    =====================================TEMPORARY MIGRATIONS METHODS===============================================
