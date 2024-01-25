@@ -1553,6 +1553,7 @@ public class CPSCore implements CPSCoreInterface {
                     sponsors.add(sponsorAddress);
                     sponsorProjects.at(sponsorAddress).add(proposal);
                     ProposalDataDb.sponsorDepositStatus.at(proposalPrefix).set(BOND_APPROVED);
+                    proposalPeriod.at(proposalPrefix).set(getPeriodCount());
                     callScore(getCpfTreasuryScore(), "transferProposalFundToCpsTreasury",
                             proposal, projectDuration, sponsorAddress, contributorAddress, flag, totalBudget);
                     distributionAmount = distributionAmount.subtract(totalBudget);
@@ -2363,7 +2364,6 @@ public class CPSCore implements CPSCoreInterface {
             sponsoredTimestamp.at(proposalPrefix).set(BigInteger.valueOf(Context.getBlockTimestamp()));
             sponsorDepositStatus.at(proposalPrefix).set(BOND_RECEIVED);
             sponsorVoteReason.at(proposalPrefix).set(voteReason);
-            proposalPeriod.at(proposalPrefix).set(getPeriodCount());
 
             SponsorBondReceived(from, "Sponsor Bond " + value + " " + token + " Received.");
         } else {
