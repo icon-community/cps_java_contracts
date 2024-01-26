@@ -334,7 +334,6 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
     public void sendInstallmentToContributor(String ipfsKey, BigInteger milestoneBudget) {
         validateCpsScore();
         Context.require(proposalExists(ipfsKey), TAG + ": Invalid IPFS Hash.");
-        BigInteger installmentAmount;
         String prefix = proposalPrefix(ipfsKey);
         Map<String, ?> proposalData = getDataFromProposalDB(prefix);
 
@@ -343,20 +342,17 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
         Address contributorAddress = (Address) proposalData.get(consts.CONTRIBUTOR_ADDRESS);
         String flag = (String) proposalData.get(consts.TOKEN);
 
-
-        Context.require(milestoneBudget.compareTo(remainingAmount) <= 0, TAG + "Requested budget is greater than remaining amount.");
-
-        installmentAmount = milestoneBudget;
-
-
-        setRemainingAmount(prefix, remainingAmount.subtract(installmentAmount));
-        setWithdrawAmount(prefix, withdrawAmount.add(installmentAmount));
+        if (milestoneBudget.compareTo(remainingAmount) >= 0){
+            milestoneBudget = remainingAmount;
+        }
+        setRemainingAmount(prefix, remainingAmount.subtract(milestoneBudget));
+        setWithdrawAmount(prefix, withdrawAmount.add(milestoneBudget));
         DictDB<String, BigInteger> installmentFund = this.installmentFundRecord.at(contributorAddress.toString());
         BigInteger installmentFundAmount = installmentFund.getOrDefault(flag, BigInteger.ZERO);
-        installmentFund.set(flag, installmentFundAmount.add(installmentAmount));
-        ProposalFundSent(contributorAddress, "new installment " + installmentAmount + " " + flag + " sent to contributors address.");
+        installmentFund.set(flag, installmentFundAmount.add(milestoneBudget));
+        ProposalFundSent(contributorAddress, "new installment " + milestoneBudget + " " + flag + " sent to contributors address.");
 
-        if (remainingAmount.subtract(installmentAmount).equals(BigInteger.ZERO)) {
+        if (remainingAmount.subtract(milestoneBudget).equals(BigInteger.ZERO)) {
             setStatus(prefix, COMPLETED);
         }
     }
