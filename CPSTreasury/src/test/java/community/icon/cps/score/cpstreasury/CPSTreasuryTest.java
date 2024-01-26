@@ -456,6 +456,41 @@ public class CPSTreasuryTest extends TestBase {
     }
 
     @Test
+    void lastReportWithIncorrectMilestone(){
+        /* total Milestone = 4, remaining milestone = 2
+        * each milestone = 22.5  , for 2 milestone = 45 */
+        sendInstallmentToContributor_SecondInstallment();
+
+        Map<String, ?> proposalDataDetails = (Map<String, ?>) tokenScore.call("getContributorProjectedFund", testing_account2.getAddress());
+        System.out.println("proposal details "+ proposalDataDetails);
+        assertEquals(proposalDataDetails.get("withdraw_amount_bnUSD"), BigInteger.valueOf(55).multiply(ICX));
+
+        List<Map<String, ?>> proposalDetailsData = (List<Map<String, ?>>) proposalDataDetails.get("data");
+        assertEquals(proposalDetailsData.get(0).get("total_budget"), BigInteger.valueOf(100).multiply(ICX));
+
+        BigInteger remainingAmount = BigInteger.valueOf(100).multiply(ICX).subtract(BigInteger.valueOf(55).multiply(ICX));
+        assertEquals(remainingAmount,BigInteger.valueOf(45).multiply(ICX));
+
+        // requesting more than 45ICX
+        tokenScore.invoke(owner, "sendInstallmentToContributor", "Proposal 1", BigInteger.valueOf(50).multiply(ICX));
+        tokenScore.invoke(owner, "sendRewardToSponsor", "Proposal 1", 2);
+        @SuppressWarnings("unchecked")
+        Map<String, ?> proposalDataDetails_after = (Map<String, ?>) tokenScore.call("getContributorProjectedFund", testing_account2.getAddress());
+        assertEquals(proposalDataDetails_after.get("withdraw_amount_bnUSD"), BigInteger.valueOf(100).multiply(ICX));
+
+
+        proposalDetailsData = (List<Map<String, ?>>) proposalDataDetails_after.get("data");
+        assertEquals(proposalDetailsData.size(),0);
+
+        assertEquals(proposalDataDetails_after.get(PROJECT_COUNT),0);
+        // at the completion of proposal the withdrawn amount is still 100ICX
+        assertEquals(proposalDataDetails_after.get(WITHDRAWN_BNUSD),BigInteger.valueOf(100).multiply(ICX));
+
+        Map<String,BigInteger> totalAmount = Map.of(consts.bnUSD,BigInteger.ZERO);
+        assertEquals(proposalDataDetails_after.get(TOTAL_AMOUNT),totalAmount);
+    }
+
+    @Test
     void sendRewardToSponsor() {
         setOnsetPayment();
         depositProposalFund_MilestoneCheck();
