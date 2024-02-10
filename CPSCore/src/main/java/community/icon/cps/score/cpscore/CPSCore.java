@@ -63,6 +63,32 @@ public class CPSCore implements CPSCoreInterface {
             this.period.set(APPLICATION_PERIOD, applicationPeriod);
             this.period.set(VOTING_PERIOD, TOTAL_PERIOD.subtract(applicationPeriod));
         }
+
+        // Fix for ICON Dashboard Proposal not being able to submit progress report being rejected
+
+        String progressReport = "bafybeic4jhoowlgeyewjqkcpgbm3fs7mgtxzhqd5kbguihoehm4cwwwzcq";
+        String proposalKey = "bafybeidoxysex3jloigzi4pvdeqgy35a4nykd46w66pobxrkephpawyjoi";
+
+        String proposalPrefix = proposalPrefix(proposalKey);
+        String progressReportPrefix = progressReportPrefix(progressReport);
+
+        ProposalDataDb.submitProgressReport.at(proposalPrefix).set(Boolean.FALSE);
+
+        ProgressReportDataDb.status.at(progressReportPrefix).set(PROGRESS_REPORT_REJECTED);
+        ProgressReportDataDb.timestamp.at(progressReportPrefix).set(BigInteger.valueOf(1706244342109937L));
+        Status status = new Status();
+        status.progressReportStatus.get(PROGRESS_REPORT_REJECTED).add(progressReport);
+
+        // End of fix
+
+        // Migrate sponsor bond from Techiast- to Techiast
+        Address oldAddr = Address.fromString("hxdc4b3fb5b47d6c14c7f9a0bac8eea9f3f48d3288");
+        Address address = Address.fromString("hxfe0256b41f1db0186f9e6cbebf8c71cf006d5d17");
+        DictDB<String, BigInteger> userAmounts = sponsorBondReturn.at(oldAddr.toString());
+
+        BigInteger bnUSDAmount = userAmounts.getOrDefault(bnUSD, BigInteger.ZERO);
+        sponsorBondReturn.at(address.toString()).set(bnUSD, bnUSDAmount);
+
     }
 
     @Override
@@ -1370,9 +1396,9 @@ public class CPSCore implements CPSCoreInterface {
                                 ProposalDataDb.updatePercentageCompleted(proposal_prefix, 100);
 
                                 // Transfer the Sponsor - Bond back to the Sponsor P - Rep after the project is completed.
-                                this.sponsorBondReturn.at(_sponsor_address.toString()).set(flag,
-                                        this.sponsorBondReturn.at(_sponsor_address.toString()).getOrDefault(flag, BigInteger.ZERO).
-                                                add(_sponsor_deposit_amount));
+                                DictDB<String, BigInteger> userSponsorBond = this.sponsorBondReturn.at(_sponsor_address.toString());
+                                BigInteger sponsorBond = userSponsorBond.getOrDefault(flag, BigInteger.ZERO);
+                                userSponsorBond.set(flag, sponsorBond.add(_sponsor_deposit_amount));
                                 sponsorDepositStatus.at(proposal_prefix).set(BOND_RETURNED);
                                 SponsorBondReturned(_sponsor_address,
                                         _sponsor_deposit_amount + " " + flag + " returned to sponsor address.");
@@ -1481,10 +1507,9 @@ public class CPSCore implements CPSCoreInterface {
                 String lastProgressKey = progressReports.get(submittedProgressReports - 1);
                 int milestoneCount = ProgressReportDataDb.milestoneSubmitted.at(progressReportPrefix(lastProgressKey)).size();
                 if (milestoneCount == 0) {
-                    Status status = new Status();
-                    removeArrayItem(status.waitingProgressReports, lastProgressKey);
+                    ProposalDataDb.submitProgressReport.at(proposalPrefix).set(Boolean.FALSE);
+                    updateProgressReportStatus(lastProgressKey, PROGRESS_REPORT_REJECTED);
                     checkProgressReportStatus(_ipfs_hash, proposalPrefix);
-
                 }
             }
         }
@@ -2727,7 +2752,6 @@ public class CPSCore implements CPSCoreInterface {
             callScore(getCpsTreasuryScore(), "updateContributorSponsorAddress", _ipfs_hash, _new_contributor);
         }
         UpdateContributorAddress(_contributor_address, _new_contributor);
-
     }
 
 
