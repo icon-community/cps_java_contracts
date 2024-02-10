@@ -1396,9 +1396,9 @@ public class CPSCore implements CPSCoreInterface {
                                 ProposalDataDb.updatePercentageCompleted(proposal_prefix, 100);
 
                                 // Transfer the Sponsor - Bond back to the Sponsor P - Rep after the project is completed.
-                                this.sponsorBondReturn.at(_sponsor_address.toString()).set(flag,
-                                        this.sponsorBondReturn.at(_sponsor_address.toString()).getOrDefault(flag, BigInteger.ZERO).
-                                                add(_sponsor_deposit_amount));
+                                DictDB<String, BigInteger> userSponsorBond = this.sponsorBondReturn.at(_sponsor_address.toString());
+                                BigInteger sponsorBond = userSponsorBond.getOrDefault(flag, BigInteger.ZERO);
+                                userSponsorBond.set(flag, sponsorBond.add(_sponsor_deposit_amount));
                                 sponsorDepositStatus.at(proposal_prefix).set(BOND_RETURNED);
                                 SponsorBondReturned(_sponsor_address,
                                         _sponsor_deposit_amount + " " + flag + " returned to sponsor address.");
