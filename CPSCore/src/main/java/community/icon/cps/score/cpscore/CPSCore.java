@@ -1481,10 +1481,9 @@ public class CPSCore implements CPSCoreInterface {
                 String lastProgressKey = progressReports.get(submittedProgressReports - 1);
                 int milestoneCount = ProgressReportDataDb.milestoneSubmitted.at(progressReportPrefix(lastProgressKey)).size();
                 if (milestoneCount == 0) {
-                    Status status = new Status();
-                    removeArrayItem(status.waitingProgressReports, lastProgressKey);
+                    ProposalDataDb.submitProgressReport.at(proposalPrefix).set(Boolean.FALSE);
+                    updateProgressReportStatus(lastProgressKey, PROGRESS_REPORT_REJECTED);
                     checkProgressReportStatus(_ipfs_hash, proposalPrefix);
-
                 }
             }
         }
