@@ -90,7 +90,7 @@ public class CPSScoreTest extends TestBase {
     @Test
     void addAdminNotOwner() {
         Executable addAdminNotOwner = () -> cpsScore.invoke(testingAccount, "addAdmin", testingAccount.getAddress());
-        expectErrorMessage(addAdminNotOwner, "Reverted(0): SenderNotScoreOwner: Sender=" + testingAccount.getAddress() + " Owner=" + owner.getAddress());
+        expectErrorMessage(addAdminNotOwner, "SenderNotScoreOwner: Sender=" + testingAccount.getAddress() + " Owner=" + owner.getAddress());
     }
 
     @Test
@@ -106,7 +106,7 @@ public class CPSScoreTest extends TestBase {
         cpsScore.invoke(owner, "addAdmin", testingAccount.getAddress());
         assertEquals(List.of(testingAccount.getAddress()), cpsScore.call("getAdmins"));
         Executable removeAdminNotOwner = () -> cpsScore.invoke(testingAccount, "removeAdmin", testingAccount.getAddress());
-        expectErrorMessage(removeAdminNotOwner, "Reverted(0): SenderNotScoreOwner: Sender=" + testingAccount.getAddress() + " Owner=" + owner.getAddress());
+        expectErrorMessage(removeAdminNotOwner, "SenderNotScoreOwner: Sender=" + testingAccount.getAddress() + " Owner=" + owner.getAddress());
     }
 
     @Test
@@ -114,7 +114,7 @@ public class CPSScoreTest extends TestBase {
         cpsScore.invoke(owner, "addAdmin", testingAccount.getAddress());
         assertEquals(List.of(testingAccount.getAddress()), cpsScore.call("getAdmins"));
         Executable removeAdminNotOwner = () -> cpsScore.invoke(owner, "removeAdmin", testingAccount1.getAddress());
-        expectErrorMessage(removeAdminNotOwner, "Reverted(0): CPS Score: Address not registered as admin.");
+        expectErrorMessage(removeAdminNotOwner, "CPS Score: Address not registered as admin.");
     }
 
     void addAdminMethod() {
@@ -150,7 +150,7 @@ public class CPSScoreTest extends TestBase {
         cpsScore.invoke(owner, "setInitialBlock");
         cpsScore.invoke(owner, "registerPrep");
         Executable register = () -> cpsScore.invoke(owner, "registerPrep");
-        expectErrorMessage(register, "Reverted(0): CPS Score: P-Rep is already registered.");
+        expectErrorMessage(register, "CPS Score: P-Rep is already registered.");
     }
 
     @Test
@@ -175,7 +175,7 @@ public class CPSScoreTest extends TestBase {
         cpsScore.invoke(owner, "toggleMaintenance");
         cpsScore.invoke(owner, "setInitialBlock");
         Executable register = () -> cpsScore.invoke(testingAccount9, "registerPrep");
-        expectErrorMessage(register, "Reverted(0): CPS Score: Not a P-Rep.");
+        expectErrorMessage(register, "CPS Score: Not a P-Rep.");
     }
 
     @Test
@@ -267,7 +267,7 @@ public class CPSScoreTest extends TestBase {
         cpsScore.invoke(owner, "registerPrep");
 
         Executable unregister = () -> cpsScore.invoke(testingAccount1, "unregisterPrep");
-        expectErrorMessage(unregister, "Reverted(0): P-Rep is not registered yet.");
+        expectErrorMessage(unregister, "P-Rep is not registered yet.");
     }
 
     @Test
@@ -406,7 +406,7 @@ public class CPSScoreTest extends TestBase {
         assertEquals(owner.getAddress(), proposalDetails.get("contributor_address"));
         assertEquals("_sponsor_pending", proposalDetails.get("status"));
         assertEquals(BigInteger.valueOf(100).multiply(MULTIPLIER), proposalDetails.get("total_budget"));
-        Map<String, Object> proposalDetailsOfStatus = (Map<String, Object>) cpsScore.call("getProposalDetails", SPONSOR_PENDING, owner.getAddress(), 0, 10);
+        Map<String, Object> proposalDetailsOfStatus = (Map<String, Object>) cpsScore.call("getProposalDetails", SPONSOR_PENDING, owner.getAddress(), 0);
         assertEquals(1, proposalDetailsOfStatus.get(COUNT));
 
 
@@ -493,7 +493,7 @@ public class CPSScoreTest extends TestBase {
                 "count", 1);
         assertEquals(amount, (projectAmounts.get(PENDING)));
 
-        Map<String, Object> sponosrsRequest = (Map<String, Object>) cpsScore.call("getSponsorsRequests", APPROVED, testingAccount.getAddress(), 0, 10);
+        Map<String, Object> sponosrsRequest = (Map<String, Object>) cpsScore.call("getSponsorsRequests", APPROVED, testingAccount.getAddress(), 0);
         System.out.println("Sponsors request" + sponosrsRequest);
     }
 
@@ -844,7 +844,7 @@ public class CPSScoreTest extends TestBase {
         List<Map<String, Object>> activeProposalList = (List<Map<String, Object>>) activeProposals.get(DATA);
         assertEquals(List.of(proposalDetails).size(), activeProposalList.size());
 
-        Map<String, Object> sponosrsRequest = (Map<String, Object>) cpsScore.call("getSponsorsRequests", APPROVED, testingAccount.getAddress(), 0, 10);
+        Map<String, Object> sponosrsRequest = (Map<String, Object>) cpsScore.call("getSponsorsRequests", APPROVED, testingAccount.getAddress(), 0);
         System.out.println("Sponsors request" + sponosrsRequest);
 
         Map<String, Integer> sponsorsRecord = (Map<String, Integer>) cpsScore.call("getSponsorsRecord");
@@ -936,7 +936,7 @@ public class CPSScoreTest extends TestBase {
         List<String> progressKeys = (List<String>) cpsScore.call("getProgressKeys");
         assertEquals(List.of("Report 1"), progressKeys);
 
-        Map<String, Object> progressReports = (Map<String, Object>) cpsScore.call("getProgressReports", WAITING, 0, 10);
+        Map<String, Object> progressReports = (Map<String, Object>) cpsScore.call("getProgressReports", WAITING, 0);
         System.out.println("Progerss reports: " + progressReports);
 //        assertEquals(List.of(progressReportDetails), progressReports.get(DATA));
         assertEquals(1, progressReports.get(COUNT));
@@ -965,7 +965,7 @@ public class CPSScoreTest extends TestBase {
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("swapTokens"), eq(8));
         Executable call = () -> cpsScore.invoke(owner, "voteProgressReport", "Report 1", "reason",
                 milestoneVoteAttributesList, "_reject", false);
-        expectErrorMessage(call, "Reverted(0): CPS Score: Voting can only be done for milestone " +
+        expectErrorMessage(call, "CPS Score: Voting can only be done for milestone " +
                 "submitted in this progress report");
 
     }
@@ -1000,7 +1000,7 @@ public class CPSScoreTest extends TestBase {
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("swapTokens"), eq(8));
         Executable call2 = () -> cpsScore.invoke(owner, "voteProgressReport", "Report 1", "reason",
                 milestoneVoteAttributesList2, "_reject", false);
-        expectErrorMessage(call2, "Reverted(0): You should submit votes for all milestones of the progress report");
+        expectErrorMessage(call2, "You should submit votes for all milestones of the progress report");
 
     }
 
@@ -1540,7 +1540,7 @@ public class CPSScoreTest extends TestBase {
         Map<String, Object> proposalDetails = getProposalDetailsByHash("Proposal 1");
         assertEquals(PAUSED, proposalDetails.get(STATUS));
 
-        Map<String, Object> sponosrsRequest = (Map<String, Object>) cpsScore.call("getSponsorsRequests", APPROVED, testingAccount.getAddress(), 0, 10);
+        Map<String, Object> sponosrsRequest = (Map<String, Object>) cpsScore.call("getSponsorsRequests", APPROVED, testingAccount.getAddress(), 0);
         System.out.println("Sponsors request::" + sponosrsRequest);
 
         Map<String, Integer> sponsorsRecord = (Map<String, Integer>) cpsScore.call("getSponsorsRecord");
@@ -1792,7 +1792,7 @@ public class CPSScoreTest extends TestBase {
         sponsorVoteParams.add("params", params);
 
         Executable bondPercentageRevert = () -> cpsScore.invoke(testingAccount, "tokenFallback", testingAccount.getAddress(), BigInteger.valueOf(10).multiply(MULTIPLIER), sponsorVoteParams.toString().getBytes());
-        expectErrorMessage(bondPercentageRevert, "Reverted(0): CPS Score: Deposit 15% of the total budget of the project.");
+        expectErrorMessage(bondPercentageRevert, "CPS Score: Deposit 15% of the total budget of the project.");
     }
 
 
@@ -1839,7 +1839,7 @@ public class CPSScoreTest extends TestBase {
         List<String> progressKeys = (List<String>) cpsScore.call("getProgressKeys");
         assertEquals(List.of("Report 1"), progressKeys);
 
-        Map<String, Object> progressReports = (Map<String, Object>) cpsScore.call("getProgressReports", WAITING, 0, 10);
+        Map<String, Object> progressReports = (Map<String, Object>) cpsScore.call("getProgressReports", WAITING, 0);
         System.out.println("Progerss reports: " + progressReports);
         assertEquals(1, progressReports.get(COUNT));
 
@@ -2057,22 +2057,22 @@ public class CPSScoreTest extends TestBase {
     @Test
     void bondPercentageExceptions() {
         Executable percentageNotAdmin = () -> cpsScore.invoke(testingAccount, "setSponsorBondPercentage", BigInteger.valueOf(15));
-        expectErrorMessage(percentageNotAdmin, "Reverted(0): CPS Score: Only CPF treasury can call this method");
+        expectErrorMessage(percentageNotAdmin, "CPS Score: Only CPF treasury can call this method");
 
         doReturn(cpfTreasuryScore.getAddress()).when(scoreSpy).getCpfTreasuryScore();
         Executable percentageLessTwelve = () -> cpsScore.invoke(cpfTreasuryScore, "setSponsorBondPercentage", BigInteger.valueOf(11));
-        expectErrorMessage(percentageLessTwelve, "Reverted(0): CPS Score: Cannot set bond percentage less than 12%");
+        expectErrorMessage(percentageLessTwelve, "CPS Score: Cannot set bond percentage less than 12%");
     }
 
     @Test
     void setApplicationPeriodExceptions() {
         Executable setPeriodNotAdmin = () -> cpsScore.invoke(testingAccount, "setPeriod", BigInteger.valueOf(10));
-        expectErrorMessage(setPeriodNotAdmin, "Reverted(0): CPS Score: Only CPF treasury can call this method");
+        expectErrorMessage(setPeriodNotAdmin, "CPS Score: Only CPF treasury can call this method");
 
 
         doReturn(cpfTreasuryScore.getAddress()).when(scoreSpy).getCpfTreasuryScore();
         Executable periodis15 = () -> cpsScore.invoke(cpfTreasuryScore, "setPeriod", BigInteger.valueOf(28));
-        expectErrorMessage(periodis15, "Reverted(0): CPS Score: Voting period must be more than or equal to 10 days");
+        expectErrorMessage(periodis15, "CPS Score: Voting period must be more than or equal to 10 days");
 
     }
 
@@ -2137,7 +2137,7 @@ public class CPSScoreTest extends TestBase {
                 milestoneSubmission1};
 
         Executable call = () -> cpsScore.invoke(owner, "submitProgressReport", progressReport, milestoneSubmission);
-        expectErrorMessage(call, "Reverted(0): CPS Score: Sorry, You are not the contributor for this project.");
+        expectErrorMessage(call, "CPS Score: Sorry, You are not the contributor for this project.");
 
         contextMock.when(caller()).thenReturn(testingAccount1.getAddress());
         cpsScore.invoke(testingAccount1, "submitProgressReport", progressReport, milestoneSubmission);

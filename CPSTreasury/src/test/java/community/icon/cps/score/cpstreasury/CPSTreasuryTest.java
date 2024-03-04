@@ -167,39 +167,39 @@ public class CPSTreasuryTest extends TestBase {
     void setCpsScoreNotAdmin() {
         setScoresMethod();
         Executable setCpsScoreNotAdmin = () -> setCpsScoreExceptions(false, score_address);
-        expectErrorMessage(setCpsScoreNotAdmin, "Reverted(0): " + TAG + ": Only admins can call this method");
+        expectErrorMessage(setCpsScoreNotAdmin, TAG + ": Only admins can call this method");
     }
 
     @Test
     void setCpfTreasuryScoreNotAdmin() {
         setScoresMethod();
         Executable setCpfTreasuryScoreNotAdmin = () -> setCpfTreasuryScoreExceptions(false, score_address);
-        expectErrorMessage(setCpfTreasuryScoreNotAdmin, "Reverted(0): " + TAG + ": Only admins can call this method");
+        expectErrorMessage(setCpfTreasuryScoreNotAdmin, TAG + ": Only admins can call this method");
     }
 
     @Test
     void setBnUSDScoreNotAdmin() {
         setScoresMethod();
         Executable setBnUSDScoreNotAdmin = () -> setBnUSDScoreExceptions(false, score_address);
-        expectErrorMessage(setBnUSDScoreNotAdmin, "Reverted(0): " + TAG + ": Only admins can call this method");
+        expectErrorMessage(setBnUSDScoreNotAdmin, TAG + ": Only admins can call this method");
     }
 
     @Test
     void setCPSScoreNotContract() {
         Executable setCpsScoreNotAdmin = () -> setCpsScoreExceptions(true, testing_account.getAddress());
-        expectErrorMessage(setCpsScoreNotAdmin, "Reverted(0): " + TAG + "Target " + testing_account.getAddress() + " is not a score.");
+        expectErrorMessage(setCpsScoreNotAdmin, TAG + "Target " + testing_account.getAddress() + " is not a score.");
     }
 
     @Test
     void setCPFTreasuryScoreNotContract() {
         Executable setCpfTreasuryScoreNotContract = () -> setCpfTreasuryScoreExceptions(true, testing_account.getAddress());
-        expectErrorMessage(setCpfTreasuryScoreNotContract, "Reverted(0): " + TAG + "Target " + testing_account.getAddress() + " is not a score.");
+        expectErrorMessage(setCpfTreasuryScoreNotContract,    TAG + "Target " + testing_account.getAddress() + " is not a score.");
     }
 
     @Test
     void setBnUSDScoreNotContract() {
         Executable setBnUSDScoreContract = () -> setBnUSDScoreExceptions(true, testing_account.getAddress());
-        expectErrorMessage(setBnUSDScoreContract, "Reverted(0): " + TAG + "Target " + testing_account.getAddress() + " is not a score.");
+        expectErrorMessage(setBnUSDScoreContract,    TAG + "Target " + testing_account.getAddress() + " is not a score.");
     }
 
     @Test
@@ -268,7 +268,7 @@ public class CPSTreasuryTest extends TestBase {
         setOnsetPayment();
         depositProposalFundMethod();
         Executable depositProposalFundProposalAlreadyExists = () -> depositProposalFundExceptions();
-        expectErrorMessage(depositProposalFundProposalAlreadyExists, "Reverted(0): " + "CPS_TREASURY: Already have this project");
+        expectErrorMessage(depositProposalFundProposalAlreadyExists,  "CPS_TREASURY: Already have this project");
     }
 
     @Test
@@ -342,7 +342,7 @@ public class CPSTreasuryTest extends TestBase {
     @Test
     void updateProposalFundProposalDoesnotExist(){
         Executable updateProposalFundProposalDoesnotExist = () -> updateProposalFundProposalException();
-        expectErrorMessage(updateProposalFundProposalDoesnotExist, "Reverted(0): " + "CPS_TREASURY: Invalid IPFS hash.");
+        expectErrorMessage(updateProposalFundProposalDoesnotExist,    "CPS_TREASURY: Invalid IPFS hash.");
     }
 
     private void  depositProposalFund_MilestoneCheck() {
