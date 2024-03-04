@@ -1,4 +1,5 @@
-package community.icon.cps.score.lib.interfaces;
+package community.icon.cps.score.test.integration.scores;
+
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
@@ -12,7 +13,6 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-@ScoreInterface(suffix = "Client")
 public interface CPSCoreInterface {
 
     public static class ProposalAttributes {
@@ -174,7 +174,7 @@ public interface CPSCoreInterface {
 
     @Payable
     @External
-    void submitProposal(ProposalAttributes proposals, MilestonesAttributes[] milestones);
+    void submitProposal(community.icon.cps.score.lib.interfaces.CPSCoreInterface.ProposalAttributes proposals, community.icon.cps.score.lib.interfaces.CPSCoreInterface.MilestonesAttributes[] milestones);
 
 
     @External
@@ -182,11 +182,11 @@ public interface CPSCoreInterface {
 
 
     @External
-    void submitProgressReport(ProgressReportAttributes progressReport, MilestoneSubmission[] milestoneSubmissions);
+    void submitProgressReport(community.icon.cps.score.lib.interfaces.CPSCoreInterface.ProgressReportAttributes progressReport, community.icon.cps.score.lib.interfaces.CPSCoreInterface.MilestoneSubmission[] milestoneSubmissions);
 
 
     @External
-    void voteProgressReport(String reportKey, String voteReason, MilestoneVoteAttributes[] votes, @Optional String budgetAdjustmentVote,@Optional boolean voteChange);
+    void voteProgressReport(String reportKey, String voteReason, community.icon.cps.score.lib.interfaces.CPSCoreInterface.MilestoneVoteAttributes[] votes, @Optional String budgetAdjustmentVote, @Optional boolean voteChange);
 
 
     @External(readonly = true)

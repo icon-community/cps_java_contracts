@@ -1,7 +1,6 @@
-package community.icon.cps.score.lib.interfaces;
+package community.icon.cps.score.test.integration.scores;
 
-import foundation.icon.score.client.ScoreClient;
-import foundation.icon.score.client.ScoreInterface;
+
 import score.Address;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -11,7 +10,6 @@ import score.annotation.Payable;
 import java.math.BigInteger;
 import java.util.Map;
 
-@ScoreInterface(suffix = "Client")
 public interface CPFTreasuryInterface {
     @External(readonly = true)
     String name();

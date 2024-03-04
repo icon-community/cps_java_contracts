@@ -1,7 +1,5 @@
-package community.icon.cps.score.lib.interfaces;
+package community.icon.cps.score.test.integration.scores;
 
-import foundation.icon.score.client.ScoreClient;
-import foundation.icon.score.client.ScoreInterface;
 import score.Address;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -11,8 +9,6 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-//@ScoreClient
-@ScoreInterface(suffix = "Client")
 public interface CPSTreasuryInterface {
     @External(readonly = true)
     String name();
@@ -78,7 +74,7 @@ public interface CPSTreasuryInterface {
 
     @External
     void updateContributorSponsorAddress(String _ipfs_key, Address _new_contributor_address,
-                                            Address _new_sponsor_address);
+                                         Address _new_sponsor_address);
 
     @EventLog(indexed = 1)
     void ProposalDisqualified(String _ipfs_key, String note);
@@ -92,3 +88,4 @@ public interface CPSTreasuryInterface {
     @EventLog(indexed = 1)
     void ProposalFundWithdrawn(Address _receiver_address, String note);
 }
+
