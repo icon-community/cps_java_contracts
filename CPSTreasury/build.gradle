@@ -10,7 +10,7 @@ dependencies {
 //    testImplementation 'foundation.icon:javaee-unittest:0.9.7'
 //    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.0'
 //    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.0'
-//    testImplementation('org.mockito:mockito-inline:4.8.0')
+    testImplementation('org.mockito:mockito-inline:4.8.0')
 //    intTestImplementation 'foundation.icon:icon-sdk:2.2.0'
 //    intTestImplementation project(":score-client")
 //    intTestAnnotationProcessor project(":score-client")
