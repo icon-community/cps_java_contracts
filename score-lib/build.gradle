@@ -2,7 +2,6 @@ plugins {
     id 'java'
 }
 
-version '0.1.0'
 
 repositories {
     mavenCentral()
@@ -11,22 +10,33 @@ repositories {
 optimizedJar.enabled = false
 
 dependencies {
-    compileOnly 'foundation.icon:javaee-api:0.9.1'
-    implementation 'foundation.icon:javaee-scorex:0.5.2'
-    implementation 'com.github.sink772:minimal-json:0.9.7'
-
-    compileOnly 'foundation.icon:javaee-score-client:0.9.0'
-    annotationProcessor 'foundation.icon:javaee-score-client:0.9.0'
+//    compileOnly 'foundation.icon:javaee-api:0.9.1'
+//    implementation group: 'foundation.icon', name: 'javaee-score-json', version: '0.9.0'
+//    implementation 'foundation.icon:javaee-scorex:0.5.2'
+//    implementation 'com.github.sink772:minimal-json:0.9.7'
 //
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.13.3'
-    implementation 'foundation.icon:icon-sdk:2.1.0'
+////    compileOnly 'foundation.icon:javaee-score-client:0.9.0'
+////    annotationProcessor 'foundation.icon:javaee-score-client:0.9.0'
+////
+//    implementation 'com.fasterxml.jackson.core:jackson-databind:2.14.0-rc1'
+//    implementation 'foundation.icon:icon-sdk:2.1.0'
 //
+//    implementation("foundation.icon:javaee-annotation-processor:0.9.0")
+//    implementation("com.squareup:javapoet:1.12.1")
+//    implementation("foundation.icon:javaee-api:0.9.0")
+//    implementation("foundation.icon:icon-sdk:2.0.0")
+//    implementation("com.fasterxml.jackson.core:jackson-databind:2.9.6")
+//    implementation("com.squareup.okhttp3:okhttp:3.11.0")
+//    implementation("org.bouncycastle:bcprov-jdk15on:1.60")
+//    compileOnly group: 'commons-io', name: 'commons-io', version: "2.11.0"
 //
-    testImplementation 'foundation.icon:javaee-unittest:0.9.4'
-    testImplementation "org.junit.jupiter:junit-jupiter:5.8.2"
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
-    testImplementation 'org.mockito:mockito-core:4.5.1'
-    testRuntimeOnly 'org.mockito:mockito-inline:4.5.1'
+////
+////
+//    testImplementation 'foundation.icon:javaee-unittest:0.9.4'
+//    testImplementation "org.junit.jupiter:junit-jupiter:5.8.2"
+//    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
+//    testImplementation 'org.mockito:mockito-core:4.5.1'
+//    testRuntimeOnly 'org.mockito:mockito-inline:4.5.1'
 }
 
 test {

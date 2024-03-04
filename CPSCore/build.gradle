@@ -1,21 +1,23 @@
 version = '1.3.9'
 
 dependencies {
-    compileOnly 'foundation.icon:javaee-api:0.9.2'
-    implementation 'com.github.sink772:minimal-json:0.9.7'
-    implementation 'foundation.icon:javaee-scorex:0.5.3'
+
+
+//    compileOnly 'foundation.icon:javaee-api:0.9.2'
+//    implementation 'com.github.sink772:minimal-json:0.9.7'
+//    implementation 'foundation.icon:javaee-scorex:0.5.3'
 
     implementation project(':score-lib')
     testImplementation project(':test-lib')
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.0'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.0'
-    testImplementation('org.mockito:mockito-inline:4.8.0')
-    testImplementation 'foundation.icon:javaee-unittest:0.9.7'
-    intTestImplementation 'foundation.icon:icon-sdk:2.2.0'
-    intTestImplementation project(":score-client")
-    intTestAnnotationProcessor project(":score-client")
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.0'
+//    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.0'
+//    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.0'
+//    testImplementation('org.mockito:mockito-inline:4.8.0')
+//    testImplementation 'foundation.icon:javaee-unittest:0.9.7'
+//    intTestImplementation 'foundation.icon:icon-sdk:2.2.0'
+////    intTestImplementation project(":score-client")
+////    intTestAnnotationProcessor project(":score-client")
+//    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.0'
 }
 
 optimizedJar {
@@ -23,6 +25,7 @@ optimizedJar {
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
+    enableDebug = false
 }
 
 deployJar {
@@ -64,4 +67,25 @@ test {
 
 repositories {
     mavenCentral()
+}
+
+task integrationTest(type: Test) {
+    useJUnitPlatform()
+
+
+    rootProject.allprojects {
+        if (it.getTasks().findByName('optimizedJar')) {
+            dependsOn(it.getTasks().getByName('optimizedJar'))
+        }
+    }
+
+    options {
+        testLogging.showStandardStreams = true
+        description = 'Runs integration tests.'
+        group = 'verification'
+
+        testClassesDirs = sourceSets.intTest.output.classesDirs
+        classpath = sourceSets.intTest.runtimeClasspath
+    }
+
 }
