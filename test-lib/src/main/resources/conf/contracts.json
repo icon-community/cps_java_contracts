@@ -1,0 +1,30 @@
+[
+  {
+    "name": "cpsCore",
+    "contract": "CPSCore",
+    "params": {
+      "applicationPeriod": "20"
+    },
+    "order":1.0
+  },
+  {
+    "name": "cpsTreasury",
+    "contract": "CPSTreasury",
+    "params": {
+    },
+    "addressParams": {
+      "cpsScore": "cpsCore"
+    },
+    "order":2.0
+  },
+  {
+    "name": "cpfTreasury",
+    "contract": "CPFTreasury",
+    "params": {
+    },
+    "addressParams": {
+      "cpsScore": "cpsCore"
+    },
+    "order":2.0
+  }
+]
