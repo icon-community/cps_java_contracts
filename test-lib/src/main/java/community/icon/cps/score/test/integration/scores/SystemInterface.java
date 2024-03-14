@@ -36,12 +36,15 @@ public interface SystemInterface {
     void setDelegation(Delegation[] delegations);
 
     void setBond(Bond[] bonds);
+    Map<String,Address> getBonderList(Address address);
 
     void setBonderList(Address[] bonderList);
 
     void setStake(BigInteger value);
 
     Map<String, Object> getPRep(Address address);
+
+    Map<String, Object> getPRepTerm();
     void initCommissionRate(BigInteger maxChangeRate,BigInteger maxRate,BigInteger rate);
     void setCommissionRate(BigInteger rate);
 

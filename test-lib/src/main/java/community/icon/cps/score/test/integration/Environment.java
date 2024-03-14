@@ -2,7 +2,7 @@ package community.icon.cps.score.test.integration;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import community.icon.cps.score.lib.interfaces.SystemInterface;
+import community.icon.cps.score.test.integration.scores.SystemInterface;
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.icx.Wallet;
 import foundation.icon.icx.crypto.KeystoreException;

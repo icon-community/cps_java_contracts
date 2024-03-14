@@ -16,6 +16,7 @@ import foundation.icon.score.client.ScoreClient;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 import static community.icon.cps.score.test.integration.Environment.chain;
 
@@ -46,6 +47,7 @@ public class CPSClient {
 
     private void init(){
         for (Entry<String, Address> entry : this.cps.getAddresses().entrySet()) {
+            System.out.println("---------------is system queried----------------" + entry.getKey());
             switch (entry.getKey()){
                 case "cpsCore":
                     cpsCore = new CPSCoreInterfaceScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
@@ -69,6 +71,16 @@ public class CPSClient {
             }
 
         }
+    }
+
+    public Map<String, score.Address> getContractAddresses() {
+        if (addressMap == null) {
+            addressMap = this.cps.getAddresses().entrySet()
+                    .stream()
+                    .collect(Collectors.toMap(Entry::getKey,
+                            entry -> score.Address.fromString(entry.getValue().toString())));
+        }
+        return addressMap;
     }
 
     public score.Address getAddress() {
