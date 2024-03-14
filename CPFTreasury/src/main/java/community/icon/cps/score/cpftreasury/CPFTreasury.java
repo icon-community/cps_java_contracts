@@ -39,12 +39,15 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     private final VarDB<Boolean> swapFlag = Context.newVarDB(SWAP_FLAG, Boolean.class);
     private final VarDB<BigInteger> swapLimitAmount = Context.newVarDB(SWAP_LIMIT_AMOUNT, BigInteger.class);
 
-    public CPFTreasury() {
+    public CPFTreasury(@Optional Address cpsScore) {
         if (treasuryFund.get() == null) {
             treasuryFund.set(BigInteger.valueOf(1000000).multiply(EXA));
             swapCount.set(SwapReset);
             swapState.set(SwapReset);
             swapFlag.set(false);
+        }
+        if (CPFTreasury.cpsScore.get() == null){
+            CPFTreasury.cpsScore.set(cpsScore);
         }
     }
 
