@@ -249,6 +249,9 @@ public interface CPSCoreInterface {
     void claimSponsorBond();
 
     @External
+    void setPeriod(BigInteger applicationPeriod);
+
+    @External
     void setSwapCount(int value);
 
     @External
