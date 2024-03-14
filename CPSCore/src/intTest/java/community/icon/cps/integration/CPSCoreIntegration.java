@@ -1,5 +1,6 @@
 package community.icon.cps.integration;
 
+import community.icon.cps.score.lib.interfaces.CPSCoreInterface;
 import community.icon.cps.score.test.integration.CPS;
 import community.icon.cps.score.test.integration.CPSClient;
 import community.icon.cps.score.test.integration.ScoreIntegrationTest;
@@ -27,8 +28,11 @@ import score.UserRevertException;
 public class CPSCoreIntegration implements ScoreIntegrationTest {
 
     private static CPSClient ownerClient;
+    private static CPSClient testClient;
     private static CPSClient readerClient;
     static Set<Map.Entry<Address, String>> prepSet = preps.entrySet();
+
+    private BigInteger ICX = BigInteger.valueOf(10).pow(18);
 
 
     public static Map<Integer,CPSClient> cpsClients = new HashMap<>();
@@ -39,7 +43,8 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
 
         cps.setupCPS();
         ownerClient = cps.defaultClient();
-        readerClient = cps.testClient();
+        readerClient = cps.newClient(BigInteger.TEN.pow(24));
+        testClient = cps.testClient();
         BaseConfig config = new BaseConfig(ownerClient);
         config.call();
 
@@ -130,6 +135,43 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
         Map<String, BigInteger> actualPrepData = loginPrep(prep1.getAddress());
         assertEquals(expectedPrepData,actualPrepData);
     }
+
+    @Test
+    @Order(4)
+    public void submitProposal(){
+        CPSClient prep1 = cpsClients.get(0);
+        CPSCoreInterface.ProposalAttributes proposalAttributes = new CPSCoreInterface.ProposalAttributes();
+
+        proposalAttributes.ipfs_hash = "Test_Proposal_1";
+        proposalAttributes.project_title = "Proposal_1";
+        proposalAttributes.project_duration = 3;
+        proposalAttributes.total_budget = BigInteger.valueOf(100).multiply(ICX);
+        proposalAttributes.token = bnUSD;
+        proposalAttributes.sponsor_address = prep1.getAddress();
+        proposalAttributes.ipfs_link ="https://proposal_1";
+        proposalAttributes.milestoneCount = 3;
+        proposalAttributes.isMilestone = true;
+
+        CPSCoreInterface.MilestonesAttributes milestonesAttributes1 = new CPSCoreInterface.MilestonesAttributes();
+        milestonesAttributes1.completionPeriod = 1;
+        milestonesAttributes1.budget = BigInteger.valueOf(30).multiply(ICX);
+        milestonesAttributes1.id = 1;
+
+        CPSCoreInterface.MilestonesAttributes milestonesAttributes2 = new CPSCoreInterface.MilestonesAttributes();
+        milestonesAttributes2.completionPeriod = 2;
+        milestonesAttributes2.budget = BigInteger.valueOf(40).multiply(ICX);
+        milestonesAttributes2.id = 2;
+
+        CPSCoreInterface.MilestonesAttributes milestonesAttributes3 = new CPSCoreInterface.MilestonesAttributes();
+        milestonesAttributes3.completionPeriod = 3;
+        milestonesAttributes3.budget = BigInteger.valueOf(20).multiply(ICX);
+        milestonesAttributes3.id = 3; // TODO: check if same id is sent
+
+        CPSCoreInterface.MilestonesAttributes[] milestonesAttributes =new CPSCoreInterface.MilestonesAttributes[]
+                {milestonesAttributes1, milestonesAttributes2,milestonesAttributes3};
+        testClient.cpsCore.submitProposal(proposalAttributes,milestonesAttributes);
+    }
+
 
     private Map<String,?> getPeriodStatus(){
         return readerClient.cpsCore.getPeriodStatus();
