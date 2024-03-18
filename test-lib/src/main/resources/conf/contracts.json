@@ -8,6 +8,23 @@
     "order":1.0
   },
   {
+    "name": "bnUSD",
+    "contract": "bnUSD",
+    "params": {
+      "name": "Balanced Stable Coin",
+      "symbol": "bnUSD",
+      "decimals": 18
+    },
+    "order": 1.0
+  },
+  {
+    "name": "dex",
+    "contract": "DEX",
+    "params": {
+    },
+    "order": 1.0
+  },
+  {
     "name": "cpsTreasury",
     "contract": "CPSTreasury",
     "params": {

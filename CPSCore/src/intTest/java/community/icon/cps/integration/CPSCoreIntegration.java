@@ -5,14 +5,12 @@ import community.icon.cps.score.test.integration.CPS;
 import community.icon.cps.score.test.integration.CPSClient;
 import community.icon.cps.score.test.integration.ScoreIntegrationTest;
 import community.icon.cps.score.test.integration.config.BaseConfig;
-import foundation.icon.score.client.RevertedException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import score.Address;
 
 import static community.icon.cps.score.cpscore.utils.Constants.*;
-import static community.icon.cps.score.test.AssertRevertedException.assertReverted;
 import static community.icon.cps.score.test.AssertRevertedException.assertUserRevert;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -169,7 +167,8 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
 
         CPSCoreInterface.MilestonesAttributes[] milestonesAttributes =new CPSCoreInterface.MilestonesAttributes[]
                 {milestonesAttributes1, milestonesAttributes2,milestonesAttributes3};
-        testClient.cpsCore.submitProposal(proposalAttributes,milestonesAttributes);
+        ((CPSCoreInterfaceScoreClient) testClient.cpsCore).submitProposal(BigInteger.valueOf(50).multiply(ICX),proposalAttributes,milestonesAttributes);
+//        testClient.cpsCore.submitProposal(proposalAttributes,milestonesAttributes);
     }
 
 

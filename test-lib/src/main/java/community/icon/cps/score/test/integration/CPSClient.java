@@ -1,13 +1,12 @@
 package community.icon.cps.score.test.integration;
 
+import community.icon.cps.score.test.integration.scores.*;
 import community.icon.cps.score.test.integration.scores.SystemInterfaceScoreClient;
-import community.icon.cps.score.test.integration.scores.CPFTreasuryInterface;
 import community.icon.cps.score.test.integration.scores.CPFTreasuryInterfaceScoreClient;
-import community.icon.cps.score.test.integration.scores.CPSCoreInterface;
 import community.icon.cps.score.test.integration.scores.CPSCoreInterfaceScoreClient;
-import community.icon.cps.score.test.integration.scores.CPSTreasuryInterface;
 import community.icon.cps.score.test.integration.scores.CPSTreasuryInterfaceScoreClient;
-import community.icon.cps.score.test.integration.scores.SystemInterface;
+import community.icon.cps.score.test.integration.scores.DummyDexScoreClient;
+import community.icon.cps.score.test.integration.scores.BalancedDollarScoreClient;
 import foundation.icon.icx.KeyWallet;
 
 import foundation.icon.jsonrpc.Address;
@@ -36,6 +35,12 @@ public class CPSClient {
     public CPSCoreInterface cpsCore;
 
     @ScoreClient
+    public BalancedDollar bnUSD;
+
+    @ScoreClient
+    public DummyDex dex;
+
+    @ScoreClient
     public SystemInterface systemScore;
 
 
@@ -59,6 +64,14 @@ public class CPSClient {
                     break;
                 case "cpfTreasury":
                     cpfTreasury = new CPFTreasuryInterfaceScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
+                            entry.getValue());
+                    break;
+                case "bnUSD":
+                    bnUSD = new BalancedDollarScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
+                            entry.getValue());
+                    break;
+                case "dex":
+                    dex = new DummyDexScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
                             entry.getValue());
                     break;
                 case "systemScore":
