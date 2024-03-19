@@ -1,6 +1,7 @@
 package community.icon.cps.integration;
 
 import community.icon.cps.score.lib.interfaces.CPSCoreInterface;
+import community.icon.cps.score.test.integration.scores.CPSCoreInterfaceScoreClient;
 import community.icon.cps.score.test.integration.CPS;
 import community.icon.cps.score.test.integration.CPSClient;
 import community.icon.cps.score.test.integration.ScoreIntegrationTest;
@@ -143,7 +144,7 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
         proposalAttributes.ipfs_hash = "Test_Proposal_1";
         proposalAttributes.project_title = "Proposal_1";
         proposalAttributes.project_duration = 3;
-        proposalAttributes.total_budget = BigInteger.valueOf(100).multiply(ICX);
+        proposalAttributes.total_budget = BigInteger.valueOf(100);
         proposalAttributes.token = bnUSD;
         proposalAttributes.sponsor_address = prep1.getAddress();
         proposalAttributes.ipfs_link ="https://proposal_1";

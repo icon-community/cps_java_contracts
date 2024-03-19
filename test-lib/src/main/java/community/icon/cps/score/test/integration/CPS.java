@@ -55,9 +55,9 @@ public class CPS {
     }
 
     private void decentralizeChain(){
-        if (isPRepRegistered()) {
-            return;
-        }
+//        if (isPRepRegistered()) {
+//            return;
+//        }
         setStake();
         setDelegationOfPreps();
         setBonderList();
@@ -89,9 +89,9 @@ public class CPS {
     private void setStake(){
         int count = 0;
         for (Map.Entry<Address, String> prep : preps.entrySet()) {
-//            if (prep.getKey().equals(Address.fromString("hxb6b5791be0b5ef67063b3c10b840fb81514db2fd"))){
-//                continue;
-//            }
+            if (prep.getKey().equals(Address.fromString("hxb6b5791be0b5ef67063b3c10b840fb81514db2fd"))){
+                continue;
+            }
             if (count < 7) {
                 KeyWallet wallet = KeyWallet.load(new Bytes(prep.getValue()));
                 var client = new DefaultScoreClient(
@@ -114,9 +114,9 @@ public class CPS {
     public void setDelegationOfPreps(){
         int count = 0;
         for (Map.Entry<Address, String> prep : preps.entrySet()) {
-//            if (prep.getKey().equals(Address.fromString("hxb6b5791be0b5ef67063b3c10b840fb81514db2fd"))){
-//                continue;
-//            }
+            if (prep.getKey().equals(Address.fromString("hxb6b5791be0b5ef67063b3c10b840fb81514db2fd"))){
+                continue;
+            }
             if (count < 7) {
                 KeyWallet wallet = KeyWallet.load(new Bytes(prep.getValue()));
                 SystemInterface.Delegation[] delegations = new SystemInterface.Delegation[1];
@@ -145,9 +145,9 @@ public class CPS {
     public void setBonderList(){
         int count = 0;
         for (Map.Entry<Address, String> prep : preps.entrySet()) {
-//            if (prep.getKey().equals(Address.fromString("hxb6b5791be0b5ef67063b3c10b840fb81514db2fd"))){
-//                continue;
-//            }
+            if (prep.getKey().equals(Address.fromString("hxb6b5791be0b5ef67063b3c10b840fb81514db2fd"))){
+                continue;
+            }
             if (count < 7) {
                 KeyWallet wallet = KeyWallet.load(new Bytes(prep.getValue()));
                 score.Address[] bonderList = new score.Address[1];
@@ -178,9 +178,9 @@ public class CPS {
     public void setBondsofPreps(){
         int count = 0;
         for (Map.Entry<Address, String> prep : preps.entrySet()) {
-//            if (prep.getKey().equals(Address.fromString("hxb6b5791be0b5ef67063b3c10b840fb81514db2fd"))){
-//                continue;
-//            }
+            if (prep.getKey().equals(Address.fromString("hxb6b5791be0b5ef67063b3c10b840fb81514db2fd"))){
+                continue;
+            }
             if (count < 7){
                 KeyWallet wallet = KeyWallet.load(new Bytes(prep.getValue()));
                 SystemInterface.Bond[] bond = new SystemInterface.Bond[1];
