@@ -41,8 +41,8 @@ public class BaseConfig {
 
         System.out.println("------setting funds--------");
         cpsClient.cpfTreasury.setMaximumTreasuryFundBnusd(BigInteger.valueOf(1000).multiply(EXA));
-        this.cpsClient.bnUSD.setMinter(this.cpsClient.getAddress());
-        this.cpsClient.bnUSD.mint(BigInteger.valueOf(1000000),new byte[0] );
+//        this.cpsClient.bnUSD.setMinter(this.cpsClient.getAddress());
+        this.cpsClient.bnUSD.mintTo(addressMap.get("cpfTreasury"),BigInteger.valueOf(1000000) );
         System.out.println("------system score------- " + addressMap.get("systemScore"));
 
     }

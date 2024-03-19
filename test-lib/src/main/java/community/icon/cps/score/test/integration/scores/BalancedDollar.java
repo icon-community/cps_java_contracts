@@ -15,7 +15,7 @@ public interface BalancedDollar {
     void mint(BigInteger _amount, @Optional byte[] _data);
 
     @External
-    void mintTo(Address _account, BigInteger _amount, @Optional byte[] _data);
+    void mintTo(Address to, BigInteger amount);
 
     @External
     void setMinter(Address _address);
