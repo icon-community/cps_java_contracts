@@ -11,15 +11,30 @@
     "name": "bnUSD",
     "contract": "bnUSD",
     "params": {
-      "name": "Balanced Stable Coin",
-      "symbol": "bnUSD",
-      "decimals": 18
+      "_name": "Balanced Stable Coin",
+      "_symbol": "bnUSD",
+      "_decimals": 18,
+      "_initialSupply": 100000000000000000000
     },
     "order": 1.0
   },
   {
     "name": "dex",
     "contract": "DEX",
+    "params": {
+    },
+    "order": 1.0
+  },
+  {
+    "name": "router",
+    "contract": "ROUTER",
+    "params": {
+    },
+    "order": 1.0
+  },
+  {
+    "name": "oracle",
+    "contract": "ORACLE",
     "params": {
     },
     "order": 1.0

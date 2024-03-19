@@ -7,6 +7,8 @@ import community.icon.cps.score.test.integration.scores.CPSCoreInterfaceScoreCli
 import community.icon.cps.score.test.integration.scores.CPSTreasuryInterfaceScoreClient;
 import community.icon.cps.score.test.integration.scores.DummyDexScoreClient;
 import community.icon.cps.score.test.integration.scores.BalancedDollarScoreClient;
+import community.icon.cps.score.test.integration.scores.OracleScoreClient;
+import community.icon.cps.score.test.integration.scores.RouterScoreClient;
 import foundation.icon.icx.KeyWallet;
 
 import foundation.icon.jsonrpc.Address;
@@ -41,6 +43,12 @@ public class CPSClient {
     public DummyDex dex;
 
     @ScoreClient
+    public Router router;
+
+    @ScoreClient
+    public Oracle oracle;
+
+    @ScoreClient
     public SystemInterface systemScore;
 
 
@@ -72,6 +80,14 @@ public class CPSClient {
                     break;
                 case "dex":
                     dex = new DummyDexScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
+                            entry.getValue());
+                    break;
+                case "router":
+                    router = new RouterScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
+                            entry.getValue());
+                    break;
+                case "oracle":
+                    oracle = new OracleScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
                             entry.getValue());
                     break;
                 case "systemScore":
