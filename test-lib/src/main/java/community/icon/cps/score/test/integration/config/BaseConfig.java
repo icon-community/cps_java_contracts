@@ -26,23 +26,38 @@ public class BaseConfig {
 
     public void call(){
         System.out.println("--------init base setup for cps-----------");
-        this.cpsClient.cpsCore.addAdmin(this.cpsClient.getAddress());
         System.out.println("--------admin set -----------");
-        cpsClient.cpsCore.toggleMaintenance();
-        cpsClient.cpsCore.setInitialBlock();
+        this.cpsClient.cpsCore.addAdmin(this.cpsClient.getAddress());
+
 
         System.out.println("------setting scores in cpscore------");
         cpsClient.cpsCore.setCpsTreasuryScore(addressMap.get("cpsTreasury"));
         cpsClient.cpsCore.setCpfTreasuryScore(addressMap.get("cpfTreasury"));
+        cpsClient.cpsCore.setBnusdScore(addressMap.get("bnUSD"));
+
+        System.out.println("------setting scores in cps treasury-----");
+        cpsClient.cpsTreasury.setCpfTreasuryScore(addressMap.get("cpfTreasury"));
+        cpsClient.cpsTreasury.setBnUSDScore(addressMap.get("bnUSD"));
 
         System.out.println("--------setting score in cpf treasury -------");
+        cpsClient.cpfTreasury.setCpsTreasuryScore(addressMap.get("cpsTreasury"));
         cpsClient.cpfTreasury.setBnUSDScore(addressMap.get("bnUSD"));
         cpsClient.cpfTreasury.setDexScore(addressMap.get("dex"));
+        cpsClient.cpfTreasury.setOracleAddress(addressMap.get("oracle"));
+        cpsClient.cpfTreasury.setRouterScore(addressMap.get("router"));
+        cpsClient.cpfTreasury.setSicxScore(addressMap.get("sICX"));
 
         System.out.println("------setting funds--------");
-        cpsClient.cpfTreasury.setMaximumTreasuryFundBnusd(BigInteger.valueOf(1000).multiply(EXA));
+        cpsClient.cpfTreasury.setMaximumTreasuryFundIcx(BigInteger.valueOf(1000).multiply(EXA));
+        cpsClient.cpfTreasury.setMaximumTreasuryFundBnusd(BigInteger.valueOf(10000).multiply(EXA));
 //        this.cpsClient.bnUSD.setMinter(this.cpsClient.getAddress());
-        this.cpsClient.bnUSD.mintTo(addressMap.get("cpfTreasury"),BigInteger.valueOf(1000000) );
+        cpsClient.bnUSD.mintTo(addressMap.get("cpfTreasury"),BigInteger.valueOf(5000).multiply(EXA) );
+        cpsClient.cpfTreasury.toggleSwapFlag();
+
+        cpsClient.cpsCore.toggleMaintenance();
+        cpsClient.cpsCore.setInitialBlock();
+
+
         System.out.println("------system score------- " + addressMap.get("systemScore"));
 
     }

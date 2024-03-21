@@ -3,6 +3,7 @@
     "name": "cpsCore",
     "contract": "CPSCore",
     "params": {
+      "bondValue": 15,
       "applicationPeriod": "20"
     },
     "order":1.0
@@ -58,5 +59,15 @@
       "cpsScore": "cpsCore"
     },
     "order":2.0
+  },
+  {
+    "name": "sICX",
+    "contract": "sICX",
+    "params": {
+    },
+    "addressParams": {
+      "_admin": "owner"
+    },
+    "order": 2.0
   }
 ]

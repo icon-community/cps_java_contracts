@@ -22,4 +22,8 @@ public interface BalancedDollar {
 
     @External(readonly = true)
     Address getMinter();
+
+    @External
+    void transfer(Address _to, BigInteger _value, @Optional byte[] _data);
+
 }

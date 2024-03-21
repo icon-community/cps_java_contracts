@@ -49,6 +49,9 @@ public class CPSClient {
     public Oracle oracle;
 
     @ScoreClient
+    public sICX sICX;
+
+    @ScoreClient
     public SystemInterface systemScore;
 
 
@@ -90,9 +93,15 @@ public class CPSClient {
                     oracle = new OracleScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
                             entry.getValue());
                     break;
+                case "sICX":
+                    sICX = new sICXScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
+                            entry.getValue());
+                    break;
                 case "systemScore":
                     systemScore = new SystemInterfaceScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
                             entry.getValue());
+                    break;
+                case "owner":
                     break;
                 default:
                     throw new NoSuchElementException(entry.getKey() + " score not found!!");

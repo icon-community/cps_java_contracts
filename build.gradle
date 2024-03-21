@@ -111,14 +111,12 @@ subprojects {
 //        useJUnitPlatform()
 //    }
 
-    //TODO: add the dummy jar files here required for cps
 //    scoreIntegrationTest.put('bnUSD', "https://raw.githubusercontent.com/naneey/cps-scores/main/dummy/IRC2Token.jar")
     scoreIntegrationTest.put('bnUSD', "$rootProject.projectDir/dummyJarFiles/bnUSD-0.9.1-optimized.jar")
     scoreIntegrationTest.put('DEX', "$rootProject.projectDir/dummyJarFiles/Dex-0.9.1-optimized.jar")
     scoreIntegrationTest.put('ROUTER', "$rootProject.projectDir/dummyJarFiles/Router-0.9.1-optimized.jar")
     scoreIntegrationTest.put('ORACLE', "$rootProject.projectDir/dummyJarFiles/oracle-0.9.1-optimized.jar")
-//    scoreIntegrationTest.put('sICX', "$rootProject.projectDir/dummyJarFiles/sICX-0.9.1-optimized.jar")
-//    scoreIntegrationTest.put('DEX', "https://raw.githubusercontent.com/openmoneymarket/omm-scores/master/dummy/dex.jar")
+    scoreIntegrationTest.put('sICX', "$rootProject.projectDir/dummyJarFiles/Sicx-0.0.1-optimized.jar")
 
     afterEvaluate { project ->
         scoreIntegrationTest.put(project.name, project.getTasks().getByName("optimizedJar").outputJarName)
