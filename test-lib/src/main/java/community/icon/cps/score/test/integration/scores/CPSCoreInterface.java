@@ -195,6 +195,12 @@ public interface CPSCoreInterface {
     @External(readonly = true)
     List<String> getProposalsKeysByStatus(String status);
 
+    @External(readonly = true)
+    Map<String, Object> getMilestoneVoteResult(String reportKey, int milestoneId);
+
+    @External(readonly = true)
+    int getMileststoneStatusOf(String proposalKey, int milestoneId);
+
 
     @External(readonly = true)
     int checkChangeVote(Address address, String ipfsHash, String proposalType);

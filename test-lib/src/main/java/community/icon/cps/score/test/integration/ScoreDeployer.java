@@ -44,8 +44,6 @@ public class ScoreDeployer {
                 System.out.println("deploying contract " + score.getName() + " :: " + score.getPath());
                 Thread.sleep(200);
                 Map<String, String> addressParams = score.getAddressParams();
-                System.out.println("the adress params " + addressParams.entrySet());
-                System.out.println("the adress params " + addresses.get("owner"));
 
                 for (Map.Entry<String, String> params : addressParams.entrySet()) {
                     String key = params.getKey();

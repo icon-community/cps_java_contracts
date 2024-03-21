@@ -1,14 +1,24 @@
 package community.icon.cps.score.test.integration;
 
-import community.icon.cps.score.test.integration.scores.*;
+import community.icon.cps.score.test.integration.scores.SystemInterface;
 import community.icon.cps.score.test.integration.scores.SystemInterfaceScoreClient;
+import community.icon.cps.score.test.integration.scores.CPFTreasuryInterface;
 import community.icon.cps.score.test.integration.scores.CPFTreasuryInterfaceScoreClient;
+import community.icon.cps.score.test.integration.scores.CPSCoreInterface;
 import community.icon.cps.score.test.integration.scores.CPSCoreInterfaceScoreClient;
+import community.icon.cps.score.test.integration.scores.CPSTreasuryInterface;
 import community.icon.cps.score.test.integration.scores.CPSTreasuryInterfaceScoreClient;
+import community.icon.cps.score.test.integration.scores.DummyDex;
 import community.icon.cps.score.test.integration.scores.DummyDexScoreClient;
+import community.icon.cps.score.test.integration.scores.BalancedDollar;
 import community.icon.cps.score.test.integration.scores.BalancedDollarScoreClient;
+import community.icon.cps.score.test.integration.scores.Oracle;
 import community.icon.cps.score.test.integration.scores.OracleScoreClient;
+import community.icon.cps.score.test.integration.scores.Router;
 import community.icon.cps.score.test.integration.scores.RouterScoreClient;
+import community.icon.cps.score.test.integration.scores.sICX;
+import community.icon.cps.score.test.integration.scores.sICXScoreClient;
+
 import foundation.icon.icx.KeyWallet;
 
 import foundation.icon.jsonrpc.Address;
@@ -63,7 +73,6 @@ public class CPSClient {
 
     private void init(){
         for (Entry<String, Address> entry : this.cps.getAddresses().entrySet()) {
-            System.out.println("---------------is system queried----------------" + entry.getKey());
             switch (entry.getKey()){
                 case "cpsCore":
                     cpsCore = new CPSCoreInterfaceScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
