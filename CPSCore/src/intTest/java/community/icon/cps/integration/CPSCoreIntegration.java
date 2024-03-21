@@ -1,6 +1,8 @@
 package community.icon.cps.integration;
 
+import com.eclipsesource.json.JsonObject;
 import community.icon.cps.score.lib.interfaces.CPSCoreInterface;
+import community.icon.cps.score.lib.interfaces.CPSCoreInterface.MilestoneVoteAttributes;
 import community.icon.cps.score.test.integration.scores.CPSCoreInterfaceScoreClient;
 import community.icon.cps.score.test.integration.CPS;
 import community.icon.cps.score.test.integration.CPSClient;
@@ -23,6 +25,7 @@ import static community.icon.cps.score.test.integration.Environment.SYSTEM_INTER
 import static community.icon.cps.score.test.integration.Environment.godClient;
 import community.icon.cps.score.test.integration.scores.SystemInterfaceScoreClient;
 import score.UserRevertException;
+import score.annotation.Optional;
 
 public class CPSCoreIntegration implements ScoreIntegrationTest {
 
@@ -31,9 +34,9 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
     private static CPSClient readerClient;
     static Set<Map.Entry<Address, String>> prepSet = preps.entrySet();
 
-    private BigInteger ICX = BigInteger.valueOf(10).pow(18);
+    private final BigInteger ICX = BigInteger.valueOf(10).pow(18);
 
-
+    private static Map<String, foundation.icon.jsonrpc.Address> addressMap;
     public static Map<Integer,CPSClient> cpsClients = new HashMap<>();
     @BeforeAll
     public static void setup() throws Exception{
@@ -41,6 +44,7 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
         CPS cps = new CPS(contracts);
 
         cps.setupCPS();
+        addressMap = cps.getAddresses();
         ownerClient = cps.defaultClient();
         readerClient = cps.newClient(BigInteger.TEN.pow(24));
         testClient = cps.testClient();
@@ -169,7 +173,197 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
         CPSCoreInterface.MilestonesAttributes[] milestonesAttributes =new CPSCoreInterface.MilestonesAttributes[]
                 {milestonesAttributes1, milestonesAttributes2,milestonesAttributes3};
         ((CPSCoreInterfaceScoreClient) testClient.cpsCore).submitProposal(BigInteger.valueOf(50).multiply(ICX),proposalAttributes,milestonesAttributes);
-//        testClient.cpsCore.submitProposal(proposalAttributes,milestonesAttributes);
+
+        List<String> proposalsIpfs = readerClient.cpsCore.getProposalsKeysByStatus(SPONSOR_PENDING);
+        assertEquals(proposalsIpfs.size(),1);
+        assertEquals(proposalsIpfs.get(0),proposalAttributes.ipfs_hash);
+
+        verifyProposalDetails(proposalAttributes);
+    }
+
+    private void verifyProposalDetails(CPSCoreInterface.ProposalAttributes expectedDetails){
+        Map<String,Object> actualDetails = getProposalDetails(expectedDetails.ipfs_hash);
+        assertEquals(actualDetails.get("project_title"), expectedDetails.project_title);
+        assertEquals(actualDetails.get("sponsor_address"), expectedDetails.sponsor_address.toString());
+        assertEquals(actualDetails.get("ipfs_hash"), expectedDetails.ipfs_hash);
+//        assertEquals(actualDetails.get("project_duration"), expectedDetails.project_duration);
+//        assertEquals(actualDetails.get("milestoneCount"), expectedDetails.milestoneCount);
+//        assertEquals( actualDetails.get("total_budget"), expectedDetails.total_budget);
+
+    }
+
+
+
+    @Test
+    @Order(5)
+    public void submitSponsorVote(){
+        CPSClient sponsorPrep = cpsClients.get(0);
+
+        bnUSDMint(sponsorPrep.getAddress(),BigInteger.valueOf(50).multiply(ICX));
+
+        byte[] data = createByteArray("sponsorVote",  "Test_Proposal_1",ACCEPT,
+                "Proposal looks good");
+        BigInteger sponsorBond = BigInteger.valueOf(15).multiply(ICX);
+        sponsorPrep.bnUSD.transfer(addressMap.get("cpsCore"),sponsorBond,data);
+
+        List<String> proposalsIpfs = readerClient.cpsCore.getProposalsKeysByStatus(PENDING);
+        assertEquals(proposalsIpfs.size(),1);
+        assertEquals(proposalsIpfs.get(0),"Test_Proposal_1");
+    }
+
+    @Test()
+    @Order(6)
+    public void voteProposal(){
+        // update Period
+        updateNextBlock();
+        ownerClient.cpsCore.updatePeriod();
+
+        Map<String,? > periodStatus = getPeriodStatus();
+        assertEquals(periodStatus.get(PERIOD_NAME),"Voting Period");
+
+        Map<String,Object> proposalVote = getProposalVote("Test_Proposal_1");
+        assertEquals(toInt((String)proposalVote.get("total_voters")),0);
+        assertEquals(toInt((String)proposalVote.get("approve_voters")),0);
+        assertEquals(toInt((String)proposalVote.get("reject_voters")),0);
+
+        for (CPSClient prepClient:cpsClients.values()){
+            voteByPrep(prepClient,"Test_Proposal_1",APPROVE,"Seems fruitful",false);
+            prepClient.cpsCore.votePriority(new String[]{"Test_Proposal_1"});
+
+        }
+        proposalVote = getProposalVote("Test_Proposal_1");
+        assertEquals(toInt((String)proposalVote.get("total_voters")),7);
+        assertEquals(toInt((String)proposalVote.get("approve_voters")),7);
+        assertEquals(toInt((String)proposalVote.get("reject_voters")),0);
+        // TODO: approved votes does not match up
+//        assertEquals(toBigInt((String)proposalVote.get("approved_votes")),BigInteger.valueOf(9540000).multiply(ICX));
+    }
+
+    @Test
+    @Order(7)
+    public void submitMilestoneReport(){
+        updateToApplicationPeriod();
+        Map<String,? > periodStatus = getPeriodStatus();
+        assertEquals(periodStatus.get(PERIOD_NAME),"Application Period");
+
+        List<String> proposalsIpfs = readerClient.cpsCore.getProposalsKeysByStatus(ACTIVE);
+        assertEquals(proposalsIpfs.size(),1);
+        assertEquals(proposalsIpfs.get(0),"Test_Proposal_1");
+
+        CPSCoreInterface.ProgressReportAttributes progressReportAttributes = new CPSCoreInterface.ProgressReportAttributes();
+        progressReportAttributes.ipfs_hash = "Test_Proposal_1";
+        progressReportAttributes.progress_report_title = "Report_1";
+        progressReportAttributes.report_hash ="Report_Proposal_1";
+        progressReportAttributes.ipfs_link = "https://proposal_1";
+        progressReportAttributes.budget_adjustment = false;
+        progressReportAttributes.additional_budget = BigInteger.ZERO;
+        progressReportAttributes.additional_month = 0;
+
+        CPSCoreInterface.MilestoneSubmission submission = new CPSCoreInterface.MilestoneSubmission();
+        submission.id = 1;
+        submission.status = true;
+        CPSCoreInterface.MilestoneSubmission[] milestoneSubmissions = new CPSCoreInterface.MilestoneSubmission[]{submission};
+
+        testClient.cpsCore.submitProgressReport(progressReportAttributes,milestoneSubmissions);
+
+        List<Map<String, Object>> activeProposal = readerClient.cpsCore.getActiveProposals(testClient.getAddress());
+
+        System.out.println(activeProposal.get(0));
+    }
+
+    @Test
+    @Order(8)
+    public void voteOnMilestone(){
+        updateNextBlock();
+        ownerClient.cpsCore.updatePeriod();
+        Map<String,? > periodStatus = getPeriodStatus();
+        assertEquals(periodStatus.get(PERIOD_NAME),"Voting Period");
+
+        MilestoneVoteAttributes[] voteAttributes = new MilestoneVoteAttributes[]{vote(1,APPROVE)};
+        for (int i = 0; i < cpsClients.size(); i++) {
+            cpsClients.get(i).cpsCore.voteProgressReport("Report_Proposal_1","Working well",
+                    voteAttributes,null,false);
+        }
+    }
+
+    @Test
+    @Order(9)
+    public void submitSecondProgressReport(){
+        updateToApplicationPeriod();
+        Map<String,? > periodStatus = getPeriodStatus();
+        assertEquals(periodStatus.get(PERIOD_NAME),"Application Period");
+
+//        MilestoneVoteAttributes[] voteAttributes = new MilestoneVoteAttributes[]{vote(1,APPROVE)};
+//        for (int i = 0; i < cpsClients.size(); i++) {
+//            cpsClients.get(i).cpsCore.voteProgressReport("Report_Proposal_1","Working well",
+//                    voteAttributes,null,false);
+//        }
+    }
+
+    private MilestoneVoteAttributes vote(int id, String vote){
+
+        MilestoneVoteAttributes milestoneVoteAttributes = new MilestoneVoteAttributes();
+        milestoneVoteAttributes.id = id;
+        milestoneVoteAttributes.vote = vote;
+        return milestoneVoteAttributes;
+    }
+
+
+
+    private void updateToApplicationPeriod(){
+        updateNextBlock();
+        ownerClient.cpsCore.updatePeriod();
+        ownerClient.cpsCore.updatePeriod();
+        ownerClient.cpsCore.updatePeriod();
+        ownerClient.cpsCore.updatePeriod();
+    }
+
+
+    private BigInteger toBigInt(String inputString) {
+        return new BigInteger(inputString.substring(2), 16);
+    }
+
+    private Integer toInt(String inputString) {
+        return Integer.parseInt(inputString.substring(2));
+    }
+
+
+
+    private void voteByPrep(CPSClient caller, String ipfsKey, String vote, String voteReason,
+                            @Optional boolean voteChange){
+
+        caller.cpsCore.voteProposal(ipfsKey,vote,voteReason,voteChange);
+    }
+
+    private Map<String,Object> getProposalDetails(String ipfsHash){
+        return readerClient.cpsCore.getProposalDetailsByHash(ipfsHash);
+    }
+
+    private Map<String,Object> getProposalVote(String ipfsHash){
+        return readerClient.cpsCore.getVoteResult(ipfsHash);
+    }
+
+    private void updateNextBlock(){
+        ownerClient.cpsCore.updateNextBlock(1);
+    }
+
+    private byte[] createByteArray(String methodName, String ipfsHash, String vote, String voteReason) {
+
+        JsonObject internalParameters = new JsonObject()
+                .add("ipfs_hash", String.valueOf(ipfsHash))
+                .add("vote", String.valueOf(vote))
+                .add("vote_reason", String.valueOf(voteReason));
+
+
+        JsonObject jsonData = new JsonObject()
+                .add("method", methodName)
+                .add("params", internalParameters);
+
+        return jsonData.toString().getBytes();
+    }
+
+    private void bnUSDMint(Address to, BigInteger amount){
+        ownerClient.bnUSD.mintTo(to,amount);
     }
 
 

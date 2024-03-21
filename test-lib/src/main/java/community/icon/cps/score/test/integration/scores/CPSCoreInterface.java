@@ -128,7 +128,10 @@ public interface CPSCoreInterface {
     Map<String, Integer> getPriorityVoteResult();
 
     @External
-    void votePriority(String[] proposals);
+    void votePriority(String[] _proposals);
+
+    @External(readonly = true)
+    List<Map<String, Object>> getActiveProposals(Address walletAddress);
 
 
     @External
@@ -190,7 +193,7 @@ public interface CPSCoreInterface {
 
 
     @External(readonly = true)
-    List<String> getProposalsKeysByStatus(String _status);
+    List<String> getProposalsKeysByStatus(String status);
 
 
     @External(readonly = true)
@@ -212,7 +215,7 @@ public interface CPSCoreInterface {
     Map<String, ?> getProposalDetails(String status, @Optional Address walletAddress, @Optional int startIndex);
 
     @External(readonly = true)
-    Map<String, Object> getProposalDetailsByHash(String ipfs_key);
+    Map<String, Object> getProposalDetailsByHash(String ipfsKey);
 
 
     @External(readonly = true)
@@ -318,4 +321,10 @@ public interface CPSCoreInterface {
 
     @External(readonly = true)
     int getPeriodCount();
+
+    @External
+    void setSponsorBondPercentage(BigInteger bondValue);
+
+    @External(readonly = true)
+    BigInteger getSponsorBondPercentage();
 }

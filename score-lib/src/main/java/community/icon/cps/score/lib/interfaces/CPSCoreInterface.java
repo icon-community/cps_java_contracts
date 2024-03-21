@@ -212,7 +212,7 @@ public interface CPSCoreInterface {
     Map<String, ?> getProposalDetails(String status, @Optional Address walletAddress, @Optional int startIndex);
 
     @External(readonly = true)
-    Map<String, Object> getProposalDetailsByHash(String ipfs_key);
+    Map<String, Object> getProposalDetailsByHash(String ipfsKey);
 
 
     @External(readonly = true)
@@ -269,6 +269,11 @@ public interface CPSCoreInterface {
 
     @External(readonly = true)
     List<Map<String,?>> getRemainingMilestones(String ipfsHash);
+    @External
+    void setSponsorBondPercentage(BigInteger bondValue);
+
+    @External(readonly = true)
+    BigInteger getSponsorBondPercentage();
 
     //    EventLogs
     @EventLog(indexed = 1)
