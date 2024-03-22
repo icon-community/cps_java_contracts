@@ -21,11 +21,14 @@ import static community.icon.cps.score.test.AssertRevertedException.assertUserRe
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static community.icon.cps.score.test.integration.Environment.preps;
-import static community.icon.cps.score.test.integration.Environment.SYSTEM_INTERFACE;
-import static community.icon.cps.score.test.integration.Environment.godClient;
+
 import community.icon.cps.score.test.integration.scores.SystemInterfaceScoreClient;
 import score.UserRevertException;
 import score.annotation.Optional;
@@ -146,7 +149,7 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
     @Order(4)
     public void submitProposal(){
         CPSClient prep1 = cpsClients.get(0);
-        CPSCoreInterface.ProposalAttributes proposalAttributes = new CPSCoreInterface.ProposalAttributes();
+        ProposalAttributes proposalAttributes = new ProposalAttributes();
 
         proposalAttributes.ipfs_hash = "Test_Proposal_1";
         proposalAttributes.project_title = "Proposal_1";
@@ -184,7 +187,7 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
         verifyProposalDetails(proposalAttributes);
     }
 
-    private void verifyProposalDetails(CPSCoreInterface.ProposalAttributes expectedDetails){
+    private void verifyProposalDetails(ProposalAttributes expectedDetails){
         Map<String,Object> actualDetails = getProposalDetails(expectedDetails.ipfs_hash);
         assertEquals(actualDetails.get("project_title"), expectedDetails.project_title);
         assertEquals(actualDetails.get("sponsor_address"), expectedDetails.sponsor_address.toString());
@@ -402,6 +405,71 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
 //                    voteAttributes,null,false);
 //        }
     }
+
+
+    @Test
+    @Order(10)
+    public void voteOnAllMilestone() throws InterruptedException {
+
+        updateNextBlock();
+        ownerClient.cpsCore.updatePeriod();
+
+        Thread.sleep(2000);
+        Map<String,? > periodStatus = getPeriodStatus();
+        assertEquals(periodStatus.get(PERIOD_NAME),"Voting Period");
+
+        MilestoneVoteAttributes[] voteAttributes = new MilestoneVoteAttributes[]{vote(2,APPROVE), vote(3,APPROVE)};
+
+        List<Map<String,Object>> expectedMilestoneData = new ArrayList<>(7);
+        for (int i = 0; i < cpsClients.size(); i++) {
+            cpsClients.get(i).cpsCore.voteProgressReport("Report_Proposal_2","Project is completed " + i,
+                    voteAttributes,null,false);
+            expectedMilestoneData.add(Map.of(
+                    ADDRESS,cpsClients.get(i).getAddress(),
+                    PREP_NAME,cpsClients.get(i).getAddress(),
+                    VOTE_REASON,"Project is completed "+ i,
+                    VOTE,APPROVE));
+        }
+
+        Map<String,Object> progressReportVote = getProgressReportVote("Report_Proposal_2");
+        assertEquals(toInt((String) progressReportVote.get("total_voters")),7);
+
+        Map<String, Object> milestoneVoteResult = getMilestoneReport("Report_Proposal_2", 2);
+        assertEquals(toInt((String) milestoneVoteResult.get(APPROVE_VOTERS)),7);
+        assertEquals(toInt((String) milestoneVoteResult.get(REJECT_VOTERS)),0);
+
+//        assertEquals(milestoneVoteResult.get(DATA),expectedMilestoneData);
+        List<Map<String,Object>> actualMilestoneData = (List<Map<String, Object>>) milestoneVoteResult.get(DATA);
+
+
+        for (int i = 0; i < 7; i++) {
+            assertEquals(expectedMilestoneData.get(0).get(ADDRESS).toString(),actualMilestoneData.get(0).get(ADDRESS));
+            assertEquals(expectedMilestoneData.get(0).get(PREP_NAME).toString(),actualMilestoneData.get(0).get(PREP_NAME));
+            assertEquals(expectedMilestoneData.get(0).get(VOTE_REASON),actualMilestoneData.get(0).get(VOTE_REASON));
+            assertEquals(expectedMilestoneData.get(0).get(VOTE),actualMilestoneData.get(0).get(VOTE));
+
+        }
+
+        int milestoneStatus = getMilestoneStatus("Test_Proposal_1",2);
+        assertEquals(MILESTONE_REPORT_COMPLETED,milestoneStatus);
+
+    }
+
+    @Test
+    @Order(11)
+    public void completeProposal1() throws InterruptedException {
+        updateToApplicationPeriod();
+
+        int milestoneStatus = getMilestoneStatus("Test_Proposal_1",3);
+        assertEquals(MILESTONE_REPORT_APPROVED,milestoneStatus);
+
+        List<String> proposalsIpfs = readerClient.cpsCore.getProposalsKeysByStatus(COMPLETED);
+        assertEquals(proposalsIpfs.size(),1);
+        assertEquals(proposalsIpfs.get(0),"Test_Proposal_1");
+    }
+
+
+
 
     private MilestoneVoteAttributes vote(int id, String vote){
 
