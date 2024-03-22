@@ -1,4 +1,3 @@
-[submodule "gochain-local"]
-	path = gochain-local
-	url = git@github.com:nightowl121/gochain-local.git
-	branch = master
+[submodule "cps-gochain-local"]
+	path = cps-gochain-local
+	url = git@github.com:naneey/cps-gochain-local.git
