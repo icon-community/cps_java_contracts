@@ -2,6 +2,7 @@ package community.icon.cps.integration;
 
 import com.eclipsesource.json.JsonObject;
 import community.icon.cps.score.lib.interfaces.CPSCoreInterface;
+import community.icon.cps.score.lib.interfaces.CPSCoreInterface.MilestonesAttributes;
 import community.icon.cps.score.lib.interfaces.CPSCoreInterface.MilestoneVoteAttributes;
 import community.icon.cps.score.lib.interfaces.CPSCoreInterface.ProposalAttributes;
 import community.icon.cps.score.lib.interfaces.CPSCoreInterface.ProgressReportAttributes;
@@ -12,8 +13,11 @@ import community.icon.cps.score.test.integration.ScoreIntegrationTest;
 import community.icon.cps.score.test.integration.config.BaseConfig;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import score.Address;
 
 import static community.icon.cps.score.cpscore.utils.Constants.*;
@@ -73,6 +77,7 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
 
 
 
+    @DisplayName("register all preps")
     @Test
     @Order(1)
     public void registerPrep(){
@@ -114,6 +119,7 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
         // TODO: handle deny list
     }
 
+    @DisplayName("unregister prep")
     @Test
     @Order(2)
     public void unregisterPrep(){
@@ -130,6 +136,7 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
     }
 
 
+    @DisplayName("check prep data")
     @Test
     @Order(3)
     public void loginAsPrep(){
@@ -145,6 +152,7 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
         assertEquals(expectedPrepData,actualPrepData);
     }
 
+    @DisplayName("submit proposal 1")
     @Test
     @Order(4)
     public void submitProposal(){
@@ -199,7 +207,7 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
     }
 
 
-
+    @DisplayName("submit sponsor vote on first proposal")
     @Test
     @Order(5)
     public void submitSponsorVote(){
@@ -220,8 +228,11 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
         Map<String,Object> proposalDetails = getProposalDetails("Test_Proposal_1");
         assertEquals(sponsorBond, toBigInt((String) proposalDetails.get(SPONSOR_DEPOSIT_AMOUNT)));
         assertEquals(BOND_RECEIVED, proposalDetails.get(SPONSOR_DEPOSIT_STATUS));
+
+        assertEquals(BigInteger.valueOf(35).multiply(ICX),readerClient.bnUSD.balanceOf(sponsorPrep.getAddress()));
     }
 
+    @DisplayName("vote on first proposal")
     @Test()
     @Order(6)
     public void voteProposal() throws InterruptedException {
@@ -250,12 +261,47 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
 //        assertEquals(toBigInt((String)proposalVote.get("approved_votes")),BigInteger.valueOf(9540000).multiply(ICX));
     }
 
+    @DisplayName("pass proposal 1 and send the initial payement")
     @Test
     @Order(7)
-    public void submitMilestoneReport() throws InterruptedException {
+    public void transferFundsToProposal() throws InterruptedException {
         updateToApplicationPeriod();
         Map<String,? > periodStatus = getPeriodStatus();
         assertEquals(periodStatus.get(PERIOD_NAME),"Application Period");
+
+        Map<String,?> contributorProject = getContributorFunds(testClient.getAddress());
+        List<Map<String, ?>> contributorData = (List<Map<String, ?>> )contributorProject.get("data");
+
+        assertEquals(toBigInt((String) contributorData.get(0).get("installment_amount")),BigInteger.valueOf(30).multiply(ICX));
+        assertEquals(toBigInt((String) contributorData.get(0).get("total_budget")),BigInteger.valueOf(100).multiply(ICX));
+        assertEquals( contributorData.get(0).get("total_installment_count"),"0x3");
+        assertEquals(toBigInt((String) contributorData.get(0).get("total_installment_paid")),BigInteger.valueOf(10).multiply(ICX));
+        assertEquals(contributorProject.get("project_count"),"0x1");
+
+
+        Map<String,?> sponsorProject = getSponsorFunds(cpsClients.get(0).getAddress());
+
+        List<Map<String,?>> sponsorData = (List<Map<String, ?>> )sponsorProject.get("data");
+        assertEquals(toBigInt((String) sponsorData.get(0).get("installment_amount")),BigInteger.valueOf(6).multiply(ICX).divide(BigInteger.TEN));
+        assertEquals(toBigInt((String) sponsorData.get(0).get("sponsor_bond_amount")),BigInteger.valueOf(15).multiply(ICX));
+        assertEquals( sponsorData.get(0).get("total_installment_count"),"0x3");
+        assertEquals(toBigInt((String) sponsorData.get(0).get("total_installment_paid")),BigInteger.valueOf(2).multiply(ICX).divide(BigInteger.TEN));
+        assertEquals(toBigInt((String) sponsorProject.get("withdraw_amount_bnUSD")),BigInteger.valueOf(2).multiply(ICX).divide(BigInteger.TEN));
+    }
+
+
+
+    private Map<String,?> getContributorFunds(Address contributorAddr){
+        return readerClient.cpsTreasury.getContributorProjectedFund(contributorAddr);
+    }
+
+    private Map<String,?> getSponsorFunds(Address sponsorAddr){
+        return readerClient.cpsTreasury.getSponsorProjectedFund(sponsorAddr);
+    }
+    @DisplayName("submit first milestone")
+    @Test
+    @Order(8)
+    public void submitMilestoneReport(){
 
         List<String> proposalsIpfs = readerClient.cpsCore.getProposalsKeysByStatus(ACTIVE);
         assertEquals(proposalsIpfs.size(),1);
@@ -301,8 +347,9 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
     }
 
 
+    @DisplayName("vote on first progress report")
     @Test
-    @Order(8)
+    @Order(9)
     public void voteOnMilestone() throws InterruptedException {
         updateNextBlock();
         ownerClient.cpsCore.updatePeriod();
@@ -331,7 +378,6 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
         assertEquals(toInt((String) milestoneVoteResult.get(APPROVE_VOTERS)),7);
         assertEquals(toInt((String) milestoneVoteResult.get(REJECT_VOTERS)),0);
 
-//        assertEquals(milestoneVoteResult.get(DATA),expectedMilestoneData);
         List<Map<String,Object>> actualMilestoneData = (List<Map<String, Object>>) milestoneVoteResult.get(DATA);
 
 
@@ -363,7 +409,7 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
 
     @DisplayName("submitting all remaining milestones")
     @Test
-    @Order(9)
+    @Order(10)
     public void submitAllMilestoneReport() throws InterruptedException {
         updateToApplicationPeriod();
         Map<String,? > periodStatus = getPeriodStatus();
@@ -371,6 +417,26 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
 
         int milestoneStatus = getMilestoneStatus("Test_Proposal_1",1);
         assertEquals(MILESTONE_REPORT_APPROVED,milestoneStatus);
+
+
+        // verifying installment count and funds record
+        Map<String,?> contributorProject = getContributorFunds(testClient.getAddress());
+        List<Map<String, ?>> contributorData = (List<Map<String, ?>> )contributorProject.get("data");
+        assertEquals(toBigInt((String) contributorData.get(0).get("installment_amount")),BigInteger.valueOf(40).multiply(ICX));
+        assertEquals(toBigInt((String) contributorData.get(0).get("total_installment_paid")),BigInteger.valueOf(40).multiply(ICX));
+        assertEquals( contributorData.get(0).get("total_times_installment_paid"),"0x1");
+        assertEquals(contributorProject.get("project_count"),"0x1");
+        assertEquals(toBigInt((String) contributorProject.get("withdraw_amount_bnUSD")),BigInteger.valueOf(40).multiply(ICX));
+
+
+
+        Map<String,?> sponsorProject = getSponsorFunds(cpsClients.get(0).getAddress());
+        List<Map<String,?>> sponsorData = (List<Map<String, ?>> )sponsorProject.get("data");
+        assertEquals(toBigInt((String) sponsorData.get(0).get("installment_amount")),BigInteger.valueOf(6).multiply(ICX).divide(BigInteger.TEN));
+        assertEquals(toBigInt((String) sponsorData.get(0).get("total_installment_paid")),BigInteger.valueOf(8).multiply(ICX).divide(BigInteger.TEN));
+        assertEquals( sponsorData.get(0).get("total_times_installment_paid"),"0x1");
+        assertEquals(toBigInt((String) sponsorProject.get("withdraw_amount_bnUSD")),BigInteger.valueOf(8).multiply(ICX).divide(BigInteger.TEN));
+
 
         CPSCoreInterface.ProgressReportAttributes progressReportAttributes = createProgressReport("2");
 
@@ -389,26 +455,18 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
 
 
         Map<String,Object> progressReportDetails = getProgressReportDetails("Report_Proposal_2");
-        System.out.println("-----details"+progressReportDetails);
         assertEquals(2,toInt((String) progressReportDetails.get(MILESTONE_SUBMITTED_COUNT)));
 //        assertEquals(new String[]{"0x2","0x3"},progressReportDetails.get("milestoneId"));
         assertEquals(WAITING,progressReportDetails.get(STATUS));
         assertEquals("Report_2",progressReportDetails.get(PROGRESS_REPORT_TITLE));
         assertEquals("Report_Proposal_2",progressReportDetails.get(REPORT_HASH));
 
-
-
-
-//        MilestoneVoteAttributes[] voteAttributes = new MilestoneVoteAttributes[]{vote(1,APPROVE)};
-//        for (int i = 0; i < cpsClients.size(); i++) {
-//            cpsClients.get(i).cpsCore.voteProgressReport("Report_Proposal_1","Working well",
-//                    voteAttributes,null,false);
-//        }
     }
 
 
+    @DisplayName("vote on progress report 2")
     @Test
-    @Order(10)
+    @Order(11)
     public void voteOnAllMilestone() throws InterruptedException {
 
         updateNextBlock();
@@ -455,17 +513,33 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
 
     }
 
+    @DisplayName("proposal 1 is completed and user claims reward")
     @Test
-    @Order(11)
+    @Order(12)
     public void completeProposal1() throws InterruptedException {
         updateToApplicationPeriod();
 
         int milestoneStatus = getMilestoneStatus("Test_Proposal_1",3);
         assertEquals(MILESTONE_REPORT_APPROVED,milestoneStatus);
 
+        milestoneStatus = getMilestoneStatus("Test_Proposal_1",2);
+        assertEquals(MILESTONE_REPORT_APPROVED,milestoneStatus);
+
         List<String> proposalsIpfs = readerClient.cpsCore.getProposalsKeysByStatus(COMPLETED);
         assertEquals(proposalsIpfs.size(),1);
         assertEquals(proposalsIpfs.get(0),"Test_Proposal_1");
+
+
+        assertEquals(BigInteger.ZERO,readerClient.bnUSD.balanceOf(testClient.getAddress()));
+        testClient.cpsTreasury.claimReward();
+        assertEquals(BigInteger.valueOf(100).multiply(ICX),readerClient.bnUSD.balanceOf(testClient.getAddress()));
+
+        CPSClient sponsorClient = cpsClients.get(0);
+        assertEquals(BigInteger.valueOf(35).multiply(ICX),readerClient.bnUSD.balanceOf(sponsorClient.getAddress()));
+        sponsorClient.cpsTreasury.claimReward();
+        assertEquals(BigInteger.valueOf(37).multiply(ICX),readerClient.bnUSD.balanceOf(sponsorClient.getAddress()));
+
+
     }
 
 
