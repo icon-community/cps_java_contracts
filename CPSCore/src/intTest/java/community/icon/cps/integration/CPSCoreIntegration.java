@@ -311,7 +311,7 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
         List<Map<String, Object>> activeProposal = readerClient.cpsCore.getActiveProposals(testClient.getAddress());
         assertEquals( "0x0", activeProposal.get(0).get("new_progress_report"));
 
-        CPSCoreInterface.ProgressReportAttributes progressReportAttributes = createProgressReport("1");
+        CPSCoreInterface.ProgressReportAttributes progressReportAttributes = createProgressReport("1", "Test_Proposal_1");
 
         CPSCoreInterface.MilestoneSubmission submission = new CPSCoreInterface.MilestoneSubmission();
         submission.id = 1;
@@ -323,22 +323,22 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
         activeProposal = readerClient.cpsCore.getActiveProposals(testClient.getAddress());
         assertEquals( "0x1", activeProposal.get(0).get("new_progress_report"));
 
-        Map<String,Object> progressReportDetails = getProgressReportDetails("Report_Proposal_1");
+        Map<String,Object> progressReportDetails = getProgressReportDetails("Test_Proposal_1_Report_Proposal_1");
         assertEquals(1,toInt((String) progressReportDetails.get(MILESTONE_SUBMITTED_COUNT)));
         assertEquals(WAITING,progressReportDetails.get(STATUS));
-        assertEquals("Report_1",progressReportDetails.get(PROGRESS_REPORT_TITLE));
-        assertEquals("Report_Proposal_1",progressReportDetails.get(REPORT_HASH));
+        assertEquals("Test_Proposal_1_Report_1",progressReportDetails.get(PROGRESS_REPORT_TITLE));
+        assertEquals("Test_Proposal_1_Report_Proposal_1",progressReportDetails.get(REPORT_HASH));
 
         int milestoneStatus = getMilestoneStatus("Test_Proposal_1",1);
         assertEquals(MILESTONE_REPORT_COMPLETED,milestoneStatus);
     }
 
-    private ProgressReportAttributes createProgressReport(String no){
+    private ProgressReportAttributes createProgressReport(String no, String ipfsHash) {
         ProgressReportAttributes progressReportAttributes = new ProgressReportAttributes();
-        progressReportAttributes.ipfs_hash = "Test_Proposal_1";
-        progressReportAttributes.progress_report_title = "Report_"+no;
-        progressReportAttributes.report_hash ="Report_Proposal_"+no;
-        progressReportAttributes.ipfs_link = "https://proposal_"+ no;
+        progressReportAttributes.ipfs_hash = ipfsHash;
+        progressReportAttributes.progress_report_title = ipfsHash + "_Report_" + no;
+        progressReportAttributes.report_hash = ipfsHash + "_Report_Proposal_" + no;
+        progressReportAttributes.ipfs_link = "https://proposal_" + no;
         progressReportAttributes.budget_adjustment = false;
         progressReportAttributes.additional_budget = BigInteger.ZERO;
         progressReportAttributes.additional_month = 0;
@@ -363,7 +363,7 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
 
         List<Map<String,Object>> expectedMilestoneData = new ArrayList<>(7);
         for (int i = 0; i < cpsClients.size(); i++) {
-            cpsClients.get(i).cpsCore.voteProgressReport("Report_Proposal_1","Working well " + i,
+            cpsClients.get(i).cpsCore.voteProgressReport("Test_Proposal_1_Report_Proposal_1","Working well " + i,
                     voteAttributes,null,false);
             expectedMilestoneData.add(Map.of(
                     ADDRESS,cpsClients.get(i).getAddress(),
@@ -372,10 +372,10 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
                     VOTE,APPROVE));
         }
 
-        Map<String,Object> progressReportVote = getProgressReportVote("Report_Proposal_1");
+        Map<String,Object> progressReportVote = getProgressReportVote("Test_Proposal_1_Report_Proposal_1");
         assertEquals(toInt((String) progressReportVote.get("total_voters")),7);
 
-        Map<String, Object> milestoneVoteResult = getMilestoneReport("Report_Proposal_1", 1);
+        Map<String, Object> milestoneVoteResult = getMilestoneReport("Test_Proposal_1_Report_Proposal_1", 1);
         assertEquals(toInt((String) milestoneVoteResult.get(APPROVE_VOTERS)),7);
         assertEquals(toInt((String) milestoneVoteResult.get(REJECT_VOTERS)),0);
 
@@ -439,7 +439,7 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
         assertEquals(toBigInt((String) sponsorProject.get("withdraw_amount_bnUSD")),BigInteger.valueOf(8).multiply(ICX).divide(BigInteger.TEN));
 
 
-        CPSCoreInterface.ProgressReportAttributes progressReportAttributes = createProgressReport("2");
+        CPSCoreInterface.ProgressReportAttributes progressReportAttributes = createProgressReport("2", "Test_Proposal_1");
 
         CPSCoreInterface.MilestoneSubmission submissionNo2 = new CPSCoreInterface.MilestoneSubmission();
         submissionNo2.id = 2;
@@ -455,12 +455,12 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
         testClient.cpsCore.submitProgressReport(progressReportAttributes,milestoneSubmissions);
 
 
-        Map<String,Object> progressReportDetails = getProgressReportDetails("Report_Proposal_2");
+        Map<String,Object> progressReportDetails = getProgressReportDetails("Test_Proposal_1_Report_Proposal_2");
         assertEquals(2,toInt((String) progressReportDetails.get(MILESTONE_SUBMITTED_COUNT)));
 //        assertEquals(new String[]{"0x2","0x3"},progressReportDetails.get("milestoneId"));
         assertEquals(WAITING,progressReportDetails.get(STATUS));
-        assertEquals("Report_2",progressReportDetails.get(PROGRESS_REPORT_TITLE));
-        assertEquals("Report_Proposal_2",progressReportDetails.get(REPORT_HASH));
+        assertEquals("Test_Proposal_1_Report_2",progressReportDetails.get(PROGRESS_REPORT_TITLE));
+        assertEquals("Test_Proposal_1_Report_Proposal_2",progressReportDetails.get(REPORT_HASH));
 
     }
 
@@ -481,7 +481,7 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
 
         List<Map<String,Object>> expectedMilestoneData = new ArrayList<>(7);
         for (int i = 0; i < cpsClients.size(); i++) {
-            cpsClients.get(i).cpsCore.voteProgressReport("Report_Proposal_2","Project is completed " + i,
+            cpsClients.get(i).cpsCore.voteProgressReport("Test_Proposal_1_Report_Proposal_2","Project is completed " + i,
                     voteAttributes,null,false);
             expectedMilestoneData.add(Map.of(
                     ADDRESS,cpsClients.get(i).getAddress(),
@@ -490,10 +490,10 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
                     VOTE,APPROVE));
         }
 
-        Map<String,Object> progressReportVote = getProgressReportVote("Report_Proposal_2");
+        Map<String,Object> progressReportVote = getProgressReportVote("Test_Proposal_1_Report_Proposal_2");
         assertEquals(toInt((String) progressReportVote.get("total_voters")),7);
 
-        Map<String, Object> milestoneVoteResult = getMilestoneReport("Report_Proposal_2", 2);
+        Map<String, Object> milestoneVoteResult = getMilestoneReport("Test_Proposal_1_Report_Proposal_2", 2);
         assertEquals(toInt((String) milestoneVoteResult.get(APPROVE_VOTERS)),7);
         assertEquals(toInt((String) milestoneVoteResult.get(REJECT_VOTERS)),0);
 
@@ -1749,6 +1749,14 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
         return Map.of(IS_PREP, BigInteger.ONE,
                 IS_REGISTERED, BigInteger.ONE,
                 PAY_PENALTY, BigInteger.ZERO,
+                VOTING_PREP, BigInteger.ZERO);
+    }
+
+    private Map<String, BigInteger> denyPrepData() {
+        return Map.of(IS_PREP, BigInteger.ONE,
+                IS_REGISTERED, BigInteger.ZERO,
+                PAY_PENALTY, BigInteger.ONE,
+                PENALTY_AMOUNT1, (BigInteger.TWO.multiply(ICX)).divide(BigInteger.valueOf(100)),
                 VOTING_PREP, BigInteger.ZERO);
     }
 

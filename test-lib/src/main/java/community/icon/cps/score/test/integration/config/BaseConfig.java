@@ -56,6 +56,7 @@ public class BaseConfig {
 
         cpsClient.cpsCore.toggleMaintenance();
         cpsClient.cpsCore.setInitialBlock();
+        cpsClient.cpsCore.setPrepPenaltyAmount(new BigInteger[]{BigInteger.valueOf(2),BigInteger.valueOf(5),BigInteger.TEN});
 
 
         System.out.println("------system score------- " + addressMap.get("systemScore"));

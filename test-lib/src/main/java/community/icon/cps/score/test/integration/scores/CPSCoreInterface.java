@@ -127,6 +127,9 @@ public interface CPSCoreInterface {
     @External(readonly = true)
     Map<String, Integer> getPriorityVoteResult();
 
+    @External(readonly = true)
+    Map<String, Object> getMilestonesReport(String ipfsKey, int milestoneId);
+
     @External
     void votePriority(String[] _proposals);
 
