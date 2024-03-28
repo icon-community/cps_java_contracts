@@ -51,7 +51,7 @@ public class CPSTreasuryTest extends TestBase {
 
     @BeforeEach
     public void setup() throws Exception {
-        tokenScore = sm.deploy(owner, CPSTreasury.class);
+        tokenScore = sm.deploy(owner, CPSTreasury.class, score_address);
         CPSTreasury instance = (CPSTreasury) tokenScore.getInstance();
         scoreSpy = spy(instance);
         tokenScore.setInstance(scoreSpy);
@@ -569,4 +569,47 @@ public class CPSTreasuryTest extends TestBase {
 
 
     }
+
+    @Test
+    void updateAddress(){
+        setOnsetPayment();
+        setCpsScoreMethod();
+
+        contextMock.when(caller()).thenReturn(score_address);
+        depositProposalFundMethod();
+
+        Address newContributorAddress = sm.createAccount().getAddress();
+        Address newSponsorAddress = sm.createAccount().getAddress();
+
+        contextMock.when(caller()).thenReturn(score_address);
+        tokenScore.invoke(testing_account,"updateContributorSponsorAddress", "Proposal 1",
+                newContributorAddress,newSponsorAddress);
+
+
+        Map<String,? > oldContributorData = (Map<String, ?>) tokenScore.call("getContributorProjectedFund", testing_account2.getAddress());
+        System.out.println("The data is empty: "+oldContributorData.get(DATA));
+
+        Map<String,? > oldSponsorData = (Map<String, ?>) tokenScore.call("getSponsorProjectedFund", testing_account.getAddress());
+        System.out.println("The data is empty: "+oldSponsorData.get(DATA));
+
+        doReturn(List.of(Map.of(
+                BUDGET,BigInteger.valueOf(50).multiply(ICX)
+        ))).when(scoreSpy).callScore(List.class,score_address,"getRemainingMilestones","Proposal 1");
+        Map<String,? > newContributorData = (Map<String, ?>) tokenScore.call("getContributorProjectedFund", newContributorAddress);
+
+        List<Map<String, ?>> data = (List<Map<String, ?>>) newContributorData.get(DATA);
+        assertEquals(data.get(0).get("ipfs_hash"),"Proposal 1");
+        assertEquals(data.get(0).get("total_installment_paid"), new BigInteger("10000000000000000000"));
+
+
+        Map<String,? > newSponsorData = (Map<String, ?>) tokenScore.call("getSponsorProjectedFund", newSponsorAddress);
+        System.out.println(newSponsorData);
+        data = (List<Map<String, ?>>) newSponsorData.get(DATA);
+        assertEquals(data.get(0).get("ipfs_hash"),"Proposal 1");
+        assertEquals(data.get(0).get("total_installment_paid"), new BigInteger("200000000000000000"));
+        assertEquals(data.get(0).get("sponsor_bond_amount"), new BigInteger("15000000000000000000"));
+
+
+    }
+
 }
