@@ -53,4 +53,6 @@ public interface DummyDex {
 
 
     void URI(BigInteger _id, String _value);
+
+    void setSicxScore(Address _score);
 }

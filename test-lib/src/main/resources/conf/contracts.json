@@ -6,7 +6,7 @@
       "bondValue": 15,
       "applicationPeriod": "20"
     },
-    "order":1.0
+    "order": 1.0
   },
   {
     "name": "bnUSD",
@@ -21,21 +21,21 @@
   },
   {
     "name": "dex",
-    "contract": "DEX",
+    "contract": "Dex",
     "params": {
     },
     "order": 1.0
   },
   {
     "name": "router",
-    "contract": "ROUTER",
+    "contract": "Router",
     "params": {
     },
     "order": 1.0
   },
   {
     "name": "oracle",
-    "contract": "ORACLE",
+    "contract": "oracle",
     "params": {
     },
     "order": 1.0
@@ -48,7 +48,7 @@
     "addressParams": {
       "cpsScore": "cpsCore"
     },
-    "order":2.0
+    "order": 2.0
   },
   {
     "name": "cpfTreasury",
@@ -58,7 +58,7 @@
     "addressParams": {
       "cpsScore": "cpsCore"
     },
-    "order":2.0
+    "order": 2.0
   },
   {
     "name": "sICX",
