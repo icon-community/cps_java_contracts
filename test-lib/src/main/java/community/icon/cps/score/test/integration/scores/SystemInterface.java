@@ -2,10 +2,13 @@ package community.icon.cps.score.test.integration.scores;
 
 import java.math.BigInteger;
 import java.util.Map;
+
+import foundation.icon.score.client.ScoreClient;
 import score.Address;
 import score.annotation.Payable;
 
 
+@ScoreClient
 public interface SystemInterface {
 
     public class Delegation{

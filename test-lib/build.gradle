@@ -9,6 +9,7 @@ repositories {
 dependencies {
 //    implementation "foundation.icon:icon-sdk:$iconsdkVersion"
     implementation name: "score-client-$scoreClientVersion"
+    annotationProcessor name: "score-client-$scoreClientVersion"
 
     implementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
     implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"

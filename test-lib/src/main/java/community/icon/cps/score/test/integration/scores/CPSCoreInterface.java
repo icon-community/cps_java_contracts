@@ -204,8 +204,6 @@ public interface CPSCoreInterface {
     @External(readonly = true)
     int getMileststoneStatusOf(String proposalKey, int milestoneId);
 
-    @External(readonly = true)
-    Map<String, Object> getMilestonesReport(String ipfsKey, int milestoneId);
 
 
     @External(readonly = true)
