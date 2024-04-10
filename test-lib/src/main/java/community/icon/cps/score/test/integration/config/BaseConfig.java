@@ -1,5 +1,6 @@
 package community.icon.cps.score.test.integration.config;
 
+import com.eclipsesource.json.JsonObject;
 import community.icon.cps.score.test.integration.CPS;
 import community.icon.cps.score.test.integration.CPSClient;
 import community.icon.cps.score.test.integration.Environment;
@@ -47,11 +48,23 @@ public class BaseConfig {
         cpsClient.cpfTreasury.setRouterScore(addressMap.get("router"));
         cpsClient.cpfTreasury.setSicxScore(addressMap.get("sICX"));
 
+        System.out.println("----setting in dex----------");
+        cpsClient.dex.setSicxScore(addressMap.get("sICX"));
+
         System.out.println("------setting funds--------");
         cpsClient.cpfTreasury.setMaximumTreasuryFundIcx(BigInteger.valueOf(1000).multiply(EXA));
         cpsClient.cpfTreasury.setMaximumTreasuryFundBnusd(BigInteger.valueOf(10000).multiply(EXA));
 //        this.cpsClient.bnUSD.setMinter(this.cpsClient.getAddress());
         cpsClient.bnUSD.mintTo(addressMap.get("cpfTreasury"),BigInteger.valueOf(5000).multiply(EXA) );
+
+        JsonObject burnTokens = new JsonObject();
+        burnTokens.add("method","_dex");
+
+        cpsClient.sICX.mintWithTokenFallBack(addressMap.get("dex"),BigInteger.valueOf(10000).multiply(EXA),burnTokens.toString().getBytes());
+//        cpsClient.sICX.mintWithTokenFallBack(addressMap.get("cpfTreasury"),BigInteger.valueOf(100).multiply(EXA),"None".getBytes());
+
+        System.out.println(cpsClient.sICX.balanceOf(addressMap.get("dex")));
+
         cpsClient.cpfTreasury.toggleSwapFlag();
 
         cpsClient.cpsCore.toggleMaintenance();

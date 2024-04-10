@@ -1,0 +1,39 @@
+version = '0.0.1'
+
+dependencies {
+
+    implementation project(':score-lib')
+    testImplementation project(':test-lib')
+}
+
+optimizedJar {
+    mainClassName = 'dummy.contract.bnusd.bnUSD'
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+deployJar {
+    endpoints {
+        lisbon {
+            uri = 'https://lisbon.net.solidwallet.io/api/v3'
+            nid = 0x2
+        }
+        local {
+            uri = 'http://localhost:9082/api/v3'
+            nid = 0x3
+        }
+    }
+    keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
+    password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
+    parameters {
+        arg('_name', 'Balanced Dollar')
+        arg('_symbol', 'bnUSD')
+        arg('_decimals', '0x12')
+        arg('_initialSupply', '0x989680')
+    }
+}
+
+test {
+    useJUnitPlatform()
+}

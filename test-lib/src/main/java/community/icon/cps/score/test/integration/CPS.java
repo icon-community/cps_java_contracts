@@ -48,6 +48,7 @@ public class CPS {
     public void setupCPS() throws Exception {
         deployPrep();
         decentralizeChain();
+        Thread.sleep(200000);
         this.addresses = new ScoreDeployer(this,contracts).deployContracts();
 
         ownerClient = new CPSClient(this,owner);
@@ -217,10 +218,7 @@ public class CPS {
         iconClient.send(owner, address, BigInteger.ZERO, method, params, DefaultICONClient.DEFAULT_RESULT_TIMEOUT);
     }
 
-    public foundation.icon.jsonrpc.Address deployAddressManager() {
-        return iconClient.deploy(owner, DefaultICONClient.ZERO_ADDRESS, getScorePath("AddressManager"),
-                new HashMap<>());
-    }
+
 
     public String getScorePath(String key) {
         String path = System.getProperty(key);
