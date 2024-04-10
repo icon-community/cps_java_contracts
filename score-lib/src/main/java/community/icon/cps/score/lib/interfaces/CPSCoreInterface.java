@@ -119,7 +119,7 @@ public interface CPSCoreInterface {
     void registerPrep();
 
     @External(readonly = true)
-    boolean checkPriorityVoting(Address prep);
+    boolean checkPriorityVoting(Address _prep);
 
     @External(readonly = true)
     List<String> sortPriorityProposals();
@@ -192,6 +192,9 @@ public interface CPSCoreInterface {
     @External(readonly = true)
     List<String> getProposalsKeysByStatus(String _status);
 
+    @External(readonly = true)
+    Map<String, Object> getMilestonesReport(String ipfsKey, int milestoneId);
+
 
     @External(readonly = true)
     int checkChangeVote(Address address, String ipfsHash, String proposalType);
@@ -253,6 +256,9 @@ public interface CPSCoreInterface {
 
     @External
     void updateNextBlock(int blockCount);
+
+    @External(readonly = true)
+    List<Map<String, Object>> getRemainingProject(String projectType, Address walletAddress);
 
     @External
     void updateContributor(String _ipfs_key, Address _new_contributor, Address _new_sponsor);
