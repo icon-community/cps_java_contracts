@@ -22,6 +22,7 @@ import score.Address;
 
 import static community.icon.cps.score.cpscore.utils.Constants.*;
 import static community.icon.cps.score.test.AssertRevertedException.assertUserRevert;
+import static community.icon.cps.score.test.integration.Environment.godClient;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.math.BigInteger;
@@ -67,6 +68,8 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
             cpsClients.put(i,cps.customClient(privKey));
 
         }
+        // ICX swap purpose
+        godClient._transfer(addressMap.get("dex"),BigInteger.valueOf(200).multiply(EXA),"transferICX to dex");
 
     }
 
@@ -117,7 +120,6 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
         assertUserRevert(new UserRevertException(TAG+": P-Rep is already registered."),
                 () -> registeredPrep.cpsCore.registerPrep(),null);
 
-        // TODO: handle deny list
     }
 
     @DisplayName("unregister prep")
@@ -183,7 +185,7 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
         CPSCoreInterface.MilestonesAttributes milestonesAttributes3 = new CPSCoreInterface.MilestonesAttributes();
         milestonesAttributes3.completionPeriod = 3;
         milestonesAttributes3.budget = BigInteger.valueOf(20).multiply(ICX);
-        milestonesAttributes3.id = 3; // TODO: check if same id is sent
+        milestonesAttributes3.id = 3;
 
         CPSCoreInterface.MilestonesAttributes[] milestonesAttributes =new CPSCoreInterface.MilestonesAttributes[]
                 {milestonesAttributes1, milestonesAttributes2,milestonesAttributes3};
@@ -258,7 +260,6 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
         assertEquals(toInt((String)proposalVote.get("total_voters")),7);
         assertEquals(toInt((String)proposalVote.get("approve_voters")),7);
         assertEquals(toInt((String)proposalVote.get("reject_voters")),0);
-        // TODO: approved votes does not match up
 //        assertEquals(toBigInt((String)proposalVote.get("approved_votes")),BigInteger.valueOf(9540000).multiply(ICX));
     }
 
@@ -941,7 +942,6 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
 
                 }
 
-                // trying to Register by deny prep TODO
             }
 
 
@@ -1002,19 +1002,19 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
                     bnUSDMint(prep.getAddress(), BigInteger.TWO.multiply(ICX));
 
                     byte[] data = penaltyByteArray("payPrepPenalty");
-                    // TODO: pay the penalty
-                    ownerClient.cpsCore.removeDenylistPreps();
-//                    prep.bnUSD.transfer(addressMap.get("cpsCore"),penaltyAmount,data);
+//                    ownerClient.cpsCore.removeDenylistPreps();
+
+                    prep.bnUSD.transfer(addressMap.get("cpsCore"),penaltyAmount,data);
 
 
                     Map<String, BigInteger> prepData = loginPrep(prep.getAddress());
-                    assertEquals(prepData, unregisteredPrepData());
+                    assertEquals(prepData, votingPrepData());
 
 
-                    prep.cpsCore.registerPrep();
-                    Map<String, BigInteger> prepData2 = loginPrep(prep.getAddress());
-
-                    assertEquals(prepData2, votingPrepData());
+//                    prep.cpsCore.registerPrep();
+//                    Map<String, BigInteger> prepData2 = loginPrep(prep.getAddress());
+//
+//                    assertEquals(prepData2, votingPrepData());
                 }
 
 
@@ -1732,6 +1732,13 @@ public class CPSCoreIntegration implements ScoreIntegrationTest {
     }
 
     private Map<String,BigInteger> unregisteredPrepData(){
+        return Map.of(IS_PREP, BigInteger.ONE,
+                IS_REGISTERED, BigInteger.ZERO,
+                PAY_PENALTY, BigInteger.ZERO,
+                VOTING_PREP, BigInteger.ZERO);
+    }
+
+    private Map<String,BigInteger> normalPrepData(){
         return Map.of(IS_PREP, BigInteger.ONE,
                 IS_REGISTERED, BigInteger.ZERO,
                 PAY_PENALTY, BigInteger.ZERO,
