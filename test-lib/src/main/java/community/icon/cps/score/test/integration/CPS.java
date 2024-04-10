@@ -48,6 +48,7 @@ public class CPS {
     public void setupCPS() throws Exception {
         deployPrep();
         decentralizeChain();
+        Thread.sleep(200000);
         this.addresses = new ScoreDeployer(this,contracts).deployContracts();
 
         ownerClient = new CPSClient(this,owner);
