@@ -31,3 +31,5 @@ complete all transaction.
 ```sh
 bash deploy.sh -a
 ```
+
+Note: make sure optimized jar is created/updated before running the script

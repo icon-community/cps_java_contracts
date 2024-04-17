@@ -26,7 +26,7 @@ case $ICON_NET in
 		export ICON_NODE=http://localhost:9082/api/v3/
 		export ICON_DEBUG_NODE=http://localhost:9082/api/v3d
 	;;
-	"testnet" )
+	"lisbon" )
 		export ICON_NID=2
 		export ICON_NODE=https://lisbon.net.solidwallet.io/api/v3/
 		export ICON_DEBUG_NODE=https://lisbon.net.solidwallet.io/api/v3d

@@ -114,7 +114,7 @@ function deploy_cps_contracts() {
     echo "--------------------------DEPLOY CONTRACTS-------------------------"
     echo "-------------------------------------------------------------------"
     local CPS_CORE_FILE=$CPS_JAVA_SCORE/CPSCore/build/libs/CPSCore-[0-9].[0-9].[0-9]-optimized.jar
-    deploy_contract $CPS_CORE_FILE $CONTRACT_ADDRESS bondValue="2" applicationPeriod="15"
+    deploy_contract $CPS_CORE_FILE $CONTRACT_ADDRESS bondValue="15" applicationPeriod="15"
 
     local cps_score_addr=$(grep 'CPSCore' "$CONTRACT_ADDRESS" | cut -d' ' -f2)
     local CPS_TREASURY_FILE=$CPS_JAVA_SCORE/CPSTreasury/build/libs/CPSTreasury-[0-9].[0-9].[0-9]-optimized.jar
@@ -124,7 +124,7 @@ function deploy_cps_contracts() {
     deploy_contract $CPF_TREASURY_FILE $CONTRACT_ADDRESS cpsScore=$cps_score_addr
 
     local BNUSD_FILE=$DUMMY_SCORE/bnUSD/build/libs/bnUSD-[0-9].[0-9].[0-9]-optimized.jar
-    deploy_contract $BNUSD_FILE $CONTRACT_ADDRESS _name="Dummy_Stable_Coin" _symbol="bnUSD" _decimals="18" _initialSupply="100000000000000000000"
+    deploy_contract $BNUSD_FILE $CONTRACT_ADDRESS _name="Dummy_bnUSD_Coin" _symbol="bnUSD" _decimals="18" _initialSupply="1000000000000000000000"
 
     local DEX_FILE=$DUMMY_SCORE/Dex/build/libs/Dex-[0-9].[0-9].[0-9]-optimized.jar
     deploy_contract $DEX_FILE $CONTRACT_ADDRESS
@@ -233,21 +233,21 @@ function add_funds() {
   local cpf_treasury_addr=$(grep 'CPFTreasury' "$CONTRACT_ADDRESS" | cut -d' ' -f2)
 
   echo "set treasury fund limit"
-  icon_send_tx $cpf_treasury_addr "setMaximumTreasuryFundIcx" value="10000000000000000000000"
-  icon_send_tx $cpf_treasury_addr "setMaximumTreasuryFundBnusd" value="10000000000000000000000"
+  icon_send_tx $cpf_treasury_addr "setMaximumTreasuryFundIcx" value="0xd3c21bcecceda0000000"
+  icon_send_tx $cpf_treasury_addr "setMaximumTreasuryFundBnusd" value="0xd3c21bcecceda0000000"
 
   echo "send fund to treasury"
   local bnUSD_addr=$(grep 'bnUSD' "$CONTRACT_ADDRESS" | cut -d' ' -f2)
-  icon_send_tx $bnUSD_addr "mintTo" to=$cpf_treasury_addr amount="5000000000000000000000"
+  icon_send_tx $bnUSD_addr "mintTo" to=$cpf_treasury_addr amount="50000000000000000000000"
 
   echo "send sicx to dex for swap"
   local sICX_addr=$(grep 'sICX' "$CONTRACT_ADDRESS" | cut -d' ' -f2)
   local dex_addr=$(grep 'Dex' "$CONTRACT_ADDRESS" | cut -d' ' -f2)
-  icon_send_tx $sICX_addr "mintWithTokenFallBack" _to=$dex_addr _amount="1000000000000000000000" \
+  icon_send_tx $sICX_addr "mintWithTokenFallBack" _to=$dex_addr _amount="10000000000000000000000" \
   _data="0x7b0a2020226d6574686f64223a20225f646578220a7d"
 
   echo "send ICX to dex"
-  icon_transfer_icx $dex_addr "100000000000000000000"
+  icon_transfer_icx $dex_addr "1000000000000000000000"
 
 
 }
@@ -272,6 +272,10 @@ function configure_system() {
   echo "toggle swap flag"
   icon_send_tx $cpf_treasury_addr "toggleSwapFlag"
 
+  echo "set oracle slippage percentage"
+  icon_send_tx $cpf_treasury_addr "setOraclePercentageDifference" value="3"
+#  icon_send_tx $cps_score_addr "toggleBudgetAdjustmentFeature"
+
 }
 
 
@@ -285,7 +289,7 @@ function set_contracts() {
 }
 
 function configure_fund_and_system() {
-#    add_funds
+    add_funds
     configure_system
 }
 
