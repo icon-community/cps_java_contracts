@@ -58,8 +58,6 @@ public class CPSTreasury extends ProposalData implements CPSTreasuryInterface {
     public CPSTreasury(@Optional Address cpsScore) {
         if (onsetPaymentPercentage.get() == null) {
             onsetPaymentPercentage.set(BigInteger.TEN);
-        }
-        if (this.cpsScore.get() == null){
             this.cpsScore.set(cpsScore);
         }
     }

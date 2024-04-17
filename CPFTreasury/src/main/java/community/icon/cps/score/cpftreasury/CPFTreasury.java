@@ -45,8 +45,6 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
             swapCount.set(SwapReset);
             swapState.set(SwapReset);
             swapFlag.set(false);
-        }
-        if (CPFTreasury.cpsScore.get() == null){
             CPFTreasury.cpsScore.set(cpsScore);
         }
     }
