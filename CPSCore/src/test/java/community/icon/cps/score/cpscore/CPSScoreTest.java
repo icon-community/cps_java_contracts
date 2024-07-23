@@ -7,6 +7,9 @@ import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
 import community.icon.cps.score.cpscore.utils.Constants;
 import community.icon.cps.score.lib.interfaces.CPSCoreInterface;
+import community.icon.cps.score.lib.interfaces.CPSCoreInterface.ProgressReportAttributes;
+import community.icon.cps.score.lib.interfaces.CPSCoreInterface.ProposalAttributes;
+
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.function.Executable;
 import org.mockito.MockedStatic;
@@ -21,10 +24,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static community.icon.cps.score.cpscore.db.ProposalDataDb.councilFlag;
 import static community.icon.cps.score.cpscore.utils.Constants.*;
 import static community.icon.cps.score.lib.interfaces.CPSCoreInterface.ProgressReportAttributes;
 import static community.icon.cps.score.lib.interfaces.CPSCoreInterface.ProposalAttributes;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -517,6 +523,7 @@ public class CPSScoreTest extends TestBase {
 
     @Test
     @DisplayName("vote approve then change it to reject")
+    //changes to this file too?
     void voteProposal() {
         submitAndSponsorVote();
         contextMock.when(caller()).thenReturn(owner.getAddress());
@@ -2046,6 +2053,75 @@ public class CPSScoreTest extends TestBase {
 
     }
 
+//begin
+    @Test
+    void testhasTwoThirdsMajority(){
+        String key="test";
+
+        doReturn(BigInteger.valueOf(15)).when(scoreSpy).getSponsorBondPercentage();
+        registerPrepsMethod();
+        
+
+        //need attributes?
+
+        //set flag to true for mock test
+        //doReturn(true).when(cpsScore).call(Boolean.class, ((Object) cpfTreasury).get(), "getCouncilFlag");
+        boolean councilFlag = true;
+// sponsor address sponsor voter valid prep ma exist huna paryo
+//votes 3 wota weight 100= constant 100x10=1000
+
+        cpsScore.invoke(owner, "setMilestoneVotes", key, BigInteger.valueOf(1000), 10);
+        cpsScore.invoke(owner, "setApprovedVotes", key, BigInteger.valueOf(700), 7);
+
+        Boolean result = call(Boolean.class, cpsScore.getAddress(), "hasTwoThirdsMajority", key);
+        assertTrue(result);
+
+        contextMock.when(caller()).thenReturn(testingAccount.getAddress());
+        cpsScore.invoke(testingAccount, "setMilestoneVotes", key, BigInteger.valueOf(1000), 10);
+        cpsScore.invoke(testingAccount, "setApprovedVotes", key, BigInteger.valueOf(300), 3);
+       
+        result = call(Boolean.class, cpsScore.getAddress(), "hasTwoThirdsMajority", key);
+        assertFalse(result, "Should meet 2/3 majority");
+
+        //flag to false
+        // doReturn(false).when(cpsScore).call(Boolean.class, ((Object) cpfTreasury).get(), "getCouncilFlag");
+        councilFlag = false;
+
+        contextMock.when(caller()).thenReturn(testingAccount1.getAddress());
+        cpsScore.invoke(testingAccount1, "setMilestoneVotes", key, BigInteger.valueOf(1000), 10);
+        cpsScore.invoke(testingAccount1, "setApprovedVotes", key, BigInteger.valueOf(700), 7);
+       
+        result = call(Boolean.class, cpsScore.getAddress(), "hasTwoThirdsMajority", key);
+        assertTrue(result);
+
+        contextMock.when(caller()).thenReturn(testingAccount.getAddress());
+        cpsScore.invoke(testingAccount2, "setMilestoneVotes", key, BigInteger.valueOf(1000), 10);
+        cpsScore.invoke(testingAccount2, "setApprovedVotes", key, BigInteger.valueOf(300), 3);
+        
+        result = call(Boolean.class, cpsScore.getAddress(), "hasTwoThirdsMajority", key);
+        assertFalse(result, "Should meet 2/3 majority");
+
+    }
+
+    private Boolean call(Class<Boolean> class1, Address address, String string, String key) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'call'");
+}
+
+void setMilestoneVotes(String key, BigInteger totalVotes, int totalVoters) {
+        cpsScore.invoke(owner, "setTotalVotes", key, totalVotes, totalVoters, true);
+    }
+    
+    void setProposalVotes(String key, BigInteger totalVotes, int totalVoters) {
+        cpsScore.invoke(owner, "setTotalVotes", key, totalVotes, totalVoters, false);
+    }
+    
+    void setApprovedVotes(String key, BigInteger approvedVotes, int approveVoters, boolean isMilestone) {
+        cpsScore.invoke(owner, "setApprovedVotes", key, approvedVotes, approveVoters, isMilestone);
+    }
+
+
+    //end
 
     @Test
     void setSwapCount() {

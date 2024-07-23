@@ -498,6 +498,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         proposalBudgets.set(newHash,totalBudget);
     }
 
+    
 
     //EventLogs
     @Override

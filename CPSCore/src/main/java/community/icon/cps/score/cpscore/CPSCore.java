@@ -723,10 +723,22 @@ public class CPSCore implements CPSCoreInterface {
                 TAG + ": Proposals can be voted only on Voting Period.");
         Address caller = Context.getCaller();
         PReps pReps = new PReps();
-        Context.require(ArrayDBUtils.containsInArrayDb(caller, pReps.validPreps),
+
+    //    ArrayDB<String> callLocation = pReps.validPreps if councilFlag == false else callLocation = councilDb.abc
+        
+        List<Address> callLocation;
+        if (getCouncilFlag()) {
+            callLocation = getCouncilManagers();
+        } else {
+            callLocation = ArrayDBUtils.arrayDBtoList(pReps.validPreps);
+        }
+
+        Context.require(ArrayDBUtils.containsInList(caller, callLocation),
                 TAG + ": Voting can only be done by registered P-Reps.");
         Context.require(List.of(APPROVE, REJECT, ABSTAIN).contains(vote),
                 TAG + ": Vote should be either _approve, _reject or _abstain");
+
+        //Context.require(hasTwoThirdsMajority(?,?))
 
         Map<String, Object> proposalDetails = getProposalDetails(ipfsKey);
         String proposalPrefix = proposalPrefix(ipfsKey);
@@ -976,10 +988,23 @@ public class CPSCore implements CPSCoreInterface {
                 TAG + ": Progress Reports can be voted only on Voting Period.");
         Address caller = Context.getCaller();
         PReps pReps = new PReps();
+
+    //    ArrayDB<String> callLocation = pReps.validPreps if councilFlag == false else callLocation = councilDb.abc
+
+    List<Address> callLocation;
+    if (getCouncilFlag()) {
+        callLocation = getCouncilManagers();
+    } else {
+        callLocation = ArrayDBUtils.arrayDBtoList(pReps.validPreps);
+    }
+
         Context.require(!ArrayDBUtils.containsInArrayDb(caller, blockAddresses),
                 TAG + ": You are blocked from CPS.");
-        Context.require(ArrayDBUtils.containsInArrayDb(caller, pReps.validPreps),
+                Context.require(ArrayDBUtils.containsInList(caller, callLocation),
                 TAG + ": Voting can only be done by registered P-Reps.");
+
+        //Context.require(hasTwoThirdsMajority(?,?))
+
         String progressReportPrefix = progressReportPrefix(reportKey);
         ArrayDB<Integer> submittedMilestones = milestoneSubmitted.at(progressReportPrefix);// CAN TAKE FROM READONLY METHOD
         for (MilestoneVoteAttributes milestoneVote : votes) {
@@ -2654,6 +2679,39 @@ public class CPSCore implements CPSCoreInterface {
             }
         }
         return milestoneIdList;
+    }
+
+    private boolean hasTwoThirdsMajority(String key, boolean isMilestone) {
+        //can also use if else if this doesnt work as intended
+
+        //error: milestonedb doesnt have total votes or voters
+
+        Map<String, Object> milestoneDbData = MilestoneDb.getDataFromMilestoneDB(key);
+        BigInteger totalVotes = isMilestone ? (BigInteger)milestoneDbData.get(TOTAL_VOTES) : ProgressReportDataDb.totalVotes.at(key).getOrDefault(BigInteger.ZERO);
+        int totalVoters = isMilestone ? (Integer)milestoneDbData.get(TOTAL_VOTERS) : ProgressReportDataDb.totalVoters.at(key).getOrDefault(0);
+    
+        BigInteger approveVotes = isMilestone ? MilestoneDb.approvedVotes.at(key).getOrDefault(BigInteger.ZERO) : ProgressReportDataDb.approvedVotes.at(key).getOrDefault(BigInteger.ZERO);
+        int approveVoters = isMilestone ? MilestoneDb.approveVoters.at(key).size() : ProgressReportDataDb.approveVoters.at(key).size();
+    
+        //need to give vote weights = 100 (arbitrary)
+        boolean voteWeightCheck = approveVotes.multiply(BigInteger.valueOf(3)).compareTo(totalVotes.multiply(BigInteger.valueOf(2))) >= 0;
+        boolean voterCountCheck = approveVoters * 3 >= totalVoters * 2;
+    
+        return voteWeightCheck && voterCountCheck;
+    }
+
+    // @External(readonly=true)
+    // private Address[] getCouncilManagers() {
+    //     return call(Address[].class, cpfTreasury.get(), "getCouncilManagers");
+    // }
+
+    @SuppressWarnings({ "unchecked"})
+    private List<Address> getCouncilManagers() {
+        return callScore(List.class, getCpfTreasuryScore(), "getCouncilManagers");
+    }
+
+    private boolean getCouncilFlag() {
+        return callScore(boolean.class, getCpfTreasuryScore(), "getCouncilFlag");
     }
 
     //    =====================================TEMPORARY MIGRATIONS METHODS===============================================

@@ -209,6 +209,10 @@ public class Constants {
     public static final Integer MILESTONE_REPORT_APPROVED = 3;
     public static final Integer MILESTONE_REPORT_NOT_COMPLETED = 4;
 
+    //     new flags
+    public static final String MAJORITY_FLAG = "majority_flag";
+    public static final String COUNCIL_FLAG = "council_flag";
+
 
     public static final BigInteger TOTAL_PERIOD = BigInteger.valueOf(30);
 }
