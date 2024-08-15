@@ -66,28 +66,28 @@ public class CPSCore implements CPSCoreInterface {
 
         // Fix for ICON Dashboard Proposal not being able to submit progress report being rejected
 
-        String progressReport = "bafybeic4jhoowlgeyewjqkcpgbm3fs7mgtxzhqd5kbguihoehm4cwwwzcq";
-        String proposalKey = "bafybeidoxysex3jloigzi4pvdeqgy35a4nykd46w66pobxrkephpawyjoi";
+        // String progressReport = "bafybeic4jhoowlgeyewjqkcpgbm3fs7mgtxzhqd5kbguihoehm4cwwwzcq";
+        // String proposalKey = "bafybeidoxysex3jloigzi4pvdeqgy35a4nykd46w66pobxrkephpawyjoi";
 
-        String proposalPrefix = proposalPrefix(proposalKey);
-        String progressReportPrefix = progressReportPrefix(progressReport);
+        // String proposalPrefix = proposalPrefix(proposalKey);
+        // String progressReportPrefix = progressReportPrefix(progressReport);
 
-        ProposalDataDb.submitProgressReport.at(proposalPrefix).set(Boolean.FALSE);
+        // ProposalDataDb.submitProgressReport.at(proposalPrefix).set(Boolean.FALSE);
 
-        ProgressReportDataDb.status.at(progressReportPrefix).set(PROGRESS_REPORT_REJECTED);
-        ProgressReportDataDb.timestamp.at(progressReportPrefix).set(BigInteger.valueOf(1706244342109937L));
-        Status status = new Status();
-        status.progressReportStatus.get(PROGRESS_REPORT_REJECTED).add(progressReport);
+        // ProgressReportDataDb.status.at(progressReportPrefix).set(PROGRESS_REPORT_REJECTED);
+        // ProgressReportDataDb.timestamp.at(progressReportPrefix).set(BigInteger.valueOf(1706244342109937L));
+        // Status status = new Status();
+        // status.progressReportStatus.get(PROGRESS_REPORT_REJECTED).add(progressReport);
 
         // End of fix
 
         // Migrate sponsor bond from Techiast- to Techiast
-        Address oldAddr = Address.fromString("hxdc4b3fb5b47d6c14c7f9a0bac8eea9f3f48d3288");
-        Address address = Address.fromString("hxfe0256b41f1db0186f9e6cbebf8c71cf006d5d17");
-        DictDB<String, BigInteger> userAmounts = sponsorBondReturn.at(oldAddr.toString());
+        // Address oldAddr = Address.fromString("hxdc4b3fb5b47d6c14c7f9a0bac8eea9f3f48d3288");
+        // Address address = Address.fromString("hxfe0256b41f1db0186f9e6cbebf8c71cf006d5d17");
+        // DictDB<String, BigInteger> userAmounts = sponsorBondReturn.at(oldAddr.toString());
 
-        BigInteger bnUSDAmount = userAmounts.getOrDefault(bnUSD, BigInteger.ZERO);
-        sponsorBondReturn.at(address.toString()).set(bnUSD, bnUSDAmount);
+        // BigInteger bnUSDAmount = userAmounts.getOrDefault(bnUSD, BigInteger.ZERO);
+        // sponsorBondReturn.at(address.toString()).set(bnUSD, bnUSDAmount);
 
     }
 
@@ -723,7 +723,15 @@ public class CPSCore implements CPSCoreInterface {
                 TAG + ": Proposals can be voted only on Voting Period.");
         Address caller = Context.getCaller();
         PReps pReps = new PReps();
-        Context.require(ArrayDBUtils.containsInArrayDb(caller, pReps.validPreps),
+
+        List<Address> callLocation;
+        if (getCouncilFlag()) {
+            callLocation = getCouncilManagers();
+        } else {
+            callLocation = ArrayDBUtils.arrayDBtoList(pReps.validPreps);
+        }
+
+        Context.require(ArrayDBUtils.containsInList(caller, callLocation),
                 TAG + ": Voting can only be done by registered P-Reps.");
         Context.require(List.of(APPROVE, REJECT, ABSTAIN).contains(vote),
                 TAG + ": Vote should be either _approve, _reject or _abstain");
@@ -976,9 +984,17 @@ public class CPSCore implements CPSCoreInterface {
                 TAG + ": Progress Reports can be voted only on Voting Period.");
         Address caller = Context.getCaller();
         PReps pReps = new PReps();
+
+        List<Address> callLocation = new ArrayList<>();
+        if (getCouncilFlag()) {
+            callLocation = getCouncilManagers();
+        } else {
+            callLocation = ArrayDBUtils.arrayDBtoList(pReps.validPreps);
+        }
+
         Context.require(!ArrayDBUtils.containsInArrayDb(caller, blockAddresses),
                 TAG + ": You are blocked from CPS.");
-        Context.require(ArrayDBUtils.containsInArrayDb(caller, pReps.validPreps),
+        Context.require(ArrayDBUtils.containsInList(caller, callLocation),
                 TAG + ": Voting can only be done by registered P-Reps.");
         String progressReportPrefix = progressReportPrefix(reportKey);
         ArrayDB<Integer> submittedMilestones = milestoneSubmitted.at(progressReportPrefix);// CAN TAKE FROM READONLY METHOD
@@ -2656,6 +2672,35 @@ public class CPSCore implements CPSCoreInterface {
         return milestoneIdList;
     }
 
+    @External(readonly = true)
+    public Boolean hasTwoThirdsMajority(String key, boolean isMilestone) {
+        //can also use if else if this doesnt work as intended
+
+        //error: milestonedb doesnt have total votes or voters
+
+        Map<String, Object> milestoneDbData = MilestoneDb.getDataFromMilestoneDB(key);
+        BigInteger totalVotes = isMilestone ? (BigInteger)milestoneDbData.get(TOTAL_VOTES) : ProgressReportDataDb.totalVotes.at(key).getOrDefault(BigInteger.ZERO);
+        int totalVoters = isMilestone ? (Integer)milestoneDbData.get(TOTAL_VOTERS) : ProgressReportDataDb.totalVoters.at(key).getOrDefault(0);
+    
+        BigInteger approveVotes = isMilestone ? MilestoneDb.approvedVotes.at(key).getOrDefault(BigInteger.ZERO) : ProgressReportDataDb.approvedVotes.at(key).getOrDefault(BigInteger.ZERO);
+        int approveVoters = isMilestone ? MilestoneDb.approveVoters.at(key).size() : ProgressReportDataDb.approveVoters.at(key).size();
+    
+        //need to give vote weights = 100 (arbitrary)
+        boolean voteWeightCheck = approveVotes.multiply(BigInteger.valueOf(3)).compareTo(totalVotes.multiply(BigInteger.valueOf(2))) >= 0;
+        boolean voterCountCheck = approveVoters * 3 >= totalVoters * 2;
+    
+        return voteWeightCheck && voterCountCheck;
+    }
+    
+    public List<Address> getCouncilManagers() {
+        return callScore(List.class, getCpfTreasuryScore(), "getCouncilManagers");
+    }
+
+    
+    public boolean getCouncilFlag() {
+        return callScore(boolean.class, getCpfTreasuryScore(), "getCouncilFlag");
+    }
+
     //    =====================================TEMPORARY MIGRATIONS METHODS===============================================
 
     @External
@@ -2862,6 +2907,11 @@ public class CPSCore implements CPSCoreInterface {
 
     public void onlyCPFTreasury() {
         Context.require(Context.getCaller().equals(getCpfTreasuryScore()), TAG + ": Only CPF treasury can call this method");
+    }
+
+    public void callScore(Class<Map> eq, Class<MilestoneDb> eq2, String eq3, String eq4) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'callScore'");
     }
 
     //    =====================================Checkers===============================================

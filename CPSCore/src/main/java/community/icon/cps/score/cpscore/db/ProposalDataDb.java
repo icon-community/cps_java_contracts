@@ -5,6 +5,8 @@ import score.*;
 import java.math.BigInteger;
 import java.util.Map;
 
+import community.icon.cps.score.lib.interfaces.CPSCoreInterface.ProposalAttributes;
+
 import static community.icon.cps.score.cpscore.utils.ArrayDBUtils.recordTxHash;
 import static community.icon.cps.score.cpscore.utils.Constants.*;
 import static community.icon.cps.score.lib.interfaces.CPSCoreInterface.ProposalAttributes;
@@ -46,6 +48,9 @@ public class ProposalDataDb {
     public static final BranchDB<String, VarDB<Integer>> proposalPeriod = Context.newBranchDB(PROPOSAL_PERIOD, Integer.class);
     public static final BranchDB<String, ArrayDB<Integer>> milestoneIds = Context.newBranchDB("milestoneIds", Integer.class);
 
+    public static final BranchDB<String, VarDB<Boolean>> majorityFlag = Context.newBranchDB(MAJORITY_FLAG, Boolean.class);
+    public static final BranchDB<String, VarDB<Boolean>> councilFlag = Context.newBranchDB(COUNCIL_FLAG, Boolean.class);
+
     public static void addDataToProposalDB(ProposalAttributes proposalData, String prefix) {
         ipfsHash.at(prefix).set(proposalData.ipfs_hash);
         projectTitle.at(prefix).set(proposalData.project_title);
@@ -68,6 +73,9 @@ public class ProposalDataDb {
         token.at(prefix).set(proposalData.token);
         milestoneCount.at(prefix).set(proposalData.milestoneCount);
         isMilestone.at(prefix).set(true);
+
+        majorityFlag.at(prefix).set(false);
+        councilFlag.at(prefix).set(false);
 
     }
 
@@ -96,7 +104,11 @@ public class ProposalDataDb {
                 Map.entry(IS_MILESTONE,isMilestone.at(prefix).getOrDefault(false)),
                 Map.entry(PERCENTAGE_COMPLETED,percentageCompleted.at(prefix).getOrDefault(0)),
                 Map.entry(SUBMIT_PROGRESS_REPORT, submitProgressReport.at(prefix).getOrDefault(false)),
-                Map.entry(PROPOSAL_PERIOD,proposalPeriod.at(prefix).getOrDefault(0)));
+                Map.entry(PROPOSAL_PERIOD,proposalPeriod.at(prefix).getOrDefault(0)),
+
+                Map.entry(MAJORITY_FLAG, majorityFlag.at(prefix).getOrDefault(false)),
+                Map.entry(COUNCIL_FLAG, councilFlag.at(prefix).getOrDefault(false)));
+
     }
 
     public static int getMilestoneCount(String prefix) {

@@ -39,6 +39,8 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     private final VarDB<Boolean> swapFlag = Context.newVarDB(SWAP_FLAG, Boolean.class);
     private final VarDB<BigInteger> swapLimitAmount = Context.newVarDB(SWAP_LIMIT_AMOUNT, BigInteger.class);
 
+    private final VarDB<Boolean> councilFlag = Context.newVarDB(COUNCIL_FLAG, Boolean.class);
+
     public CPFTreasury(@Optional Address cpsScore) {
         if (treasuryFund.get() == null) {
             treasuryFund.set(BigInteger.valueOf(1000000).multiply(EXA));
@@ -499,6 +501,27 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         proposalBudgets.set(newHash,totalBudget);
     }
 
+    @External
+    public void toggleCouncilFlag() {
+        validateAdmins();
+        councilFlag.set(!councilFlag.getOrDefault(false));
+    }
+
+    @External(readonly = true)
+    public boolean getCouncilFlag() {
+        return councilFlag.getOrDefault(false);
+    }
+
+    // @External
+    // public List<Address> setCouncilManagers() {
+    //     validateAdmins();
+
+    // }
+
+    // @External
+    // public List<Address> getCouncilManagers() {
+         
+    // }
 
     //EventLogs
     @Override
