@@ -50,6 +50,7 @@ public class Constants {
     public static final Address SYSTEM_ADDRESS = Address.fromString("cx0000000000000000000000000000000000000000");
 
     public static final String COUNCIL_FLAG = "council_flag";
+    public static final String COUNCIL_MANAGERS = "council_managers";
 
     public static final int sICXICXPoolID = 1;
     public static final int sICXBNUSDPoolID = 2;

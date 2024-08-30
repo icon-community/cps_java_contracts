@@ -2172,7 +2172,7 @@ public class CPSScoreTest extends TestBase {
 
         // Simulate the second voter
         CPSCoreInterface.MilestoneVoteAttributes secondVote = new CPSCoreInterface.MilestoneVoteAttributes();
-        secondVote.vote = APPROVE;
+        secondVote.vote = REJECT;
         secondVote.id = 2;
 
         // Invoke the voting method for the second voter
@@ -2180,7 +2180,7 @@ public class CPSScoreTest extends TestBase {
 
         // Check if the majority is met after the second vote
         boolean isMajorityAfterSecondVote = (Boolean)cpsScore.call("hasTwoThirdsMajority","Proposal 1", true);
-        assertTrue(isMajorityAfterSecondVote); // Expecting true
+        assertFalse(isMajorityAfterSecondVote); // Expecting false
 
         // Simulate the third voter
         CPSCoreInterface.MilestoneVoteAttributes thirdVote = new CPSCoreInterface.MilestoneVoteAttributes();
