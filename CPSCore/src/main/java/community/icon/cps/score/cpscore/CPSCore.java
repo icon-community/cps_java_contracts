@@ -985,7 +985,7 @@ public class CPSCore implements CPSCoreInterface {
         Address caller = Context.getCaller();
         PReps pReps = new PReps();
 
-        List<Address> callLocation = new ArrayList<>();
+        List<Address> callLocation;
         if (getCouncilFlag()) {
             callLocation = getCouncilManagers();
         } else {
@@ -1429,10 +1429,10 @@ public class CPSCore implements CPSCoreInterface {
                             int proposalPeriod = ProposalDataDb.proposalPeriod.at(proposal_prefix).getOrDefault(0);
                             boolean extended = MilestoneDb.extensionFlag.at(milestonePrefix).getOrDefault(false);
 
-                            if (getPeriodCount() == (proposalPeriod + completionPeriod)) {
-                                if (extended) {
-                                    updateProposalStatus(_ipfs_hash, _proposal_details);
-                                } else {
+                            int finalPeriodToSubmit = proposalPeriod + completionPeriod;
+                            if (getPeriodCount() < finalPeriodToSubmit){
+                                milestonePassed +=1;
+                            }else if (getPeriodCount() >= finalPeriodToSubmit && !extended) {
                                     milestonePassed += 1;
                                     String proposalPrefix = proposalPrefix(_ipfs_hash);
                                     int project_duration = (int) _proposal_details.get(PROJECT_DURATION);
@@ -1440,11 +1440,8 @@ public class CPSCore implements CPSCoreInterface {
                                     ProposalDataDb.projectDuration.at(proposalPrefix).set(project_duration + 1);
                                     MilestoneDb.completionPeriod.at(milestonePrefix).set(completionPeriod + 1);
                                 }
-                            }
                             updateMilestoneDB(milestonePrefix);
-
                         }
-
                     } else {
                         MilestoneDb.status.at(milestonePrefix).set(MILESTONE_REPORT_REJECTED);
                         updateMilestoneDB(milestonePrefix);

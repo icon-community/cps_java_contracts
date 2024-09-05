@@ -1,11 +1,18 @@
 package community.icon.cps.score.cpftreasury;
 
 import score.Address;
+import score.ArrayDB;
 import score.Context;
 import score.annotation.External;
+import scorex.util.ArrayList;
 
 import java.math.BigInteger;
+import java.util.List;
 
+import static community.icon.cps.score.cpftreasury.CPFTreasury.councilFlag;
+import static community.icon.cps.score.cpftreasury.CPFTreasury.councilManagers;
+import static community.icon.cps.score.cpftreasury.Constants.TAG;
+import static community.icon.cps.score.cpftreasury.Validations.validateAdmins;
 import static community.icon.cps.score.cpftreasury.Validations.validateGovernanceContract;
 
 public class SetterGetter {
@@ -154,19 +161,69 @@ public class SetterGetter {
     @External
     public void setSponsorBondPercentage(BigInteger bondValue) {
         validateGovernanceContract();
-        Context.call( getCpsScore(), "setSponsorBondPercentage",bondValue);
+        Context.call(getCpsScore(), "setSponsorBondPercentage", bondValue);
     }
 
     @External
     public void setPeriod(BigInteger applicationPeriod) {
         validateGovernanceContract();
-        Context.call(getCpsScore(), "setPeriod",applicationPeriod);
+        Context.call(getCpsScore(), "setPeriod", applicationPeriod);
     }
 
     @External
     public void setOnsetPayment(BigInteger paymentPercentage) {
         validateGovernanceContract();
-        Context.call(getCpsTreasuryScore(), "setOnsetPayment",paymentPercentage);
+        Context.call(getCpsTreasuryScore(), "setOnsetPayment", paymentPercentage);
+    }
+
+
+    @External
+    public void toggleCouncilFlag() {
+        // todo add governance
+        validateAdmins();
+        councilFlag.set(!councilFlag.getOrDefault(false));
+    }
+
+    @External(readonly = true)
+    public boolean getCouncilFlag() {
+        return councilFlag.getOrDefault(false);
+    }
+
+    @External
+    public void setCouncilManagers(Address[] newCouncilManagers) {
+        //todo governance only
+        int sizeOfCouncilManagers = councilManagers.size();
+        Context.require(sizeOfCouncilManagers >= 3, TAG + ":: council managers should be greater than 3");
+        Context.require(sizeOfCouncilManagers % 2 == 1, TAG + ":: council managers should be an odd number");
+        if (sizeOfCouncilManagers > 0) {
+            clearArrayDb(councilManagers);
+        }
+        int sizeOfNewManagers = newCouncilManagers.length;
+        for (int i = 0; i < sizeOfNewManagers; i++) {
+            councilManagers.add(newCouncilManagers[i]);
+        }
+    }
+
+    @External
+    public List<Address> getCouncilManagers() {
+        return arrayDBtoList(councilManagers);
+    }
+
+
+    <T> List<T> arrayDBtoList(ArrayDB<T> arraydb) {
+        List<T> list = new ArrayList<>();
+        for (int i = 0; i < arraydb.size(); i++) {
+            list.add(arraydb.get(i));
+        }
+        return list;
+    }
+
+    void clearArrayDb(ArrayDB<?> array_db) {
+        int size = array_db.size();
+        for (int i = 0; i < size; i++) {
+            array_db.pop();
+        }
+
     }
 
 }

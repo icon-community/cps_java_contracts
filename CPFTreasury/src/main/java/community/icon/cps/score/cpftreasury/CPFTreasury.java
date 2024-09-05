@@ -39,8 +39,8 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     private final VarDB<Boolean> swapFlag = Context.newVarDB(SWAP_FLAG, Boolean.class);
     private final VarDB<BigInteger> swapLimitAmount = Context.newVarDB(SWAP_LIMIT_AMOUNT, BigInteger.class);
 
-    private final VarDB<Boolean> councilFlag = Context.newVarDB(COUNCIL_FLAG, Boolean.class);
-    private final ArrayDB<Address> councilManagers = Context.newArrayDB(COUNCIL_MANAGERS, Address.class);
+    public static final VarDB<Boolean> councilFlag = Context.newVarDB(COUNCIL_FLAG, Boolean.class);
+    public static final ArrayDB<Address> councilManagers = Context.newArrayDB(COUNCIL_MANAGERS, Address.class);
 
 
     public CPFTreasury(@Optional Address cpsScore) {
@@ -503,53 +503,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         proposalBudgets.set(newHash,totalBudget);
     }
 
-    @External
-    public void toggleCouncilFlag() {
-        validateAdmins();
-        councilFlag.set(!councilFlag.getOrDefault(false));
-    }
 
-    @External(readonly = true)
-    public boolean getCouncilFlag() {
-        return councilFlag.getOrDefault(false);
-    }
-
-    @External
-    public void setCouncilManagers(Address[] newCouncilManagers) {
-        //todo governance only
-        int sizeOfCouncilManagers = councilManagers.size();
-        Context.require(sizeOfCouncilManagers >= 3,"council managers should be greater than 3");
-        Context.require(sizeOfCouncilManagers%2 == 1,"council managers should be an odd number");
-        if (sizeOfCouncilManagers>0){
-            clearArrayDb(councilManagers);
-        }
-        int sizeOfNewManagers= newCouncilManagers.length;
-        for(int i =0; i<sizeOfNewManagers; i++){
-            councilManagers.add(newCouncilManagers[i]);
-        }
-    }
-
-    @External
-    public List<Address> getCouncilManagers() {
-        //todo governance only
-        return arrayDBtoList(councilManagers);   
-    }
-
-    <T> List<T> arrayDBtoList(ArrayDB<T> arraydb) {
-        List<T> list = new ArrayList<>();
-        for (int i = 0; i < arraydb.size(); i++) {
-            list.add(arraydb.get(i));
-        }
-        return list;
-    }
-
-    void clearArrayDb(ArrayDB<?> array_db) {
-        int size = array_db.size();
-        for (int i = 0; i < size; i++) {
-            array_db.pop();
-        }
-
-    }
     
     //EventLogs
     @Override
