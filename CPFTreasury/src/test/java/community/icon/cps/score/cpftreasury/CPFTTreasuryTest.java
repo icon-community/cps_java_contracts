@@ -726,6 +726,34 @@ public class CPFTTreasuryTest extends TestBase {
         }
     }
 
+    @Test
+    void toggleCouncilFlag(){
+        try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
+            theMock.when(() -> Context.call(cpsScore.get(), "isAdmin", Context.getCaller())).thenReturn(true);
+            tokenScore.invoke(owner,"toggleCouncilFlag");
+            assertEquals(true,tokenScore.call("getCouncilFlag"));
+        }
+    }
+
+    @Test
+void setCouncilManagers() {
+    Address A = Address.fromString("cx0000000000000000000000000000000000000007");
+    Address B = Address.fromString("cx0000000000000000000000000000000000000008");
+    Address C = Address.fromString("cx0000000000000000000000000000000000000009");
+
+    Address[] CManagers = {A, B, C};
+
+    try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
+        theMock.when(() -> Context.call(cpsScore.get(), "isAdmin", Context.getCaller())).thenReturn(true);
+        tokenScore.invoke(owner, "setCouncilManagers", (Object) CManagers);
+
+        List<Address> returnedManagers = (List<Address>) tokenScore.call("getCouncilManagers");
+
+        for (int i = 0; i < CManagers.length; i++) {
+            assertEquals(CManagers[i], returnedManagers.get(i));
+        }
+    }
+}
 
     public void expectErrorMessage(Executable contractCall, String errorMessage) {
         AssertionError e = Assertions.assertThrows(AssertionError.class, contractCall);
