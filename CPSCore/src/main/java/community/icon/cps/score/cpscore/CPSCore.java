@@ -1260,6 +1260,7 @@ public class CPSCore implements CPSCoreInterface {
                     period.periodName.set(TRANSITION_PERIOD);
                     period.previousPeriodName.set(APPLICATION_PERIOD);
                     period.updatePeriodIndex.set(updateIndex + 1);
+                    callScore(getCpfTreasuryScore(), "setRewardPool", "finalFund");
                     updateProposalsResult();
 
                     PeriodUpdate("Period Update State 1/4. Period Updated to Transition Period. " +
@@ -1292,6 +1293,8 @@ public class CPSCore implements CPSCoreInterface {
                     period.periodCount.set(period.periodCount.getOrDefault(0) + 1);
                     burn(proposalFees.get(), null);
                     proposalFees.set(BigInteger.ZERO);
+                    callScore(getCpfTreasuryScore(), "distributeRewardToFundManagers");
+
                 }
 
             }
@@ -1430,16 +1433,16 @@ public class CPSCore implements CPSCoreInterface {
                             boolean extended = MilestoneDb.extensionFlag.at(milestonePrefix).getOrDefault(false);
 
                             int finalPeriodToSubmit = proposalPeriod + completionPeriod;
-                            if (getPeriodCount() < finalPeriodToSubmit){
-                                milestonePassed +=1;
-                            }else if (getPeriodCount() >= finalPeriodToSubmit && !extended) {
-                                    milestonePassed += 1;
-                                    String proposalPrefix = proposalPrefix(_ipfs_hash);
-                                    int project_duration = (int) _proposal_details.get(PROJECT_DURATION);
-                                    MilestoneDb.extensionFlag.at(milestonePrefix).set(true);
-                                    ProposalDataDb.projectDuration.at(proposalPrefix).set(project_duration + 1);
-                                    MilestoneDb.completionPeriod.at(milestonePrefix).set(completionPeriod + 1);
-                                }
+                            if (getPeriodCount() < finalPeriodToSubmit) {
+                                milestonePassed += 1;
+                            } else if (getPeriodCount() >= finalPeriodToSubmit && !extended) {
+                                milestonePassed += 1;
+                                String proposalPrefix = proposalPrefix(_ipfs_hash);
+                                int project_duration = (int) _proposal_details.get(PROJECT_DURATION);
+                                MilestoneDb.extensionFlag.at(milestonePrefix).set(true);
+                                ProposalDataDb.projectDuration.at(proposalPrefix).set(project_duration + 1);
+                                MilestoneDb.completionPeriod.at(milestonePrefix).set(completionPeriod + 1);
+                            }
                             updateMilestoneDB(milestonePrefix);
                         }
                     } else {
@@ -2676,24 +2679,24 @@ public class CPSCore implements CPSCoreInterface {
         //error: milestonedb doesnt have total votes or voters
 
         Map<String, Object> milestoneDbData = MilestoneDb.getDataFromMilestoneDB(key);
-        BigInteger totalVotes = isMilestone ? (BigInteger)milestoneDbData.get(TOTAL_VOTES) : ProgressReportDataDb.totalVotes.at(key).getOrDefault(BigInteger.ZERO);
-        int totalVoters = isMilestone ? (Integer)milestoneDbData.get(TOTAL_VOTERS) : ProgressReportDataDb.totalVoters.at(key).getOrDefault(0);
-    
+        BigInteger totalVotes = isMilestone ? (BigInteger) milestoneDbData.get(TOTAL_VOTES) : ProgressReportDataDb.totalVotes.at(key).getOrDefault(BigInteger.ZERO);
+        int totalVoters = isMilestone ? (Integer) milestoneDbData.get(TOTAL_VOTERS) : ProgressReportDataDb.totalVoters.at(key).getOrDefault(0);
+
         BigInteger approveVotes = isMilestone ? MilestoneDb.approvedVotes.at(key).getOrDefault(BigInteger.ZERO) : ProgressReportDataDb.approvedVotes.at(key).getOrDefault(BigInteger.ZERO);
         int approveVoters = isMilestone ? MilestoneDb.approveVoters.at(key).size() : ProgressReportDataDb.approveVoters.at(key).size();
-    
+
         //need to give vote weights = 100 (arbitrary)
         boolean voteWeightCheck = approveVotes.multiply(BigInteger.valueOf(3)).compareTo(totalVotes.multiply(BigInteger.valueOf(2))) >= 0;
         boolean voterCountCheck = approveVoters * 3 >= totalVoters * 2;
-    
+
         return voteWeightCheck && voterCountCheck;
     }
-    
+
     public List<Address> getCouncilManagers() {
         return callScore(List.class, getCpfTreasuryScore(), "getCouncilManagers");
     }
 
-    
+
     public boolean getCouncilFlag() {
         return callScore(boolean.class, getCpfTreasuryScore(), "getCouncilFlag");
     }
