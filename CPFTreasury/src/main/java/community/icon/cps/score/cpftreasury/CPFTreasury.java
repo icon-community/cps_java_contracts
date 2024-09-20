@@ -26,10 +26,14 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     public static final VarDB<Address> sICXScore = Context.newVarDB(SICX_SCORE, Address.class);
     public static final VarDB<Address> routerScore = Context.newVarDB(ROUTER_SCORE, Address.class);
     public static final VarDB<Address> oracleAddress = Context.newVarDB(ORACLE_ADDRESS, Address.class);
+
     private final ArrayDB<String> proposalsKeys = Context.newArrayDB(PROPOSALS_KEYS, String.class);
     private final DictDB<String, BigInteger> proposalBudgets = Context.newDictDB(PROPOSAL_BUDGETS, BigInteger.class);
+
     private final VarDB<BigInteger> treasuryFund = Context.newVarDB(TREASURY_FUND, BigInteger.class);
     private final VarDB<BigInteger> emergencyFund = Context.newVarDB(EMERGENCY_FUND, BigInteger.class);
+    private final DictDB<String, BigInteger> rewardPool = Context.newDictDB(REWARD_POOL, BigInteger.class);
+
     private final VarDB<BigInteger> treasuryFundbnUSD = Context.newVarDB(TREASURY_FUND_BNUSD, BigInteger.class);
 
     private final VarDB<Integer> swapState = Context.newVarDB(SWAP_STATE, Integer.class);
@@ -41,6 +45,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
 
     public static final VarDB<Boolean> councilFlag = Context.newVarDB(COUNCIL_FLAG, Boolean.class);
     public static final ArrayDB<Address> councilManagers = Context.newArrayDB(COUNCIL_MANAGERS, Address.class);
+    public static final DictDB<Address, BigInteger> councilManagersReward = Context.newDictDB(COUNCIL_MANAGERS_REWARD, BigInteger.class);
 
 
     public CPFTreasury(@Optional Address cpsScore) {
@@ -278,7 +283,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
                 }
                 Context.call(amount, routerScore.get(), "route", path, _minReceive);
             } catch (Exception e) {
-                Context.println("Ignoring Errors from Router. Error Message: " +  e.getMessage());
+                Context.println("Ignoring Errors from Router. Error Message: " + e.getMessage());
             }
         }
     }
@@ -336,7 +341,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         Address balancedDollar = CPFTreasury.balancedDollar.get();
 
         Context.call(balancedDollar, TRANSFER, address, value, "".getBytes());
-        EmergencyFundTransferred(address, value,purpose);
+        EmergencyFundTransferred(address, value, purpose);
     }
 
 
@@ -397,6 +402,70 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     public void setOraclePercentageDifference(int value) {
         validateAdmins();
         oraclePerDiff.set(value);
+    }
+
+    @External
+    public void setRewardPool(String key) {
+        validateCpsScore();
+        Context.require(key.equals(INITIAL_FUND) || key.equals(FINAL_FUND), TAG + ": incorrectKeyForPool");
+        rewardPool.set(key, getTotalFundBNUSD().get(AVAILABLE_BALANCE));
+    }
+
+    @External(readonly = true)
+    public Map<String, BigInteger> getRewardPool() {
+        BigInteger finalFund = rewardPool.getOrDefault(FINAL_FUND, BigInteger.ZERO);
+        BigInteger initialFund = rewardPool.getOrDefault(INITIAL_FUND, BigInteger.ZERO);
+        BigInteger rewardPool = finalFund.subtract(initialFund).multiply(BigInteger.valueOf(2).divide(BigInteger.valueOf(100)));
+        return Map.of(INITIAL_FUND, initialFund,
+                FINAL_FUND, finalFund,
+                "rewardPool", rewardPool);
+    }
+
+    @External
+    public void distributeRewardToFundManagers() {
+        validateCpsScore();
+
+        try {
+            Map<String, BigInteger> rewardPool = getRewardPool();
+            BigInteger initialFund = rewardPool.get(INITIAL_FUND);
+            BigInteger finalFund = rewardPool.get(FINAL_FUND);
+
+            Context.require((initialFund.compareTo(BigInteger.ZERO) > 0 && finalFund.compareTo(BigInteger.ZERO) > 0),
+                    TAG + ": RewardPoolIsEmpty");
+
+            BigInteger rewardPoolAmount = rewardPool.get("rewardPool");
+
+
+            int len = councilManagers.size();
+            BigInteger rewardAmount = rewardPoolAmount.divide(BigInteger.valueOf(len));
+
+            for (int i = 0; i < len; i++) {
+                Address manager = councilManagers.get(i);
+                councilManagersReward.set(manager, councilManagersReward.getOrDefault(manager, BigInteger.ZERO).add(rewardAmount));
+                FundManagerRewardSet(manager, rewardAmount);
+            }
+
+        } catch (Exception e) {
+            Context.println("Error in distributeRewardToFundManagers: " + e.getMessage());
+        }
+        setRewardPool(INITIAL_FUND);
+    }
+
+    @External(readonly = true)
+    public BigInteger getRewardAmountForManager(Address manager) {
+        return councilManagersReward.getOrDefault(manager, BigInteger.ZERO);
+    }
+
+    @External
+    public void claimFundManagerReward() {
+        Address manager = Context.getCaller();
+        BigInteger rewardAmount = councilManagersReward.getOrDefault(manager, BigInteger.ZERO);
+        Context.require(rewardAmount.compareTo(BigInteger.ZERO) > 0, TAG + ": No reward to claim.");
+
+        councilManagersReward.set(manager, BigInteger.ZERO);
+        Context.call(balancedDollar.get(), TRANSFER, manager, rewardAmount, "".getBytes());
+        FundManagerRewardClaimed(manager, rewardAmount);
+
     }
 
     @Override
@@ -489,7 +558,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     }
 
     @External
-    public void migrateOldHashToNewHash(String oldHash, String newHash){
+    public void migrateOldHashToNewHash(String oldHash, String newHash) {
         validateCpsScore();
         int size = proposalsKeys.size();
         for (int i = 0; i < size; i++) {
@@ -499,12 +568,26 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         }
 
         BigInteger totalBudget = proposalBudgets.get(oldHash);
-        proposalBudgets.set(oldHash,null);
-        proposalBudgets.set(newHash,totalBudget);
+        proposalBudgets.set(oldHash, null);
+        proposalBudgets.set(newHash, totalBudget);
+    }
+
+    private static <T> boolean containsInArrayDb(T value, ArrayDB<T> array) {
+        boolean contains = false;
+        if (array == null || value == null) {
+            return contains;
+        }
+
+        for (int i = 0; i < array.size(); i++) {
+            if (array.get(i) != null && array.get(i).equals(value)) {
+                contains = true;
+                break;
+            }
+        }
+        return contains;
     }
 
 
-    
     //EventLogs
     @Override
     @EventLog(indexed = 1)
@@ -528,5 +611,13 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
 
     @EventLog(indexed = 1)
     public void EmergencyFundTransferred(Address _address, BigInteger _value, String _purpose) {
+    }
+
+    @EventLog(indexed = 1)
+    public void FundManagerRewardSet(Address _address, BigInteger _value) {
+    }
+
+    @EventLog(indexed = 1)
+    public void FundManagerRewardClaimed(Address _address, BigInteger _value) {
     }
 }
