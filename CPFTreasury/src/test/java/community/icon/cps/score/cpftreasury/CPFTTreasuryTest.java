@@ -15,15 +15,25 @@ import score.Address;
 import score.Context;
 import score.DictDB;
 import score.VarDB;
+import scorex.util.HashMap;
 
+import java.util.Arrays;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class CPFTTreasuryTest extends TestBase {
     private static final Address score_address = Address.fromString("cx0000000000000000000000000000000000000000");
@@ -737,9 +747,9 @@ public class CPFTTreasuryTest extends TestBase {
 
     @Test
 void setCouncilManagers() {
-    Address A = Address.fromString("cx0000000000000000000000000000000000000007");
-    Address B = Address.fromString("cx0000000000000000000000000000000000000008");
-    Address C = Address.fromString("cx0000000000000000000000000000000000000009");
+    Address A = Address.fromString("hx0000000000000000000000000000000000000007");
+    Address B = Address.fromString("hx0000000000000000000000000000000000000008");
+    Address C = Address.fromString("hx0000000000000000000000000000000000000009");
 
     Address[] CManagers = {A, B, C};
 
@@ -754,6 +764,85 @@ void setCouncilManagers() {
         }
     }
 }
+
+// @Test
+// public void testSetRewardPool() {
+//     final String AVAILABLE_BALANCE = "availableBalance";
+
+//     String initialFundKey = "INITIAL_FUND";
+//     String finalFundKey = "FINAL_FUND";
+//     String invalidKey = "INVALID_KEY";
+//     BigInteger availableBalance = BigInteger.valueOf(1000);
+
+//     Map<String, BigInteger> totalFund = new HashMap<>();
+//     totalFund.put(AVAILABLE_BALANCE, availableBalance);
+
+//     VarDB<BigInteger> rewardPoolMock = mock(VarDB.class);
+
+//     CPFTreasury cpsScore = mock(CPFTreasury.class);
+//     when(((CPFTreasury) cpsScore).getTotalFundBNUSD()).thenReturn(totalFund);
+
+//     ((CPFTreasury) cpsScore).setRewardPool(initialFundKey);
+//     verify(rewardPoolMock).set(availableBalance);
+
+//     ((CPFTreasury) cpsScore).setRewardPool(finalFundKey);
+//     verify(rewardPoolMock).set(availableBalance);
+
+//     IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+//         ((CPFTreasury) cpsScore).setRewardPool(invalidKey);
+//     });
+//     assertTrue(exception.getMessage().contains("incorrectKeyForPool"));
+// }
+
+public class RewardVoteTest {
+
+    private final BigInteger EXA = BigInteger.valueOf(1_000_000_000_000_000_000L);
+
+    @Test
+    public void testRewardVote() {
+        MockedStatic<Context> contextMock = mockStatic(Context.class);
+
+        BigInteger newFunds = BigInteger.valueOf(400).multiply(EXA); 
+
+        contextMock.when(() -> getRemainingFund()).thenReturn(newFunds);
+
+        Address A = Address.fromString("hx0000000000000000000000000000000000000001");
+        Address B = Address.fromString("hx0000000000000000000000000000000000000002");
+        List<Address> councilManagers = Arrays.asList(A, B);
+        contextMock.when(() -> getCouncilManagers()).thenReturn(councilManagers);
+
+        rewardVote();
+
+        BigInteger expectedRewardPerManager = BigInteger.valueOf(4).multiply(EXA); 
+        contextMock.verify(() -> Context.call(A, "distributeRewardToFundManagers", expectedRewardPerManager));
+        contextMock.verify(() -> Context.call(B, "distributeRewardToFundManagers", expectedRewardPerManager));
+
+        contextMock.close();
+    }
+
+    private BigInteger getRemainingFund() {
+        return BigInteger.ZERO;
+    }
+
+    private List<Address> getCouncilManagers() {
+        return Arrays.asList();
+    }
+
+    private void rewardVote() {
+        BigInteger initialFund = getRemainingFund();
+        BigInteger finalFund = BigInteger.valueOf(400).multiply(EXA); 
+
+        BigInteger rewardPool = finalFund.subtract(initialFund).multiply(BigInteger.valueOf(2)).divide(BigInteger.valueOf(100));
+        List<Address> councilManagers = getCouncilManagers();
+        BigInteger rewardPerManager = rewardPool.divide(BigInteger.valueOf(councilManagers.size()));
+
+        for (Address manager : councilManagers) {
+            Context.call(manager, "distributeRewardToFundManagers", rewardPerManager);
+        }
+    }
+}
+
+
 
     public void expectErrorMessage(Executable contractCall, String errorMessage) {
         AssertionError e = Assertions.assertThrows(AssertionError.class, contractCall);
