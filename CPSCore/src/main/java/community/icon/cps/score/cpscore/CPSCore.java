@@ -1262,7 +1262,6 @@ public class CPSCore implements CPSCoreInterface {
                     period.updatePeriodIndex.set(updateIndex + 1);
                     callScore(getCpfTreasuryScore(), "setRewardPool", "finalFund");
                     updateProposalsResult();
-
                     PeriodUpdate("Period Update State 1/4. Period Updated to Transition Period. " +
                             "After all the calculations are completed, " +
                             "Period will change to " + APPLICATION_PERIOD);
@@ -1294,7 +1293,6 @@ public class CPSCore implements CPSCoreInterface {
                     burn(proposalFees.get(), null);
                     proposalFees.set(BigInteger.ZERO);
                     callScore(getCpfTreasuryScore(), "distributeRewardToFundManagers");
-
                 }
 
             }

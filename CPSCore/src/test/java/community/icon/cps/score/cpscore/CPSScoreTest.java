@@ -834,6 +834,8 @@ public class CPSScoreTest extends TestBase {
     }
 
     void updatePeriods() {
+        doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("distributeRewardToFundManagers"));
+        doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("setRewardPool"), any());
         //        1/4
         cpsScore.invoke(owner, "updatePeriod");
         //        2/4
@@ -864,6 +866,7 @@ public class CPSScoreTest extends TestBase {
 
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("resetSwapState"));
         doReturn(BigInteger.valueOf(15)).when(scoreSpy).getVotingPeriod();
+        
         updatePeriods();
 
         Map<String, Object> proposalDetails = getProposalDetailsByHash("Proposal 1");
@@ -2075,73 +2078,6 @@ public class CPSScoreTest extends TestBase {
     }
 
     //begin
-//     @Test
-//     void testhasTwoThirdsMajority(){
-//         String key="test";
-
-//         doReturn(BigInteger.valueOf(15)).when(scoreSpy).getSponsorBondPercentage();
-//         registerPrepsMethod();
-        
-
-//         //need attributes?
-
-//         //set flag to true for mock test
-//         //doReturn(true).when(cpsScore).call(Boolean.class, ((Object) cpfTreasury).get(), "getCouncilFlag");
-//         // boolean councilFlag = true;
-//         doReturn(true).when(scoreSpy).getCouncilFlag();
-
-// // sponsor address sponsor voter valid prep ma exist huna paryo
-// //votes 3 wota weight 100= constant 100x10=1000
-
-//         setMilestoneVotes(key, BigInteger.valueOf(1000), 10);
-//         setApprovedVotes(key, BigInteger.valueOf(700), 7,true);
-
-//         Boolean result = call(Boolean.class, cpsScore.getAddress(), "hasTwoThirdsMajority", key);
-//         assertTrue(result, "Should meet 2/3 majority");
-
-//         contextMock.when(caller()).thenReturn(testingAccount.getAddress());
-//         setMilestoneVotes(key, BigInteger.valueOf(1000), 10);
-//         setApprovedVotes(key, BigInteger.valueOf(300), 3, true);
-       
-//         result = call(Boolean.class, cpsScore.getAddress(), "hasTwoThirdsMajority", key);
-//         assertFalse(result, "Should meet 2/3 majority");
-
-//         //flag to false
-//         // doReturn(false).when(cpsScore).call(Boolean.class, ((Object) cpfTreasury).get(), "getCouncilFlag");
-//         //  councilFlag = false;
-//         doReturn(false).when(scoreSpy).getCouncilFlag();
-
-//         contextMock.when(caller()).thenReturn(testingAccount1.getAddress());
-//         setMilestoneVotes(key, BigInteger.valueOf(1000), 10);
-//         setApprovedVotes(key, BigInteger.valueOf(700), 7, true);
-       
-//         result = call(Boolean.class, cpsScore.getAddress(), "hasTwoThirdsMajority", key);
-//         assertTrue(result, "Should meet 2/3 majority");
-
-//         contextMock.when(caller()).thenReturn(testingAccount.getAddress());
-//         setMilestoneVotes(key, BigInteger.valueOf(1000), 10);
-//         setApprovedVotes(key, BigInteger.valueOf(300), 3, true);
-        
-//         result = call(Boolean.class, cpsScore.getAddress(), "hasTwoThirdsMajority", key);
-//         assertFalse(result, "Should meet 2/3 majority");
-
-//     }
-
-//     private Boolean call(Class<Boolean> returnType, Address address, String method, String key) {
-//         return Context.call(returnType, address, method, key);
-// }
-
-//     void setMilestoneVotes(String key, BigInteger totalVotes, int totalVoters) {
-//         cpsScore.invoke(owner, "setTotalVotes", key, totalVotes, totalVoters, true);
-//     }
-    
-//     void setProposalVotes(String key, BigInteger totalVotes, int totalVoters) {
-//         cpsScore.invoke(owner, "setTotalVotes", key, totalVotes, totalVoters, false);
-//     }
-    
-//     void setApprovedVotes(String key, BigInteger approvedVotes, int approveVoters, boolean isMilestone) {
-//         cpsScore.invoke(owner, "setApprovedVotes", key, approvedVotes, approveVoters, isMilestone);
-//     }
 
     public class VotingTest {
 
@@ -2194,8 +2130,6 @@ public class CPSScoreTest extends TestBase {
         Boolean isMajorityAfterThirdVote = (Boolean)cpsScore.call("hasTwoThirdsMajority","Proposal 1", true);
         assertTrue(isMajorityAfterThirdVote); // Expecting true
     }
-
-
 }
     //end
 

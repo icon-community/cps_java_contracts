@@ -767,6 +767,8 @@ void setCouncilManagers() {
 
 // @Test
 // public void testSetRewardPool() {
+    // setCPSScoreMethod(score_address);
+
 //     final String AVAILABLE_BALANCE = "availableBalance";
 
 //     String initialFundKey = "INITIAL_FUND";
@@ -800,6 +802,7 @@ public class RewardVoteTest {
 
     @Test
     public void testRewardVote() {
+        setCPSScoreMethod(score_address);
         MockedStatic<Context> contextMock = mockStatic(Context.class);
 
         BigInteger newFunds = BigInteger.valueOf(400).multiply(EXA); 
