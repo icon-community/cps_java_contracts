@@ -801,68 +801,6 @@ public void testSetRewardPool() {
     // assertTrue(exception.getMessage().contains("incorrectKeyForPool"));
 }
 
-// @Test
-// void setRewardPoolTest() {
-//     String validKeyInitial = "INITIAL_FUND";
-//     String validKeyFinal = "FINAL_FUND";
-//     String invalidKey = "INVALID_FUND";
-
-//     try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
-
-//         // Mock the valid key scenario for INITIAL_FUND
-//         theMock.when(() -> Context.require(validKeyInitial.equals("INITIAL_FUND") || validKeyInitial.equals("FINAL_FUND"), "TAG: incorrectKeyForPool"))
-//                 .thenAnswer(invocation -> null); // Just pass
-
-//         // Invoke the method with valid INITIAL_FUND key
-//         tokenScore.invoke(owner, "setRewardPool", validKeyInitial);
-
-//         // Mock the valid key scenario for FINAL_FUND
-//         theMock.when(() -> Context.require(validKeyFinal.equals("INITIAL_FUND") || validKeyFinal.equals("FINAL_FUND"), "TAG: incorrectKeyForPool"))
-//                 .thenAnswer(invocation -> null); // Just pass
-
-//         // Invoke the method with valid FINAL_FUND key
-//         tokenScore.invoke(owner, "setRewardPool", validKeyFinal);
-
-//         // Mock the invalid key scenario
-//         theMock.when(() -> Context.require(invalidKey.equals("INITIAL_FUND") || invalidKey.equals("FINAL_FUND"), "TAG: incorrectKeyForPool"))
-//                 .thenThrow(new AssertionError("TAG: incorrectKeyForPool"));
-
-//         // Test the invalid key and expect an AssertionError
-//         assertThrows(AssertionError.class, () -> tokenScore.invoke(owner, "setRewardPool", invalidKey));
-//     }
-// }
-
-
-// @Test
-// public void testSetRewardPool() {
-    // setCPSScoreMethod(score_address);
-
-//     final String AVAILABLE_BALANCE = "availableBalance";
-
-//     String initialFundKey = "INITIAL_FUND";
-//     String finalFundKey = "FINAL_FUND";
-//     String invalidKey = "INVALID_KEY";
-//     BigInteger availableBalance = BigInteger.valueOf(1000);
-
-//     Map<String, BigInteger> totalFund = new HashMap<>();
-//     totalFund.put(AVAILABLE_BALANCE, availableBalance);
-
-//     VarDB<BigInteger> rewardPoolMock = mock(VarDB.class);
-
-//     CPFTreasury cpsScore = mock(CPFTreasury.class);
-//     when(((CPFTreasury) cpsScore).getTotalFundBNUSD()).thenReturn(totalFund);
-
-//     ((CPFTreasury) cpsScore).setRewardPool(initialFundKey);
-//     verify(rewardPoolMock).set(availableBalance);
-
-//     ((CPFTreasury) cpsScore).setRewardPool(finalFundKey);
-//     verify(rewardPoolMock).set(availableBalance);
-
-//     IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-//         ((CPFTreasury) cpsScore).setRewardPool(invalidKey);
-//     });
-//     assertTrue(exception.getMessage().contains("incorrectKeyForPool"));
-// }
 
 public class RewardVoteTest {
 
