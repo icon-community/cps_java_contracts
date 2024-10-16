@@ -2671,7 +2671,7 @@ public class CPSCore implements CPSCoreInterface {
     }
 
     @External(readonly = true)
-    public Boolean hasTwoThirdsMajority(String key, boolean isMilestone) {
+    public boolean hasTwoThirdsMajority(String key, boolean isMilestone) {
         //can also use if else if this doesnt work as intended
 
         //error: milestonedb doesnt have total votes or voters
