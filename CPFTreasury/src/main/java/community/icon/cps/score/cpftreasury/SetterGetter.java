@@ -160,7 +160,7 @@ public class SetterGetter {
 
     @External
     public void setSponsorBondPercentage(BigInteger bondValue) {
-        validateGovernanceContract();
+        validateAdmins();
         Context.call(getCpsScore(), "setSponsorBondPercentage", bondValue);
     }
 
@@ -176,11 +176,9 @@ public class SetterGetter {
         Context.call(getCpsTreasuryScore(), "setOnsetPayment", paymentPercentage);
     }
 
-
     @External
     public void toggleCouncilFlag() {
-        // todo add governance
-        validateAdmins();
+        validateGovernanceContract();
         councilFlag.set(!councilFlag.getOrDefault(false));
     }
 
@@ -191,20 +189,19 @@ public class SetterGetter {
 
     @External
     public void setCouncilManagers(Address[] newCouncilManagers) {
-        //todo governance only
-        int sizeOfCouncilManagers = councilManagers.size();
+        validateGovernanceContract();
+        int sizeOfCouncilManagers = newCouncilManagers.length;
         Context.require(sizeOfCouncilManagers >= 3, TAG + ":: council managers should be greater than 3");
         Context.require(sizeOfCouncilManagers % 2 == 1, TAG + ":: council managers should be an odd number");
-        if (sizeOfCouncilManagers > 0) {
+        if (councilManagers.size() > 0) {
             clearArrayDb(councilManagers);
         }
-        int sizeOfNewManagers = newCouncilManagers.length;
-        for (int i = 0; i < sizeOfNewManagers; i++) {
-            councilManagers.add(newCouncilManagers[i]);
+        for (Address newCouncilManager : newCouncilManagers) {
+            councilManagers.add(newCouncilManager);
         }
     }
 
-    @External
+    @External(readonly = true)
     public List<Address> getCouncilManagers() {
         return arrayDBtoList(councilManagers);
     }
