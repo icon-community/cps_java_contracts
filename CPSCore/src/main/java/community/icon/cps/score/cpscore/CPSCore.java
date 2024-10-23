@@ -344,7 +344,9 @@ public class CPSCore implements CPSCoreInterface {
             int index = getCouncilManagers().indexOf(address);
             return "Council Manager " + (index + 1);
         }
-        return (String) getPRepInfo(address).get("name");
+        else {
+            return (String) getPRepInfo(address).get("name");
+        }
     }
 
     private BigInteger getStake(Address address) {
@@ -678,6 +680,7 @@ public class CPSCore implements CPSCoreInterface {
         String ipfsHashPrefix = proposalPrefix(ipfsHash);
 
         addDataToProposalDB(proposals, ipfsHashPrefix);
+        councilFlag.at(ipfsHashPrefix).set(getCouncilFlag());
         BigInteger initialPaymentPercentage = callScore(BigInteger.class, getCpsTreasuryScore(), "getOnsetPayment");
 
         BigInteger totalBudget = proposals.total_budget.multiply(EXA);
@@ -1436,7 +1439,6 @@ public class CPSCore implements CPSCoreInterface {
                 } else {
                     if (majorityFlag) {
                         _approved_reports_count += 1;
-
                         if (milestoneStatus == MILESTONE_REPORT_COMPLETED) {
                             milestonePassed += 1;
                             milestoneBudget = milestoneBudget.add(MilestoneDb.budget.at(milestonePrefix).getOrDefault(BigInteger.ZERO));

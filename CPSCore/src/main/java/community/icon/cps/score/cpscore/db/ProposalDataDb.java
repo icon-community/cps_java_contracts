@@ -1,15 +1,13 @@
 package community.icon.cps.score.cpscore.db;
 
+import community.icon.cps.score.lib.interfaces.CPSCoreInterface.ProposalAttributes;
 import score.*;
 
 import java.math.BigInteger;
 import java.util.Map;
 
-import community.icon.cps.score.lib.interfaces.CPSCoreInterface.ProposalAttributes;
-
 import static community.icon.cps.score.cpscore.utils.ArrayDBUtils.recordTxHash;
 import static community.icon.cps.score.cpscore.utils.Constants.*;
-import static community.icon.cps.score.lib.interfaces.CPSCoreInterface.ProposalAttributes;
 
 public class ProposalDataDb {
     public static final BranchDB<String, VarDB<String>> ipfsHash = Context.newBranchDB(IPFS_HASH, String.class);
@@ -73,10 +71,7 @@ public class ProposalDataDb {
         token.at(prefix).set(proposalData.token);
         milestoneCount.at(prefix).set(proposalData.milestoneCount);
         isMilestone.at(prefix).set(true);
-
         majorityFlag.at(prefix).set(false);
-        councilFlag.at(prefix).set(false);
-
     }
 
     public static void updatePercentageCompleted(String prefix, int percentage) {
