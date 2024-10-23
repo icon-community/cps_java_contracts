@@ -1,4 +1,4 @@
-version = '1.3.9'
+version = '1.5.5'
 
 dependencies {
 
@@ -35,31 +35,25 @@ deployJar {
         lisbon {
             uri = 'https://lisbon.net.solidwallet.io/api/v3'
             nid = 0x2
-            to = 'cx8e21d3b7a70aeeaca45d4a70c31a6b959f5823bd'
-        }
-        local {
-            uri = 'http://localhost:9082/api/v3'
-            nid = 0x3
-        }
-        berlin {
-            uri = 'https://berlin.net.solidwallet.io/api/v3'
-            nid = 0x7
-        }
-        sejong {
-            uri = 'https://sejong.net.solidwallet.io/api/v3'
-            nid = 0x53
-            to = 'cx2b214d56805531b9c878c4d4ff0e53d961c60834'
+            to = "cx1a7a9bde78fe14e2aeea03966c6d7260575627f5"
         }
         mainnet {
             uri = 'https://ctz.solidwallet.io/api/v3'
             nid = 0x1
             to = 'cx9f4ab72f854d3ccdc59aa6f2c3e2215dd62e879f'
         }
-
+        devnet{
+            uri = "https://tt.net.solidwallet.io/api/v3"
+            nid = 0x3
+            to = "cx5100c8b221cc373939d8a720ecfbd90440c75ed3"
+        }
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
     parameters {
+        arg("applicationPeriod", "15")
+        arg("bondValue", "15")
+
     }
 }
 

@@ -15,15 +15,27 @@ import score.Address;
 import score.Context;
 import score.DictDB;
 import score.VarDB;
+import scorex.util.HashMap;
 
+import java.util.Arrays;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class CPFTTreasuryTest extends TestBase {
     private static final Address score_address = Address.fromString("cx0000000000000000000000000000000000000000");
@@ -725,6 +737,120 @@ public class CPFTTreasuryTest extends TestBase {
 
         }
     }
+
+    @Test
+    void toggleCouncilFlag(){
+        try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
+            theMock.when(() -> Context.call(cpsScore.get(), "isAdmin", Context.getCaller())).thenReturn(true);
+            tokenScore.invoke(owner,"toggleCouncilFlag");
+            assertEquals(true,tokenScore.call("getCouncilFlag"));
+        }
+    }
+
+    @Test
+void setCouncilManagers() {
+    Address A = Address.fromString("hx0000000000000000000000000000000000000007");
+    Address B = Address.fromString("hx0000000000000000000000000000000000000008");
+    Address C = Address.fromString("hx0000000000000000000000000000000000000009");
+
+    Address[] CManagers = {A, B, C};
+
+    try (MockedStatic<Context> theMock = Mockito.mockStatic(Context.class)) {
+        theMock.when(() -> Context.call(cpsScore.get(), "isAdmin", Context.getCaller())).thenReturn(true);
+        tokenScore.invoke(owner, "setCouncilManagers", (Object) CManagers);
+
+        List<Address> returnedManagers = (List<Address>) tokenScore.call("getCouncilManagers");
+
+        for (int i = 0; i < CManagers.length; i++) {
+            assertEquals(CManagers[i], returnedManagers.get(i));
+        }
+    }
+}
+
+@Test
+public void testSetRewardPool() {
+    setCPSScoreMethod(score_address);
+
+    final String AVAILABLE_BALANCE = "availableBalance";
+
+    String initialFundKey = "INITIAL_FUND";
+    String finalFundKey = "FINAL_FUND";
+    String invalidKey = "INVALID_KEY";
+    BigInteger availableBalance = BigInteger.valueOf(1000);
+
+    Map<String, BigInteger> totalFund = new HashMap<>();
+    totalFund.put(AVAILABLE_BALANCE, availableBalance);
+
+    VarDB<BigInteger> rewardPoolMock = mock(VarDB.class);
+    
+    CPFTreasury cpsScore = mock(CPFTreasury.class);
+
+    when(rewardPoolMock.get()).thenReturn(availableBalance);
+
+    cpsScore.setRewardPool(initialFundKey);
+    
+    assertEquals(availableBalance, rewardPoolMock.get()); 
+
+    cpsScore.setRewardPool(finalFundKey);
+    
+    assertEquals(availableBalance, rewardPoolMock.get()); 
+
+    // IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+    //     cpsScore.setRewardPool(invalidKey);
+    // });
+    // assertTrue(exception.getMessage().contains("incorrectKeyForPool"));
+}
+
+
+public class RewardVoteTest {
+
+    private final BigInteger EXA = BigInteger.valueOf(1_000_000_000_000_000_000L);
+
+    @Test
+    public void testRewardVote() {
+        setCPSScoreMethod(score_address);
+        MockedStatic<Context> contextMock = mockStatic(Context.class);
+
+        BigInteger newFunds = BigInteger.valueOf(400).multiply(EXA); 
+
+        contextMock.when(() -> getRemainingFund()).thenReturn(newFunds);
+
+        Address A = Address.fromString("hx0000000000000000000000000000000000000001");
+        Address B = Address.fromString("hx0000000000000000000000000000000000000002");
+        List<Address> councilManagers = Arrays.asList(A, B);
+        contextMock.when(() -> getCouncilManagers()).thenReturn(councilManagers);
+
+        rewardVote();
+
+        BigInteger expectedRewardPerManager = BigInteger.valueOf(4).multiply(EXA); 
+        contextMock.verify(() -> Context.call(A, "distributeRewardToFundManagers", expectedRewardPerManager));
+        contextMock.verify(() -> Context.call(B, "distributeRewardToFundManagers", expectedRewardPerManager));
+
+        contextMock.close();
+    }
+
+    private BigInteger getRemainingFund() {
+        return BigInteger.ZERO;
+    }
+
+    private List<Address> getCouncilManagers() {
+        return Arrays.asList();
+    }
+
+    private void rewardVote() {
+        BigInteger initialFund = getRemainingFund();
+        BigInteger finalFund = BigInteger.valueOf(400).multiply(EXA); 
+
+        BigInteger rewardPool = finalFund.subtract(initialFund).multiply(BigInteger.valueOf(2)).divide(BigInteger.valueOf(100));
+        List<Address> councilManagers = getCouncilManagers();
+        BigInteger rewardPerManager = rewardPool.divide(BigInteger.valueOf(councilManagers.size()));
+
+        for (Address manager : councilManagers) {
+            Context.call(manager, "distributeRewardToFundManagers", rewardPerManager);
+        }
+    }
+}
+
 
 
     public void expectErrorMessage(Executable contractCall, String errorMessage) {

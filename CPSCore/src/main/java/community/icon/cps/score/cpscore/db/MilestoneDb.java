@@ -23,12 +23,16 @@ public class MilestoneDb {
 
     public static final BranchDB<String, BranchDB<Address, DictDB<String, Integer>>> votersListIndices = Context.newBranchDB(VOTERS_LIST_INDEXES, Integer.class);
 
+    public static final BranchDB<String, VarDB<Boolean>> majorityFlag = Context.newBranchDB(MAJORITY_FLAG, Boolean.class);
+
     public static void addDataToMilestoneDb(CPSCoreInterface.MilestonesAttributes milestoneData, String prefix) {
         id.at(prefix).set(milestoneData.id);
         approvedVotes.at(prefix).set(BigInteger.ZERO);
         rejectedVotes.at(prefix).set(BigInteger.ZERO);
         completionPeriod.at(prefix).set(milestoneData.completionPeriod);
         budget.at(prefix).set(milestoneData.budget);
+
+        majorityFlag.at(prefix).set(false);
 
     }
 
@@ -46,7 +50,10 @@ public class MilestoneDb {
                 Map.entry(TOTAL_VOTERS, ProgressReportDataDb.totalVoters.at(progressReportPrefix(reportHash)).getOrDefault(0)),
                 Map.entry(APPROVE_VOTERS, approveVoters.at(prefix).size()),
                 Map.entry(REJECT_VOTERS, rejectVoters.at(prefix).size()),
-                Map.entry(EXTENSION_FLAG, extensionFlag.at(prefix).getOrDefault(false)));
+                Map.entry(EXTENSION_FLAG, extensionFlag.at(prefix).getOrDefault(false)),
+
+                Map.entry(MAJORITY_FLAG, majorityFlag.at(prefix).getOrDefault(false)));
+
     }
 
     public static String progressReportPrefix(String progressHash) {

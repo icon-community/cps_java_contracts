@@ -2,17 +2,16 @@ package dummy.contract.dex;
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
+import community.icon.cps.score.lib.interfaces.DexInterface;
 import score.Address;
 import score.Context;
 import score.VarDB;
 import score.annotation.EventLog;
 import score.annotation.External;
+import score.annotation.Payable;
 
 import java.math.BigInteger;
 import java.util.Arrays;
-
-import community.icon.cps.score.lib.interfaces.DexInterface;
-import score.annotation.Payable;
 
 public class Dex implements DexInterface {
     private static final String TAG = "Balanced DEX";
@@ -29,7 +28,7 @@ public class Dex implements DexInterface {
     }
 
     @External(readonly = true)
-    public BigInteger getPrice(int poolId) {
+    public BigInteger getPrice(int _id) {
         return BigInteger.ONE;
     }
 
@@ -71,7 +70,6 @@ public class Dex implements DexInterface {
         // Call an internal method based on the "method" param sent in tokenFallBack
         switch (method) {
             case "_swap_icx": {
-                Context.println("the sicx is " + sicx.get());
                 Context.require(fromToken.equals(sicx.get()),
                         TAG + ": InvalidAsset: _swap_icx can only be called with sICX");
                 swapIcx(_from, _value);
@@ -79,7 +77,6 @@ public class Dex implements DexInterface {
 
             }
             case "_swap": {
-                Context.println("the thus us called");
 
                 // Parse the slippage sent by the user in minimumReceive.
                 // If none is sent, use the maximum.
@@ -104,12 +101,8 @@ public class Dex implements DexInterface {
                 Address toToken = Address.fromString(params.get("toToken").asString());
 
                 // Perform the swap
-                Context.println("from token "+ fromToken);
-                Context.println("from token "+ toToken);
-                Context.println("from "+ _from);
-                Context.println("receiver "+ receiver);
+
                 exchange(fromToken, toToken, _from, receiver, _value, minimumReceive);
-                Context.println("after the exchange ");
 
                 break;
             }
@@ -124,7 +117,6 @@ public class Dex implements DexInterface {
     }
 
     void swapIcx(Address sender, BigInteger value) {
-        Context.println("the sender is "+ sender);
         Context.transfer(sender, value);
     }
 
@@ -136,11 +128,8 @@ public class Dex implements DexInterface {
         }
 
         // Send the trader their funds
-        Context.println("is it heree?");
-        Context.println("roe "+ toToken);
-        Context.println("roe "+ receiver);
+
         Context.call(toToken, "transfer", receiver, value);
-        Context.println("lets check this  " + Context.getAddress());
 
         Swap(BigInteger.valueOf(0), fromToken, fromToken, toToken, sender, receiver, value, value,
                 BigInteger.valueOf(Context.getBlockTimestamp()), BigInteger.ZERO, BigInteger.ZERO, BigInteger.ZERO, BigInteger.ZERO, BigInteger.ZERO

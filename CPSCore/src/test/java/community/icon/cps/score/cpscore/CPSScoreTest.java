@@ -5,12 +5,18 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
+
+import community.icon.cps.score.cpscore.db.MilestoneDb;
 import community.icon.cps.score.cpscore.utils.Constants;
 import community.icon.cps.score.lib.interfaces.CPSCoreInterface;
+import community.icon.cps.score.lib.interfaces.CPSCoreInterface.ProgressReportAttributes;
+import community.icon.cps.score.lib.interfaces.CPSCoreInterface.ProposalAttributes;
+
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.function.Executable;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.mockito.stubbing.Answer;
 import score.Address;
 import score.ArrayDB;
@@ -20,12 +26,17 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import scorex.util.HashMap;
+
 
 import static community.icon.cps.score.cpscore.utils.Constants.*;
 import static community.icon.cps.score.lib.interfaces.CPSCoreInterface.ProgressReportAttributes;
 import static community.icon.cps.score.lib.interfaces.CPSCoreInterface.ProposalAttributes;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -499,6 +510,9 @@ public class CPSScoreTest extends TestBase {
 
     void submitAndSponsorVote() {
         submitProposalMethod();
+
+        doReturn(false).when(scoreSpy).getCouncilFlag();
+
         contextMock.when(caller()).thenReturn(bnUSDScore);
         JsonObject sponsorVoteParams = new JsonObject();
         sponsorVoteParams.add("method", "sponsorVote");
@@ -604,6 +618,14 @@ public class CPSScoreTest extends TestBase {
     }
 
     void voteProposalMethod() {
+
+        // doReturn(List.of(cpfTreasury)).when(scoreSpy).callScore(cpfTreasury, "getCouncilManagers");
+        
+        doReturn(List.of(cpfTreasury)).when(scoreSpy).callScore(List.class, cpfTreasury, "getCouncilManagers");
+        doReturn(false).when(scoreSpy).getCouncilFlag();
+
+        //mockito void method cannot be stubbed.
+
         submitAndSponsorVote();
         contextMock.when(caller()).thenReturn(owner.getAddress());
         updateNextBlock();
@@ -720,6 +742,9 @@ public class CPSScoreTest extends TestBase {
         String[] proposal = new String[]{"Proposal 0", "Proposal 1", "Proposal 2", "Proposal 3", "Proposal 4", "Proposal 5",
                 "Proposal 6", "Proposal 7", "Proposal 8", "Proposal 9"};
 
+
+        doReturn(false).when(scoreSpy).getCouncilFlag();
+
         for (int i = 0; i < 10; i++) {
             contextMock.when(caller()).thenReturn(owner.getAddress());
             cpsScore.invoke(owner, "voteProposal", "Proposal " + i, APPROVE, "reason", false);
@@ -768,6 +793,9 @@ public class CPSScoreTest extends TestBase {
 
     void voteProposalMethodReject() {
         submitAndSponsorVote();
+
+        doReturn(false).when(scoreSpy).getCouncilFlag();
+
         contextMock.when(caller()).thenReturn(owner.getAddress());
         updateNextBlock();
         doReturn(BigInteger.valueOf(15)).when(scoreSpy).getApplicationPeriod();
@@ -806,6 +834,8 @@ public class CPSScoreTest extends TestBase {
     }
 
     void updatePeriods() {
+        doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("distributeRewardToFundManagers"));
+        doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("setRewardPool"), any());
         //        1/4
         cpsScore.invoke(owner, "updatePeriod");
         //        2/4
@@ -836,6 +866,7 @@ public class CPSScoreTest extends TestBase {
 
         doNothing().when(scoreSpy).callScore(eq(cpfTreasury), eq("resetSwapState"));
         doReturn(BigInteger.valueOf(15)).when(scoreSpy).getVotingPeriod();
+        
         updatePeriods();
 
         Map<String, Object> proposalDetails = getProposalDetailsByHash("Proposal 1");
@@ -2046,6 +2077,61 @@ public class CPSScoreTest extends TestBase {
 
     }
 
+    //begin
+
+    public class VotingTest {
+
+    private void commonSetup() {
+        
+        // Mock methods and setup initial conditions
+        doReturn(BigInteger.valueOf(3)).when(scoreSpy).callScore(eq(BigInteger.class), any(), eq("getTotalVotes"), any());
+        doReturn(BigInteger.ZERO).when(scoreSpy).callScore(eq(BigInteger.class), any(), eq("getApprovedVotes"), any());
+        doReturn(3).when(scoreSpy).callScore(eq(Integer.class), any(), eq("getTotalVoters"), any());
+    }
+
+    @Test
+    public void testVotingProcess() {
+        // Setup required for this specific test
+        commonSetup();
+
+        // Simulate the first voter
+        CPSCoreInterface.MilestoneVoteAttributes firstVote = new CPSCoreInterface.MilestoneVoteAttributes();
+        firstVote.vote = APPROVE;
+        firstVote.id = 1;
+
+        // Invoke the voting method for the first voter
+        cpsScore.invoke(owner, "voteProposal", "Proposal 1", firstVote, false);
+
+        // Check if the majority is met after the first vote
+        boolean isMajorityAfterFirstVote = (Boolean)cpsScore.call("hasTwoThirdsMajority","Proposal 1", true);
+        assertFalse(isMajorityAfterFirstVote); // Expecting false
+
+        // Simulate the second voter
+        CPSCoreInterface.MilestoneVoteAttributes secondVote = new CPSCoreInterface.MilestoneVoteAttributes();
+        secondVote.vote = REJECT;
+        secondVote.id = 2;
+
+        // Invoke the voting method for the second voter
+        cpsScore.invoke(owner, "voteProposal", "Proposal 1", secondVote, false);
+
+        // Check if the majority is met after the second vote
+        boolean isMajorityAfterSecondVote = (Boolean)cpsScore.call("hasTwoThirdsMajority","Proposal 1", true);
+        assertFalse(isMajorityAfterSecondVote); // Expecting false
+
+        // Simulate the third voter
+        CPSCoreInterface.MilestoneVoteAttributes thirdVote = new CPSCoreInterface.MilestoneVoteAttributes();
+        thirdVote.vote = APPROVE;
+        thirdVote.id = 3;
+
+        // Invoke the voting method for the third voter
+        cpsScore.invoke(owner, "voteProposal", "Proposal 1", thirdVote, false);
+
+        // Check if the majority is met after the third vote
+        Boolean isMajorityAfterThirdVote = (Boolean)cpsScore.call("hasTwoThirdsMajority","Proposal 1", true);
+        assertTrue(isMajorityAfterThirdVote); // Expecting true
+    }
+}
+    //end
 
     @Test
     void setSwapCount() {
