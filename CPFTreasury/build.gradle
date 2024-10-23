@@ -1,4 +1,4 @@
-version = '1.2.0'
+version = '1.5.0'
 
 dependencies {
 //    compileOnly 'foundation.icon:javaee-api:0.9.1'
@@ -31,26 +31,28 @@ deployJar {
         lisbon {
             uri = 'https://lisbon.net.solidwallet.io/api/v3'
             nid = 0x2
-            to = 'cx3d4182c0e783b7ef97ba63409c4bdf808853bd9f'
+            to = "cxd19ed92de2050a87c709097b6297aadf5f8d7432"
         }
-        local {
-            uri = 'http://localhost:9082/api/v3'
-            nid = 0x3
-        }
-        berlin {
-            uri = 'https://berlin.net.solidwallet.io/api/v3'
-            nid = 0x7
-        }
+
         mainnet {
             uri = 'https://ctz.solidwallet.io/api/v3'
             nid = 0x1
             to = 'cxdca1178010b5368aea929ad5c06abee64b91acc2'
         }
+        devnet{
+            uri = "https://tt.net.solidwallet.io/api/v3"
+            nid = 0x3
+            to = "cx0d0638e5764ede3ed2c9eadd179bc67785868842"
+        }
 
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
+    parameters {
+        arg("cpsScore", "cx5100c8b221cc373939d8a720ecfbd90440c75ed3")
+    }
 }
+
 
 test {
     useJUnitPlatform()

@@ -32,7 +32,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
 
     private final VarDB<BigInteger> treasuryFund = Context.newVarDB(TREASURY_FUND, BigInteger.class);
     private final VarDB<BigInteger> emergencyFund = Context.newVarDB(EMERGENCY_FUND, BigInteger.class);
-    private final DictDB<String, BigInteger> rewardPool = Context.newDictDB(REWARD_POOL, BigInteger.class);
+    public static final DictDB<String, BigInteger> rewardPool = Context.newDictDB(REWARD_POOL, BigInteger.class);
 
     private final VarDB<BigInteger> treasuryFundbnUSD = Context.newVarDB(TREASURY_FUND_BNUSD, BigInteger.class);
 
@@ -45,17 +45,27 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
 
     public static final VarDB<Boolean> councilFlag = Context.newVarDB(COUNCIL_FLAG, Boolean.class);
     public static final ArrayDB<Address> councilManagers = Context.newArrayDB(COUNCIL_MANAGERS, Address.class);
+
+    public static final VarDB<Integer> councilManagerRewardPercentage = Context.newVarDB(COUNCIL_MANAGERS_REWARD_PERCENTAGE, Integer.class);
     public static final DictDB<Address, BigInteger> councilManagersReward = Context.newDictDB(COUNCIL_MANAGERS_REWARD, BigInteger.class);
 
 
     public CPFTreasury(@Optional Address cpsScore) {
         if (treasuryFund.get() == null) {
-            treasuryFund.set(BigInteger.valueOf(1000000).multiply(EXA));
+            treasuryFund.set(BigInteger.valueOf(5000000).multiply(EXA));
             swapCount.set(SwapReset);
             swapState.set(SwapReset);
             swapFlag.set(false);
+            treasuryFundbnUSD.set(BigInteger.valueOf(5000000).multiply(EXA));
             CPFTreasury.cpsScore.set(cpsScore);
         }
+
+        councilFlag.set(true);
+        councilManagers.add(Address.fromString("hxd4eb0a6c591b5e7a76e9a6677da055ebfdd897da"));
+        councilManagers.add(Address.fromString("hx9fa9d224306b0722099d30471b3c2306421aead7"));
+        councilManagers.add(Address.fromString("hx03907c67a68e8d6948cff58f49d39b3d7c8d95ad"));
+        councilManagerRewardPercentage.set(0);
+
     }
 
     private boolean proposalExists(String ipfsKey) {
@@ -112,8 +122,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     @Override
     @External(readonly = true)
     public Map<String, BigInteger> getTotalFunds() {
-        return Map.of(ICX, Context.getBalance(Context.getAddress()),
-                bnUSD, getBNUSDAvailableBalance());
+        return Map.of(ICX, Context.getBalance(Context.getAddress()), bnUSD, getBNUSDAvailableBalance());
     }
 
     @External(readonly = true)
@@ -126,22 +135,32 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         return getTotalFundBNUSD().get(EMERGENCY_FUND);
     }
 
+    @External
+    public void setFundManagersRewards(int paymentPercentage) {
+//        validateGovernanceContract();
+        validateAdmins();
+        Context.require(paymentPercentage >= 0 && paymentPercentage <= 100, TAG + " :InvalidPercentage");
+        councilManagerRewardPercentage.set(paymentPercentage);
+        setRewardPool(INITIAL_FUND);
+    }
+
+    @External(readonly = true)
+    public int getFundManagersRewards() {
+        return councilManagerRewardPercentage.getOrDefault(0);
+    }
 
     private Map<String, BigInteger> getTotalFundBNUSD() {
         BigInteger bnusdBalance = (BigInteger) Context.call(balancedDollar.get(), "balanceOf", Context.getAddress());
         BigInteger emergencyFund = this.emergencyFund.getOrDefault(BigInteger.ZERO);
         BigInteger availableBalance = bnusdBalance.subtract(emergencyFund);
-        return Map.of(BNUSD_BALANCE, bnusdBalance,
-                EMERGENCY_FUND, emergencyFund,
-                AVAILABLE_BALANCE, availableBalance);
+        return Map.of(BNUSD_BALANCE, bnusdBalance, EMERGENCY_FUND, emergencyFund, AVAILABLE_BALANCE, availableBalance);
     }
 
     @Override
     @External(readonly = true)
     public Map<String, BigInteger> getRemainingSwapAmount() {
         BigInteger maxCap = treasuryFundbnUSD.get();
-        return Map.of(MAX_CAP, maxCap,
-                REMAINING_TO_SWAP, maxCap.subtract(getBNUSDAvailableBalance()));
+        return Map.of(MAX_CAP, maxCap, REMAINING_TO_SWAP, maxCap.subtract(getBNUSDAvailableBalance()));
     }
 
     private void returnFundAmount(Address address, BigInteger value) {
@@ -152,9 +171,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
 
     @Override
     @External
-    public void transferProposalFundToCpsTreasury(String ipfsKey, int projectDuration,
-                                                  Address sponsorAddress, Address contributorAddress,
-                                                  String tokenFlag, BigInteger totalBudget) {
+    public void transferProposalFundToCpsTreasury(String ipfsKey, int projectDuration, Address sponsorAddress, Address contributorAddress, String tokenFlag, BigInteger totalBudget) {
         validateCpsScore();
         Context.require(!proposalExists(ipfsKey), TAG + ": Project already exists. Invalid IPFS Hash");
         Context.require(tokenFlag.equals(bnUSD), TAG + ": " + tokenFlag + " is not supported. Only " + bnUSD + " token available.");
@@ -186,8 +203,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
 
     @Override
     @External
-    public void updateProposalFund(String ipfsKey, @Optional String flag, @Optional BigInteger addedBudget,
-                                   @Optional int totalInstallmentCount) {
+    public void updateProposalFund(String ipfsKey, @Optional String flag, @Optional BigInteger addedBudget, @Optional int totalInstallmentCount) {
         validateCpsScore();
         Context.require(proposalExists(ipfsKey), TAG + ": IPFS hash does not exist.");
         Context.require(flag != null && flag.equals(bnUSD), TAG + ": Unsupported token. " + flag);
@@ -415,40 +431,37 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
     public Map<String, BigInteger> getRewardPool() {
         BigInteger finalFund = rewardPool.getOrDefault(FINAL_FUND, BigInteger.ZERO);
         BigInteger initialFund = rewardPool.getOrDefault(INITIAL_FUND, BigInteger.ZERO);
-        BigInteger rewardPool = finalFund.subtract(initialFund).multiply(BigInteger.valueOf(2).divide(BigInteger.valueOf(100)));
-        return Map.of(INITIAL_FUND, initialFund,
-                FINAL_FUND, finalFund,
-                "rewardPool", rewardPool);
+        BigInteger fundDiff = finalFund.subtract(initialFund);
+        BigInteger rewardPool = fundDiff.multiply(BigInteger.valueOf(getFundManagersRewards())).divide(BigInteger.valueOf(100));
+        return Map.of(INITIAL_FUND, initialFund, FINAL_FUND, finalFund, REWARD_POOL, rewardPool);
     }
 
     @External
     public void distributeRewardToFundManagers() {
         validateCpsScore();
+        if (getFundManagersRewards() > 0) {
+            try {
+                Map<String, BigInteger> rewardPool = getRewardPool();
+                BigInteger initialFund = rewardPool.get(INITIAL_FUND);
+                BigInteger finalFund = rewardPool.get(FINAL_FUND);
 
-        try {
-            Map<String, BigInteger> rewardPool = getRewardPool();
-            BigInteger initialFund = rewardPool.get(INITIAL_FUND);
-            BigInteger finalFund = rewardPool.get(FINAL_FUND);
+                Context.require((initialFund.compareTo(BigInteger.ZERO) > 0 && finalFund.compareTo(BigInteger.ZERO) > 0), TAG + ": RewardPoolIsEmpty");
 
-            Context.require((initialFund.compareTo(BigInteger.ZERO) > 0 && finalFund.compareTo(BigInteger.ZERO) > 0),
-                    TAG + ": RewardPoolIsEmpty");
+                BigInteger rewardPoolAmount = rewardPool.get(REWARD_POOL);
+                int len = councilManagers.size();
+                BigInteger rewardAmount = rewardPoolAmount.divide(BigInteger.valueOf(len));
 
-            BigInteger rewardPoolAmount = rewardPool.get("rewardPool");
+                for (int i = 0; i < len; i++) {
+                    Address manager = councilManagers.get(i);
+                    councilManagersReward.set(manager, councilManagersReward.getOrDefault(manager, BigInteger.ZERO).add(rewardAmount));
+                    FundManagerRewardSet(manager, rewardAmount);
+                }
 
-
-            int len = councilManagers.size();
-            BigInteger rewardAmount = rewardPoolAmount.divide(BigInteger.valueOf(len));
-
-            for (int i = 0; i < len; i++) {
-                Address manager = councilManagers.get(i);
-                councilManagersReward.set(manager, councilManagersReward.getOrDefault(manager, BigInteger.ZERO).add(rewardAmount));
-                FundManagerRewardSet(manager, rewardAmount);
+            } catch (Exception e) {
+                Context.println("Error in distributeRewardToFundManagers: " + e.getMessage());
             }
-
-        } catch (Exception e) {
-            Context.println("Error in distributeRewardToFundManagers: " + e.getMessage());
+            setRewardPool(INITIAL_FUND);
         }
-        setRewardPool(INITIAL_FUND);
     }
 
     @External(readonly = true)
@@ -465,7 +478,6 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         councilManagersReward.set(manager, BigInteger.ZERO);
         Context.call(balancedDollar.get(), TRANSFER, manager, rewardAmount, "".getBytes());
         FundManagerRewardClaimed(manager, rewardAmount);
-
     }
 
     @Override
@@ -507,8 +519,7 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         Address sICX = sICXScore.get();
         Address caller = Context.getCaller();
 
-        Context.require(caller.equals(bnUSDScore) || caller.equals(sICX), TAG +
-                " Only " + bnUSDScore + " and " + sICX + " can send tokens to CPF Treasury.");
+        Context.require(caller.equals(bnUSDScore) || caller.equals(sICX), TAG + " Only " + bnUSDScore + " and " + sICX + " can send tokens to CPF Treasury.");
         if (caller.equals(sICX)) {
             if (_from.equals(dexScore.get())) {
                 JsonObject swapICX = new JsonObject();
@@ -518,7 +529,6 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
                 Context.revert(TAG + ": sICX can be approved only from Balanced DEX.");
             }
         } else {
-
             if (_data == null || new String(_data).equalsIgnoreCase("none")) {
                 _data = "{}".getBytes();
             }
@@ -570,21 +580,6 @@ public class CPFTreasury extends SetterGetter implements CPFTreasuryInterface {
         BigInteger totalBudget = proposalBudgets.get(oldHash);
         proposalBudgets.set(oldHash, null);
         proposalBudgets.set(newHash, totalBudget);
-    }
-
-    private static <T> boolean containsInArrayDb(T value, ArrayDB<T> array) {
-        boolean contains = false;
-        if (array == null || value == null) {
-            return contains;
-        }
-
-        for (int i = 0; i < array.size(); i++) {
-            if (array.get(i) != null && array.get(i).equals(value)) {
-                contains = true;
-                break;
-            }
-        }
-        return contains;
     }
 
 

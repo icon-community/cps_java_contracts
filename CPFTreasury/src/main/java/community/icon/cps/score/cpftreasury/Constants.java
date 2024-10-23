@@ -57,6 +57,7 @@ public class Constants {
     public static final String COUNCIL_FLAG = "council_flag";
     public static final String COUNCIL_MANAGERS = "council_managers";
     public static final String COUNCIL_MANAGERS_REWARD = "councilManagersReward";
+    public static final String COUNCIL_MANAGERS_REWARD_PERCENTAGE = "councilManagersRewardPercentage";
 
     public static final int sICXICXPoolID = 1;
     public static final int sICXBNUSDPoolID = 2;
