@@ -17,6 +17,11 @@ public class Constants {
     public static final String PROPOSALS_KEYS = "_proposals_keys";
     public static final String TREASURY_FUND = "treasury_fund";
     public static final String EMERGENCY_FUND = "emergencyFund";
+    public static final String REWARD_POOL = "rewardPool";
+
+    public static final String INITIAL_FUND = "initialFund";
+    public static final String FINAL_FUND = "finalFund";
+
     public static final String AVAILABLE_BALANCE = "availableBalance";
     public static final String TREASURY_FUND_BNUSD = "treasury_fund_bnusd";
 
@@ -48,6 +53,11 @@ public class Constants {
     public static final String DATA = "data";
     public static final String STATE = "state";
     public static final Address SYSTEM_ADDRESS = Address.fromString("cx0000000000000000000000000000000000000000");
+
+    public static final String COUNCIL_FLAG = "council_flag";
+    public static final String COUNCIL_MANAGERS = "council_managers";
+    public static final String COUNCIL_MANAGERS_REWARD = "councilManagersReward";
+    public static final String COUNCIL_MANAGERS_REWARD_PERCENTAGE = "councilManagersRewardPercentage";
 
     public static final int sICXICXPoolID = 1;
     public static final int sICXBNUSDPoolID = 2;

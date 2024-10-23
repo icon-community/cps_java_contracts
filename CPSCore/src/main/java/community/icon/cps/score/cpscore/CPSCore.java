@@ -62,33 +62,8 @@ public class CPSCore implements CPSCoreInterface {
             sponsorBondPercentage.set(bondValue);
             this.period.set(APPLICATION_PERIOD, applicationPeriod);
             this.period.set(VOTING_PERIOD, TOTAL_PERIOD.subtract(applicationPeriod));
+            admins.add(Context.getOwner());
         }
-
-        // Fix for ICON Dashboard Proposal not being able to submit progress report being rejected
-
-        String progressReport = "bafybeic4jhoowlgeyewjqkcpgbm3fs7mgtxzhqd5kbguihoehm4cwwwzcq";
-        String proposalKey = "bafybeidoxysex3jloigzi4pvdeqgy35a4nykd46w66pobxrkephpawyjoi";
-
-        String proposalPrefix = proposalPrefix(proposalKey);
-        String progressReportPrefix = progressReportPrefix(progressReport);
-
-        ProposalDataDb.submitProgressReport.at(proposalPrefix).set(Boolean.FALSE);
-
-        ProgressReportDataDb.status.at(progressReportPrefix).set(PROGRESS_REPORT_REJECTED);
-        ProgressReportDataDb.timestamp.at(progressReportPrefix).set(BigInteger.valueOf(1706244342109937L));
-        Status status = new Status();
-        status.progressReportStatus.get(PROGRESS_REPORT_REJECTED).add(progressReport);
-
-        // End of fix
-
-        // Migrate sponsor bond from Techiast- to Techiast
-        Address oldAddr = Address.fromString("hxdc4b3fb5b47d6c14c7f9a0bac8eea9f3f48d3288");
-        Address address = Address.fromString("hxfe0256b41f1db0186f9e6cbebf8c71cf006d5d17");
-        DictDB<String, BigInteger> userAmounts = sponsorBondReturn.at(oldAddr.toString());
-
-        BigInteger bnUSDAmount = userAmounts.getOrDefault(bnUSD, BigInteger.ZERO);
-        sponsorBondReturn.at(address.toString()).set(bnUSD, bnUSDAmount);
-
     }
 
     @Override
@@ -225,7 +200,7 @@ public class CPSCore implements CPSCoreInterface {
     @External(readonly = true)
     public boolean getBudgetAdjustmentFeature() {
         SetterGetter setterGetter = new SetterGetter();
-        return setterGetter.budgetAdjustment.getOrDefault(true);
+        return setterGetter.budgetAdjustment.getOrDefault(false);
     }
 
     @External
@@ -365,15 +340,29 @@ public class CPSCore implements CPSCoreInterface {
     }
 
     private String getPrepName(Address address) {
-        return (String) getPRepInfo(address).get("name");
+        if (getCouncilFlag() && getCouncilManagers().contains(address)) {
+            int index = getCouncilManagers().indexOf(address);
+            return "Council Manager " + (index + 1);
+        }
+        else {
+            return (String) getPRepInfo(address).get("name");
+        }
     }
 
     private BigInteger getStake(Address address) {
-        return (BigInteger) getPRepInfo(address).get("power");
+        if (getCouncilFlag() && getCouncilManagers().contains(address)) {
+            return EXA.multiply(BigInteger.ONE);
+        } else {
+            return (BigInteger) getPRepInfo(address).get("power");
+        }
     }
 
     private BigInteger getDelegation(Address address) {
-        return delegationSnapshot.get(address);
+        if (getCouncilFlag() && getCouncilManagers().contains(address)) {
+            return EXA.multiply(BigInteger.ONE);
+        } else {
+            return delegationSnapshot.get(address);
+        }
     }
 
     private void setPreps() {
@@ -441,7 +430,8 @@ public class CPSCore implements CPSCoreInterface {
     @Override
     @External(readonly = true)
     public boolean checkPriorityVoting(Address _prep) {
-        int count = (int) getActiveProposalsList(0).get(COUNT);
+        Status status = new Status();
+        int count = status.pending.size();
         if (count > 0) {
             return ArrayDBUtils.containsInArrayDb(_prep, priorityVotedPreps);
         }
@@ -484,7 +474,11 @@ public class CPSCore implements CPSCoreInterface {
         Context.require(period.periodName.get().equals(VOTING_PERIOD), TAG + ": Voting can only be done in Voting Period.");
         Address caller = Context.getCaller();
         PReps pReps = new PReps();
-        Context.require(ArrayDBUtils.containsInArrayDb(caller, pReps.validPreps), "Voting can only be done by registered P-Reps");
+        if (getCouncilFlag()) {
+            Context.require(getCouncilManagers().contains(caller), "Voting can only be done by Council Managers.");
+        } else {
+            Context.require(ArrayDBUtils.containsInArrayDb(caller, pReps.validPreps), "Voting can only be done by registered P-Reps");
+        }
         Context.require(!checkPriorityVoting(caller), "Already voted for Priority Ranking.");
 
         priorityVotedPreps.add(caller);
@@ -541,10 +535,16 @@ public class CPSCore implements CPSCoreInterface {
             allPreps = ArrayDBUtils.arrayDBtoList(pReps.validPreps);
         }
 
+        loginData.put(IS_COUNCIL_MANAGER, BigInteger.ZERO);
         loginData.put(IS_PREP, BigInteger.ZERO);
         loginData.put(IS_REGISTERED, BigInteger.ZERO);
         loginData.put(PAY_PENALTY, BigInteger.ZERO);
         loginData.put(VOTING_PREP, BigInteger.ZERO);
+
+        if (getCouncilFlag() && getCouncilManagers().contains(address)) {
+            loginData.put(IS_COUNCIL_MANAGER, BigInteger.ONE);
+            loginData.put(VOTING_PREP, BigInteger.ONE);
+        }
 
         if (allPreps.contains(address)) {
             loginData.put(IS_PREP, BigInteger.ONE);
@@ -553,12 +553,10 @@ public class CPSCore implements CPSCoreInterface {
                 loginData.put(PENALTY_AMOUNT1, getPenaltyAmount(address));
             } else if (ArrayDBUtils.containsInArrayDb(address, pReps.registeredPreps)) {
                 loginData.put(IS_REGISTERED, BigInteger.ONE);
-
-                if (ArrayDBUtils.containsInArrayDb(address, pReps.validPreps)) {
+                if (!getCouncilFlag() && ArrayDBUtils.containsInArrayDb(address, pReps.validPreps)) {
                     loginData.put(VOTING_PREP, BigInteger.ONE);
                 }
             }
-
         }
         return loginData;
     }
@@ -576,7 +574,6 @@ public class CPSCore implements CPSCoreInterface {
     @External(readonly = true)
     public Map<String, BigInteger> getRemainingFund() {
         SetterGetter setterGetter = new SetterGetter();
-        //noinspection unchecked
         return callScore(Map.class, setterGetter.cpfScore.get(), "getTotalFunds");
     }
 
@@ -602,6 +599,7 @@ public class CPSCore implements CPSCoreInterface {
     public List<Address> getDenylist() {
         List<Address> denyList = new ArrayList<>();
         PReps pReps = new PReps();
+
         for (int i = 0; i < pReps.denylist.size(); i++) {
             denyList.add(pReps.denylist.get(i));
         }
@@ -682,6 +680,7 @@ public class CPSCore implements CPSCoreInterface {
         String ipfsHashPrefix = proposalPrefix(ipfsHash);
 
         addDataToProposalDB(proposals, ipfsHashPrefix);
+        councilFlag.at(ipfsHashPrefix).set(getCouncilFlag());
         BigInteger initialPaymentPercentage = callScore(BigInteger.class, getCpsTreasuryScore(), "getOnsetPayment");
 
         BigInteger totalBudget = proposals.total_budget.multiply(EXA);
@@ -723,7 +722,15 @@ public class CPSCore implements CPSCoreInterface {
                 TAG + ": Proposals can be voted only on Voting Period.");
         Address caller = Context.getCaller();
         PReps pReps = new PReps();
-        Context.require(ArrayDBUtils.containsInArrayDb(caller, pReps.validPreps),
+
+        List<Address> callLocation;
+        if (getCouncilFlag()) {
+            callLocation = getCouncilManagers();
+        } else {
+            callLocation = ArrayDBUtils.arrayDBtoList(pReps.validPreps);
+        }
+
+        Context.require(ArrayDBUtils.containsInList(caller, callLocation),
                 TAG + ": Voting can only be done by registered P-Reps.");
         Context.require(List.of(APPROVE, REJECT, ABSTAIN).contains(vote),
                 TAG + ": Vote should be either _approve, _reject or _abstain");
@@ -751,12 +758,16 @@ public class CPSCore implements CPSCoreInterface {
         BigInteger abstainedVotes = (BigInteger) proposalVoteDetails.get(ABSTAINED_VOTES);
         Integer totalVoter = (Integer) proposalVoteDetails.get(TOTAL_VOTERS);
         if (totalVoter == 0 || totalVotes.equals(BigInteger.ZERO)) {
-            ProposalDataDb.totalVoters.at(proposalPrefix).set(pReps.validPreps.size());
-            ProposalDataDb.totalVotes.at(proposalPrefix).set(totalDelegationSnapshot.getOrDefault(BigInteger.ZERO));
+            if (getCouncilFlag()) {
+                ProposalDataDb.totalVotes.at(proposalPrefix).set(EXA.multiply(BigInteger.valueOf(getCouncilManagers().size())));
+                ProposalDataDb.totalVoters.at(proposalPrefix).set(getCouncilManagers().size());
+            } else {
+                ProposalDataDb.totalVotes.at(proposalPrefix).set(totalDelegationSnapshot.getOrDefault(BigInteger.ZERO));
+                ProposalDataDb.totalVoters.at(proposalPrefix).set(pReps.validPreps.size());
+            }
         }
 
         DictDB<String, Integer> votersIndexDb = votersListIndex.at(proposalPrefix).at(caller);
-
         if (!voteChange) {
             ProposalDataDb.votersList.at(proposalPrefix).add(caller);
             votersIndexDb.set(INDEX, ProposalDataDb.votersList.at(proposalPrefix).size());
@@ -803,20 +814,26 @@ public class CPSCore implements CPSCoreInterface {
             votersIndexDb.set(VOTE, ABSTAIN_);
             ProposalDataDb.abstainedVotes.at(proposalPrefix).set(abstainedVotes.add(voterStake));
         }
+
+        if (hasTwoThirdsMajority(ipfsKey, 0)) {
+            ProposalDataDb.majorityFlag.at(proposalPrefix).set(true);
+        }
+
+
         VotedSuccessfully(caller, "Proposal Vote for " + proposalDetails.get(PROJECT_TITLE) + " Successful.");
         swapBNUsdToken();
     }
 
 
     private List<Integer> getMilestoneDeadline(String ipfsHash) {
-        String ipfsHAshPRefix = proposalPrefix(ipfsHash);
-        ArrayDB<Integer> milestoneIDs = milestoneIds.at(ipfsHAshPRefix);
+        String proposalPrefix = proposalPrefix(ipfsHash);
+        ArrayDB<Integer> milestoneIDs = milestoneIds.at(proposalPrefix);
 
         List<Integer> milestoneIdList = new ArrayList<>();
         for (int i = 0; i < milestoneIDs.size(); i++) {
             int milestoneId = milestoneIDs.get(i);
             String milestonePrefix = mileStonePrefix(ipfsHash, milestoneId);
-            int proposalTotalPeriod = proposalPeriod.at(ipfsHAshPRefix).getOrDefault(0);
+            int proposalTotalPeriod = proposalPeriod.at(proposalPrefix).getOrDefault(0);
             int completionPeriod = MilestoneDb.completionPeriod.at(milestonePrefix).getOrDefault(0);
 
             int computedCompletionPeriod = proposalTotalPeriod + completionPeriod;
@@ -880,28 +897,43 @@ public class CPSCore implements CPSCoreInterface {
                 Context.revert(TAG + ":: Submit progress report for all milestones.");
             }
 
-
             Context.require(milestoneSubmissions.length + approvedReports <= totalMilestoneCount,
                     TAG + ":: Submitted milestone is greater than recorded on proposal.");
-            List<Integer> milestoneDeadlineIDs = getMilestoneDeadline(ipfsHash);
-            if (!milestoneDeadlineIDs.isEmpty()) {
-                boolean isMilestoneSubmitted = checkContainsMilestone(milestoneSubmissions, milestoneDeadlineIDs);
-                Context.require(isMilestoneSubmitted, TAG + ": Submit milestone report for milestone id. " + milestoneDeadlineIDs);
-            }
 
             for (MilestoneSubmission milestoneAttr : milestoneSubmissions) {
+                String milestonePrefix = mileStonePrefix(ipfsHash, milestoneAttr.id);
                 int milestoneStatus = getMileststoneStatusOf(ipfsHash, milestoneAttr.id);
+                int milestoneCompletionPeriod = MilestoneDb.completionPeriod.at(milestonePrefix).get();
+
+                for (int i = 0; i < getRemainingMilestones(ipfsHash).size(); i++) {
+                    Map<String, ?> milestoneIdsMap = getRemainingMilestones(ipfsHash).get(i);
+                    int milestoneId = (int) milestoneIdsMap.get(MILESTONE_ID);
+
+                    String milestonePrefix1 = mileStonePrefix(ipfsHash, milestoneId);
+                    int milestoneCompletionPeriod1 = MilestoneDb.completionPeriod.at(milestonePrefix1).get();
+                    if (milestoneCompletionPeriod1 < milestoneCompletionPeriod) {
+                        MilestoneDb.completionPeriod.at(milestonePrefix1).set(milestoneCompletionPeriod1 + 1);
+                        MilestoneDb.completionPeriod.at(milestonePrefix).set(milestoneCompletionPeriod - 1);
+                    }
+                }
+
                 if (milestoneStatus == MILESTONE_REPORT_APPROVED || milestoneStatus == MILESTONE_REPORT_COMPLETED) {
                     Context.revert(TAG + " Milestone already completed/submitted " + milestoneStatus);
                 }
+
                 int stats = MILESTONE_REPORT_NOT_COMPLETED;
                 if (milestoneAttr.status) {
                     stats = MILESTONE_REPORT_COMPLETED;
                 }
-                String milestonePrefix = mileStonePrefix(ipfsHash, milestoneAttr.id);
                 MilestoneDb.status.at(milestonePrefix).set(stats);
                 MilestoneDb.progressReportHash.at(milestonePrefix).set(reportHash);
                 milestoneSubmitted.at(reportHashPrefix).add(milestoneAttr.id);
+            }
+
+            List<Integer> milestoneDeadlineIDs = getMilestoneDeadline(ipfsHash);
+            if (!milestoneDeadlineIDs.isEmpty()) {
+                boolean isMilestoneSubmitted = checkContainsMilestone(milestoneSubmissions, milestoneDeadlineIDs);
+                Context.require(isMilestoneSubmitted, TAG + ": Submit milestone report for milestone id. " + milestoneDeadlineIDs);
             }
 
         }
@@ -976,10 +1008,18 @@ public class CPSCore implements CPSCoreInterface {
                 TAG + ": Progress Reports can be voted only on Voting Period.");
         Address caller = Context.getCaller();
         PReps pReps = new PReps();
+
+        List<Address> callLocation;
+        if (getCouncilFlag()) {
+            callLocation = getCouncilManagers();
+        } else {
+            callLocation = ArrayDBUtils.arrayDBtoList(pReps.validPreps);
+        }
+
         Context.require(!ArrayDBUtils.containsInArrayDb(caller, blockAddresses),
                 TAG + ": You are blocked from CPS.");
-        Context.require(ArrayDBUtils.containsInArrayDb(caller, pReps.validPreps),
-                TAG + ": Voting can only be done by registered P-Reps.");
+        Context.require(ArrayDBUtils.containsInList(caller, callLocation),
+                TAG + ": Voting can only be done by registered P-Reps or Council Managers.");
         String progressReportPrefix = progressReportPrefix(reportKey);
         ArrayDB<Integer> submittedMilestones = milestoneSubmitted.at(progressReportPrefix);// CAN TAKE FROM READONLY METHOD
         for (MilestoneVoteAttributes milestoneVote : votes) {
@@ -1011,8 +1051,13 @@ public class CPSCore implements CPSCoreInterface {
         Integer totalVoter = ProgressReportDataDb.totalVoters.at(progressReportPrefix).getOrDefault(0);
 
         if (totalVoter == 0 || totalVotes.equals(BigInteger.ZERO)) {
-            ProgressReportDataDb.totalVoters.at(progressReportPrefix).set(pReps.validPreps.size());
-            ProgressReportDataDb.totalVotes.at(progressReportPrefix).set(this.totalDelegationSnapshot.getOrDefault(BigInteger.ZERO));
+            if (getCouncilFlag()) {
+                ProgressReportDataDb.totalVotes.at(progressReportPrefix).set(EXA.multiply(BigInteger.valueOf(getCouncilManagers().size())));
+                ProgressReportDataDb.totalVoters.at(progressReportPrefix).set(getCouncilManagers().size());
+            } else {
+                ProgressReportDataDb.totalVotes.at(progressReportPrefix).set(this.totalDelegationSnapshot.getOrDefault(BigInteger.ZERO));
+                ProgressReportDataDb.totalVoters.at(progressReportPrefix).set(pReps.validPreps.size());
+            }
         }
 
         DictDB<Address, Integer> voteChanged = ProgressReportDataDb.voteChange.at(progressReportPrefix);
@@ -1057,6 +1102,7 @@ public class CPSCore implements CPSCoreInterface {
                 }
             }
 
+
             boolean budgetAdjustment = (boolean) progressReportDetails.get(BUDGET_ADJUSTMENT);
             if (budgetAdjustment && getBudgetAdjustmentFeature()) { //
                 budgetAdjustment(reportKey, budgetAdjustmentVote, voteChange);
@@ -1077,6 +1123,10 @@ public class CPSCore implements CPSCoreInterface {
             if (budgetAdjustment && getBudgetAdjustmentFeature()) {
                 budgetAdjustment(reportKey, budgetAdjustmentVote, voteChange);
 
+            }
+
+            if (hasTwoThirdsMajority(proposalKey, milestoneVote.id)) {
+                MilestoneDb.majorityFlag.at(milestonePrefix).set(true);
             }
             VotedSuccessfully(caller, "Progress Report Vote for " + progressReportDetails.get(PROGRESS_REPORT_TITLE) + " Successful.");
             swapBNUsdToken();
@@ -1244,8 +1294,8 @@ public class CPSCore implements CPSCoreInterface {
                     period.periodName.set(TRANSITION_PERIOD);
                     period.previousPeriodName.set(APPLICATION_PERIOD);
                     period.updatePeriodIndex.set(updateIndex + 1);
+                    callScore(getCpfTreasuryScore(), "setRewardPool", "finalFund");
                     updateProposalsResult();
-
                     PeriodUpdate("Period Update State 1/4. Period Updated to Transition Period. " +
                             "After all the calculations are completed, " +
                             "Period will change to " + APPLICATION_PERIOD);
@@ -1276,6 +1326,8 @@ public class CPSCore implements CPSCoreInterface {
                     period.periodCount.set(period.periodCount.getOrDefault(0) + 1);
                     burn(proposalFees.get(), null);
                     proposalFees.set(BigInteger.ZERO);
+
+                    callScore(getCpfTreasuryScore(), "distributeRewardToFundManagers");
                 }
 
             }
@@ -1311,6 +1363,7 @@ public class CPSCore implements CPSCoreInterface {
             DictDB<String, Integer> prepVote = MilestoneDb.votersListIndices.at(milestonePrefix).at(prep);
             prepVote.set(INDEX, 0);
             prepVote.set(VOTE, 0);
+            MilestoneDb.majorityFlag.at(milestonePrefix).set(false);
         }
         clearArrayDb(MilestoneDb.votersList.at(milestonePrefix));
     }
@@ -1337,7 +1390,6 @@ public class CPSCore implements CPSCoreInterface {
 
             boolean _budget_adjustment = (boolean) _report_result.get(BUDGET_ADJUSTMENT);
 
-
 //          If a progress report have any budget_adjustment, then it checks the budget adjustment first
             if (_budget_adjustment && getBudgetAdjustmentFeature()) {
                 updateBudgetAdjustments(_reports);
@@ -1350,8 +1402,6 @@ public class CPSCore implements CPSCoreInterface {
             Address _sponsor_address = (Address) _proposal_details.get(SPONSOR_ADDRESS);
             BigInteger _sponsor_deposit_amount = (BigInteger) _proposal_details.get(SPONSOR_DEPOSIT_AMOUNT);
             String flag = (String) _proposal_details.get(TOKEN);
-
-            List<Address> _main_preps_list = arrayDBtoList(pReps.validPreps);
 
             ArrayDB<Integer> milestoneSubmitted = ProgressReportDataDb.milestoneSubmitted.at(progressPrefix);
 
@@ -1368,20 +1418,27 @@ public class CPSCore implements CPSCoreInterface {
                 Map<String, Object> _milestone_details = getDataFromMilestoneDB(milestonePrefix);
 
                 int milestoneStatus = (int) _milestone_details.get(STATUS);
-                int _approve_voters = (int) _milestone_details.get(APPROVE_VOTERS);
-                BigInteger _approved_votes = (BigInteger) _milestone_details.get(APPROVED_VOTES);
+                boolean majorityFlag = (boolean) _milestone_details.get(MAJORITY_FLAG);
                 BigInteger _total_votes = ProgressReportDataDb.totalVotes.at(progressPrefix).get();
                 int _total_voters = ProgressReportDataDb.totalVoters.at(progressPrefix).getOrDefault(0);
 
-                if (_total_voters == 0 || _total_votes.equals(BigInteger.ZERO) || _main_preps_list.size() < MINIMUM_PREPS) {
+                int votersCount;
+                int minimumVoters;
+
+                if (getCouncilFlag()) {
+                    minimumVoters = 3;
+                    votersCount = getCouncilManagers().size();
+                } else {
+                    minimumVoters = 7;
+                    votersCount = pReps.validPreps.size();
+                }
+
+                if (_total_voters == 0 || _total_votes.equals(BigInteger.ZERO) || votersCount < minimumVoters) {
                     MilestoneDb.status.at(milestonePrefix).set(MILESTONE_REPORT_REJECTED);
                     updateMilestoneDB(milestonePrefix);
                 } else {
-                    double votersRatio = (double) _approve_voters / _total_voters;
-                    double votesRatio = _approved_votes.doubleValue() / _total_votes.doubleValue();
-                    if (votersRatio >= MAJORITY && votesRatio >= MAJORITY) {
+                    if (majorityFlag) {
                         _approved_reports_count += 1;
-
                         if (milestoneStatus == MILESTONE_REPORT_COMPLETED) {
                             milestonePassed += 1;
                             milestoneBudget = milestoneBudget.add(MilestoneDb.budget.at(milestonePrefix).getOrDefault(BigInteger.ZERO));
@@ -1413,22 +1470,19 @@ public class CPSCore implements CPSCoreInterface {
                             int proposalPeriod = ProposalDataDb.proposalPeriod.at(proposal_prefix).getOrDefault(0);
                             boolean extended = MilestoneDb.extensionFlag.at(milestonePrefix).getOrDefault(false);
 
-                            if (getPeriodCount() == (proposalPeriod + completionPeriod)) {
-                                if (extended) {
-                                    updateProposalStatus(_ipfs_hash, _proposal_details);
-                                } else {
-                                    milestonePassed += 1;
-                                    String proposalPrefix = proposalPrefix(_ipfs_hash);
-                                    int project_duration = (int) _proposal_details.get(PROJECT_DURATION);
-                                    MilestoneDb.extensionFlag.at(milestonePrefix).set(true);
-                                    ProposalDataDb.projectDuration.at(proposalPrefix).set(project_duration + 1);
-                                    MilestoneDb.completionPeriod.at(milestonePrefix).set(completionPeriod + 1);
-                                }
+                            int finalPeriodToSubmit = proposalPeriod + completionPeriod;
+                            if (getPeriodCount() < finalPeriodToSubmit) {
+                                milestonePassed += 1;
+                            } else if (getPeriodCount() >= finalPeriodToSubmit && !extended) {
+                                milestonePassed += 1;
+                                String proposalPrefix = proposalPrefix(_ipfs_hash);
+                                int project_duration = (int) _proposal_details.get(PROJECT_DURATION);
+                                MilestoneDb.extensionFlag.at(milestonePrefix).set(true);
+                                ProposalDataDb.projectDuration.at(proposalPrefix).set(project_duration + 1);
+                                MilestoneDb.completionPeriod.at(milestonePrefix).set(completionPeriod + 1);
                             }
                             updateMilestoneDB(milestonePrefix);
-
                         }
-
                     } else {
                         MilestoneDb.status.at(milestonePrefix).set(MILESTONE_REPORT_REJECTED);
                         updateMilestoneDB(milestonePrefix);
@@ -1458,7 +1512,6 @@ public class CPSCore implements CPSCoreInterface {
                 }
             }
         }
-
     }
 
 
@@ -1556,7 +1609,19 @@ public class CPSCore implements CPSCoreInterface {
         BigInteger _total_votes = (BigInteger) _vote_result.get(TOTAL_VOTES);
         PReps pReps = new PReps();
         double votersRatio = (double) _approve_voters / _total_voters;
-        if (_total_voters == 0 || _total_votes.equals(BigInteger.ZERO) || pReps.validPreps.size() < MINIMUM_PREPS) {
+
+        int votersCount;
+        int minimumVoters;
+
+        if (getCouncilFlag()) {
+            minimumVoters = 3;
+            votersCount = getCouncilManagers().size();
+        } else {
+            minimumVoters = 7;
+            votersCount = pReps.validPreps.size();
+        }
+
+        if (_total_votes.equals(BigInteger.ZERO) || votersCount < minimumVoters) {
             budgetAdjustmentStatus.at(_prefix).set(REJECTED);
         } else if (votersRatio >= MAJORITY && (_approved_votes.doubleValue() / _total_votes.doubleValue()) >= MAJORITY) {
             String _ipfs_hash = (String) _report_result.get(IPFS_HASH);
@@ -1571,7 +1636,6 @@ public class CPSCore implements CPSCoreInterface {
             projectDuration.at(proposal_prefix).set(_period_count + _additional_duration);
             totalBudget.at(proposal_prefix).set(_total_budget.add(_additional_budget));
             budgetAdjustmentStatus.at(_prefix).set(APPROVED);
-
 
 //          After the budget adjustment is approved, Request new added fund to CPF
             callScore(getCpfTreasuryScore(), "updateProposalFund", _ipfs_hash, token_flag, _additional_budget, _additional_duration);
@@ -1593,8 +1657,6 @@ public class CPSCore implements CPSCoreInterface {
             BigInteger totalBudget = (BigInteger) proposalDetails.get(TOTAL_BUDGET);
             int projectDuration = (int) proposalDetails.get(MILESTONE_COUNT);
             BigInteger sponsorDepositAmount = (BigInteger) proposalDetails.get(SPONSOR_DEPOSIT_AMOUNT);
-            int approvedVoters = (int) proposalVoteDetails.get(APPROVE_VOTERS);
-            BigInteger approvedVotes = (BigInteger) proposalVoteDetails.get(APPROVED_VOTES);
             BigInteger totalVotes = (BigInteger) proposalVoteDetails.get(TOTAL_VOTES);
             int totalVoters = (int) proposalVoteDetails.get(TOTAL_VOTERS);
             String flag = (String) proposalDetails.get(TOKEN);
@@ -1603,15 +1665,22 @@ public class CPSCore implements CPSCoreInterface {
 
             checkInactivePreps(ProposalDataDb.votersList.at(proposalPrefix));
 
-            double voters_ratio = 0;
-            if (totalVoters != 0) {
-                voters_ratio = (double) approvedVoters / totalVoters;
+            int votersCount;
+            int minimumVoters;
+
+            if (getCouncilFlag()) {
+                minimumVoters = 3;
+                votersCount = getCouncilManagers().size();
+            } else {
+                minimumVoters = 7;
+                votersCount = pReps.validPreps.size();
             }
-            if (totalVoters == 0 || totalVotes.equals(BigInteger.ZERO) || pReps.validPreps.size() < MINIMUM_PREPS) {
+
+
+            if (totalVoters == 0 || totalVotes.equals(BigInteger.ZERO) || votersCount < minimumVoters) {
                 updateProposalStatus(proposal, REJECTED);
                 updatedStatus = REJECTED;
-            } else if ((voters_ratio) >= MAJORITY &&
-                    (approvedVotes.doubleValue() / totalVotes.doubleValue()) >= MAJORITY) {
+            } else if (majorityFlag.at(proposalPrefix).getOrDefault(false)) {
                 if (totalBudget.multiply(BigInteger.valueOf(102)).divide(BigInteger.valueOf(100)). // total budget + 2% of sponsor
                         compareTo(distributionAmount) < 0) {
                     updateProposalStatus(proposal, ACTIVE);
@@ -1696,10 +1765,16 @@ public class CPSCore implements CPSCoreInterface {
 
     private void checkInactivePreps(ArrayDB<Address> prepList) {
         PReps pReps = new PReps();
-        for (int i = 0; i < pReps.validPreps.size(); i++) {
-            Address prep = pReps.validPreps.get(i);
-            if (!containsInArrayDb(prep, prepList) && !containsInArrayDb(prep, pReps.inactivePreps)) {
-                pReps.inactivePreps.add(prep);
+        List<Address> voters;
+        if (getCouncilFlag()) {
+            voters = getCouncilManagers();
+        } else {
+            voters = ArrayDBUtils.arrayDBtoList(pReps.validPreps);
+        }
+
+        for (Address voter : voters) {
+            if (!containsInArrayDb(voter, prepList) && !containsInArrayDb(voter, pReps.inactivePreps)) {
+                pReps.inactivePreps.add(voter);
             }
         }
     }
@@ -1873,17 +1948,6 @@ public class CPSCore implements CPSCoreInterface {
         return Map.of();
     }
 
-    private Map<String, Object> getMilestoneReport(String reportKey, String ipfsHash) {
-        Map<String, Object> milestoneReport = new HashMap<>();
-        ArrayDB<Integer> mileSubmitted = milestoneSubmitted.at(progressReportPrefix(reportKey));
-        for (int i = 0; i < mileSubmitted.size(); i++) {
-            int count = mileSubmitted.get(i);
-            milestoneReport.put("milestone_" + count, getMilestonesReport(ipfsHash, count));
-        }
-        return milestoneReport;
-    }
-
-
     @Override
     @External(readonly = true)
     public Map<String, Object> getProgressReportsByProposal(String ipfsKey) {
@@ -1996,8 +2060,8 @@ public class CPSCore implements CPSCoreInterface {
 
                 String ipfsHash = ProgressReportDataDb.ipfsHash.at(prefix).get();
                 ArrayDB<Integer> milestoneSubmittedOf = milestoneSubmitted.at(prefix);
-                for (int j = 0; j < milestoneSubmittedOf.size(); j++) {
-                    int milestoneID = milestoneSubmittedOf.get(j);
+                if (milestoneSubmittedOf.size() > 0) {
+                    int milestoneID = milestoneSubmittedOf.get(0);
                     String milestonePrefix = mileStonePrefix(ipfsHash, milestoneID);
 
                     ArrayDB<Address> voterList = MilestoneDb.votersList.at(milestonePrefix);
@@ -2007,6 +2071,7 @@ public class CPSCore implements CPSCoreInterface {
                         _remaining_progress_report.add(progressReportDetails);
                     }
                 }
+
             }
             return _remaining_progress_report;
         }
@@ -2299,7 +2364,19 @@ public class CPSCore implements CPSCoreInterface {
         PReps pReps = new PReps();
         Status status = new Status();
         PeriodController period = new PeriodController();
-        if (pReps.validPreps.size() < MINIMUM_PREPS) {
+
+        int votersCount;
+        int minimumVoters;
+
+        if (getCouncilFlag()) {
+            minimumVoters = 3;
+            votersCount = getCouncilManagers().size();
+        } else {
+            minimumVoters = 7;
+            votersCount = pReps.validPreps.size();
+        }
+
+        if (votersCount < minimumVoters) {
             period.periodName.set(APPLICATION_PERIOD);
             PeriodUpdate("Period Updated back to Application Period due to less Registered P-Reps Count");
 
@@ -2377,8 +2454,6 @@ public class CPSCore implements CPSCoreInterface {
         } else {
             Context.revert(TAG + " Not supported method. Token transfer fails.");
         }
-
-
     }
 
     private void sponsorVote(String ipfsKey, String vote, String voteReason, Address from, BigInteger value) {
@@ -2656,6 +2731,47 @@ public class CPSCore implements CPSCoreInterface {
         return milestoneIdList;
     }
 
+    private boolean hasTwoThirdsMajority(String ipfsHash, int milestoneId) {
+        String ipfsHashPrefix = proposalPrefix(ipfsHash);
+        boolean isMilestone = milestoneId > 0;
+        BigInteger totalVotes;
+        BigInteger approvedVotes;
+        int approvedVoters;
+        int totalVoters;
+
+        if (isMilestone) {
+            String milestonePrefix = mileStonePrefix(ipfsHash, milestoneId);
+            Map<String, Object> dataFromMilestoneDB = getDataFromMilestoneDB(milestonePrefix);
+            totalVotes = (BigInteger) dataFromMilestoneDB.get(TOTAL_VOTES);
+            totalVoters = (Integer) dataFromMilestoneDB.get(TOTAL_VOTERS);
+            approvedVotes = MilestoneDb.approvedVotes.at(milestonePrefix).getOrDefault(BigInteger.ZERO);
+            approvedVoters = MilestoneDb.approveVoters.at(milestonePrefix).size();
+
+        } else {
+            totalVotes = ProposalDataDb.totalVotes.at(ipfsHashPrefix).getOrDefault(BigInteger.ZERO);
+            totalVoters = ProposalDataDb.totalVoters.at(ipfsHashPrefix).getOrDefault(0);
+            approvedVotes = ProposalDataDb.approvedVotes.at(ipfsHashPrefix).getOrDefault(BigInteger.ZERO);
+            approvedVoters = ProposalDataDb.approveVoters.at(ipfsHashPrefix).size();
+        }
+
+        double voteWeight = approvedVotes.doubleValue() / totalVotes.doubleValue();
+        double voters_ratio = (double) approvedVoters / totalVoters;
+
+        return voters_ratio >= MAJORITY && voteWeight > MAJORITY;
+    }
+
+
+    @External(readonly = true)
+    public List<Address> getCouncilManagers() {
+        return callScore(List.class, getCpfTreasuryScore(), "getCouncilManagers");
+    }
+
+
+    @External(readonly = true)
+    public boolean getCouncilFlag() {
+        return callScore(boolean.class, getCpfTreasuryScore(), "getCouncilFlag");
+    }
+
     //    =====================================TEMPORARY MIGRATIONS METHODS===============================================
 
     @External
@@ -2851,7 +2967,6 @@ public class CPSCore implements CPSCoreInterface {
     public void validateAdmins() {
         Context.require(isAdmin(Context.getCaller()),
                 TAG + ": Only Admins can call this method");
-
     }
 
     public void validateAdminScore(Address scoreAddress) {
