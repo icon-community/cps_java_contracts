@@ -11,8 +11,7 @@ import score.annotation.Payable;
 import java.math.BigInteger;
 import java.util.Map;
 
-@ScoreClient
-@ScoreInterface
+@ScoreInterface(suffix = "Client")
 public interface CPFTreasuryInterface {
     @External(readonly = true)
     String name();

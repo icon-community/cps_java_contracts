@@ -1,0 +1,73 @@
+[
+  {
+    "name": "cpsCore",
+    "contract": "CPSCore",
+    "params": {
+      "bondValue": 15,
+      "applicationPeriod": "20"
+    },
+    "order": 1.0
+  },
+  {
+    "name": "bnUSD",
+    "contract": "bnUSD",
+    "params": {
+      "_name": "Balanced Stable Coin",
+      "_symbol": "bnUSD",
+      "_decimals": 18,
+      "_initialSupply": 100000000000000000000
+    },
+    "order": 1.0
+  },
+  {
+    "name": "dex",
+    "contract": "Dex",
+    "params": {
+    },
+    "order": 1.0
+  },
+  {
+    "name": "router",
+    "contract": "Router",
+    "params": {
+    },
+    "order": 1.0
+  },
+  {
+    "name": "oracle",
+    "contract": "oracle",
+    "params": {
+    },
+    "order": 1.0
+  },
+  {
+    "name": "cpsTreasury",
+    "contract": "CPSTreasury",
+    "params": {
+    },
+    "addressParams": {
+      "cpsScore": "cpsCore"
+    },
+    "order": 2.0
+  },
+  {
+    "name": "cpfTreasury",
+    "contract": "CPFTreasury",
+    "params": {
+    },
+    "addressParams": {
+      "cpsScore": "cpsCore"
+    },
+    "order": 2.0
+  },
+  {
+    "name": "sICX",
+    "contract": "sICX",
+    "params": {
+    },
+    "addressParams": {
+      "_admin": "owner"
+    },
+    "order": 2.0
+  }
+]

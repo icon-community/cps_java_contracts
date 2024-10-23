@@ -12,8 +12,7 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-@ScoreClient
-@ScoreInterface
+@ScoreInterface(suffix = "Client")
 public interface CPSCoreInterface {
 
     public static class ProposalAttributes {
@@ -120,7 +119,7 @@ public interface CPSCoreInterface {
     void registerPrep();
 
     @External(readonly = true)
-    boolean checkPriorityVoting(Address prep);
+    boolean checkPriorityVoting(Address _prep);
 
     @External(readonly = true)
     List<String> sortPriorityProposals();
@@ -193,6 +192,9 @@ public interface CPSCoreInterface {
     @External(readonly = true)
     List<String> getProposalsKeysByStatus(String _status);
 
+    @External(readonly = true)
+    Map<String, Object> getMilestonesReport(String ipfsKey, int milestoneId);
+
 
     @External(readonly = true)
     int checkChangeVote(Address address, String ipfsHash, String proposalType);
@@ -213,7 +215,7 @@ public interface CPSCoreInterface {
     Map<String, ?> getProposalDetails(String status, @Optional Address walletAddress, @Optional int startIndex);
 
     @External(readonly = true)
-    Map<String, Object> getProposalDetailsByHash(String ipfs_key);
+    Map<String, Object> getProposalDetailsByHash(String ipfsKey);
 
 
     @External(readonly = true)
@@ -255,6 +257,9 @@ public interface CPSCoreInterface {
     @External
     void updateNextBlock(int blockCount);
 
+    @External(readonly = true)
+    List<Map<String, Object>> getRemainingProject(String projectType, Address walletAddress);
+
     @External
     void updateContributor(String _ipfs_key, Address _new_contributor, Address _new_sponsor);
 
@@ -270,6 +275,11 @@ public interface CPSCoreInterface {
 
     @External(readonly = true)
     List<Map<String,?>> getRemainingMilestones(String ipfsHash);
+    @External
+    void setSponsorBondPercentage(BigInteger bondValue);
+
+    @External(readonly = true)
+    BigInteger getSponsorBondPercentage();
 
     //    EventLogs
     @EventLog(indexed = 1)

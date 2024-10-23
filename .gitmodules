@@ -1,0 +1,3 @@
+[submodule "cps-gochain-local"]
+	path = cps-gochain-local
+	url = git@github.com:naneey/cps-gochain-local.git

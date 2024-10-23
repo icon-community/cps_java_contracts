@@ -1,156 +1,301 @@
 package community.icon.cps.score.test.integration;
 
+import community.icon.cps.score.test.integration.scores.SystemInterfaceScoreClient;
+import community.icon.cps.score.test.integration.model.Score;
+import community.icon.cps.score.test.integration.scores.SystemInterface;
+import community.icon.cps.score.test.integration.utils.DefaultICONClient;
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.icx.data.Bytes;
 import foundation.icon.score.client.DefaultScoreClient;
 
-import community.icon.cps.score.lib.interfaces.CPSTreasuryInterfaceScoreClient;
-import community.icon.cps.score.lib.interfaces.CPFTreasuryInterfaceScoreClient;
-import community.icon.cps.score.lib.interfaces.CPSCoreInterfaceScoreInterface;
 
-import community.icon.cps.score.lib.interfaces.DexInterfaceScoreClient;
-import community.icon.cps.score.lib.interfaces.sICXInterfaceScoreClient;
-import community.icon.cps.score.lib.interfaces.bnUSDInterfaceScoreClient;
-import community.icon.cps.score.lib.interfaces.RouterInterfaceScoreClient;
 import score.Address;
 
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.math.BigInteger;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
-import static community.icon.cps.score.test.integration.ScoreIntegrationTest.*;
+import static community.icon.cps.score.test.integration.Environment.*;
+import static community.icon.cps.score.test.integration.ScoreIntegrationTest.createWalletWithBalance;
+import static community.icon.cps.score.test.integration.ScoreIntegrationTest.transfer;
+
 
 public class CPS {
-    public KeyWallet user;
-    public KeyWallet testUser;
 
     public KeyWallet owner;
-
-    /*
-    Prep wallets loaded from test-lib/src/main/java/community/icon/cps/score/test/wallets
-     */
-
-    public KeyWallet prepWallet1;
-    public KeyWallet prepWallet2;
-    public KeyWallet prepWallet3;
-    public KeyWallet prepWallet4;
-    public KeyWallet prepWallet5;
-    public KeyWallet prepWallet6;
-    public KeyWallet prepWallet7;
-
     public CPSClient ownerClient;
-    public DefaultScoreClient cpsTreasury;
-    public DefaultScoreClient cpfTreasury;
-    public DefaultScoreClient cpsCore;
+    public CPSClient testClient;
 
-    public DefaultScoreClient dex;
-    public DefaultScoreClient router;
-    public DefaultScoreClient bnusd;
-    public DefaultScoreClient sicx;
+    private Map<String, foundation.icon.jsonrpc.Address> addresses;
+    public DefaultICONClient iconClient;
 
-    public DefaultScoreClient governanceBalanced;
+    HashMap<Address, CPSClient> cpsClients;
 
-    public CPSTreasuryInterfaceScoreClient cpsTreasuryScore;
-    public CPFTreasuryInterfaceScoreClient cpfTreasuryScore;
-    public CPSCoreInterfaceScoreInterface cpsMainScore;
+    private String contracts;
 
+    public CPS(String contracts) throws Exception {
 
-    Map<String, CPSClient> cpsClients;
-
-    public List<KeyWallet> prepList;
-
-    public CPS() throws Exception{
+        this.contracts = contracts;
         cpsClients = new HashMap<>();
         owner = createWalletWithBalance(BigInteger.TEN.pow(24));
-        user = createWalletWithBalance(BigInteger.TEN.pow(24));
-        testUser = createWalletWithBalance(BigInteger.TEN.pow(24));
-        BufferedReader br = new BufferedReader(new FileReader("privateKey.txt"));
-//        System.out.println("Reading the content of the file in cpsMain: " + br.readLine());
-        String longPrivateKey = br.readLine();
-        String privateKey0 = longPrivateKey.substring(0, 66);
-        String privateKey1 = longPrivateKey.substring(66, 132);
-        String privateKey2 = longPrivateKey.substring(132, 198);
-        String privateKey3 = longPrivateKey.substring(198, 264);
-        String privateKey4 = longPrivateKey.substring(264, 330);
-        String privateKey5 = longPrivateKey.substring(330, 396);
-        String privateKey6 = longPrivateKey.substring(396, 462);
-
-        prepWallet1 = KeyWallet.load(new Bytes(privateKey1));
-        prepWallet2 = KeyWallet.load(new Bytes(privateKey2));
-        prepWallet3 = KeyWallet.load(new Bytes(privateKey3));
-        prepWallet4 = KeyWallet.load(new Bytes(privateKey4));
-        prepWallet5 = KeyWallet.load(new Bytes(privateKey5));
-        prepWallet6 = KeyWallet.load(new Bytes(privateKey6));
-        prepWallet7 = KeyWallet.load(new Bytes(privateKey0));
+        iconClient =  new DefaultICONClient(chain);
     }
 
-    public void setupCPS() throws Exception{
-        registerPreps();
-        deployContracts();
-//        setStakeOfPreps();
-//        setDelegationOfPreps();
-//        setBonderListOfPReps();
-//        setBondOfPreps();
-//        registerGodPrep();
-//        setGodStake();
+    public void setupCPS() throws Exception {
+        deployPrep();
+        decentralizeChain();
+        Thread.sleep(120000);
+        this.addresses = new ScoreDeployer(this,contracts).deployContracts();
+
+        ownerClient = new CPSClient(this,owner);
+        testClient = new CPSClient(this, createWalletWithBalance(BigInteger.TEN.pow(24)));
     }
 
-    public void registerGodPrep(){
-        registerGodClient();
-    }
-
-    public void setGodPrep(){
+    private void decentralizeChain(){
+//        if (isPRepRegistered()) {
+//            return;
+//        }
+        setStake();
+        setDelegationOfPreps();
+        setBonderList();
+        setBondsofPreps();
         setGodStake();
     }
 
-    public void setStakeOfPreps(){
-        KeyWallet[] keyWallets = {prepWallet1, prepWallet2, prepWallet3, prepWallet4, prepWallet5, prepWallet6, prepWallet7};
-        setStake(keyWallets);
+    public void setGodStake(){
+        SYSTEM_INTERFACE = new SystemInterfaceScoreClient(godClient);
+        SYSTEM_INTERFACE.setStake(BigInteger.valueOf(9_000_000).multiply(BigInteger.TEN.pow(18)));
+        SystemInterface.Delegation[] delegation = new SystemInterface.Delegation[1];
+        delegation[0] = new SystemInterface.Delegation();
+        delegation[0].address = score.Address.fromString(chain.godWallet.getAddress().toString());
+        delegation[0].value = BigInteger.valueOf(8000000).multiply(BigInteger.TEN.pow(18));
+        SYSTEM_INTERFACE.setDelegation(delegation);
+
+        score.Address[] addresses = new score.Address[1];
+        addresses[0] = score.Address.fromString(chain.godWallet.getAddress().toString());
+        SYSTEM_INTERFACE.setBonderList(addresses);
+
+        SystemInterface.Bond[] bonds = new SystemInterface.Bond[1];
+        bonds[0] = new SystemInterface.Bond();
+        bonds[0].address = score.Address.fromString(chain.godWallet.getAddress().toString());
+        bonds[0].value = BigInteger.valueOf(1000000).multiply(BigInteger.TEN.pow(18));
+        SYSTEM_INTERFACE.setBond(bonds);
+        System.out.println("god wallet setup done");
+    }
+
+    private void setStake(){
+        int count = 0;
+        for (Map.Entry<Address, String> prep : preps.entrySet()) {
+            if (prep.getKey().equals(Address.fromString("hxb6b5791be0b5ef67063b3c10b840fb81514db2fd"))){
+                continue;
+            }
+            if (count < 7) {
+                KeyWallet wallet = KeyWallet.load(new Bytes(prep.getValue()));
+                var client = new DefaultScoreClient(
+                        chain.getEndpointURL(),
+                        chain.networkId,
+                        wallet,
+                        DefaultScoreClient.ZERO_ADDRESS
+                );
+                SYSTEM_INTERFACE = new SystemInterfaceScoreClient(client);
+                SYSTEM_INTERFACE.setStake(BigInteger.valueOf(100_000).multiply(BigInteger.TEN.pow(18)));
+                count++;
+            }
+            else {
+                break;
+            }
+        }
+        System.out.println("set is done");
     }
 
     public void setDelegationOfPreps(){
-        KeyWallet[] keyWallets = {prepWallet1, prepWallet2, prepWallet3, prepWallet4, prepWallet5, prepWallet6, prepWallet7};
-        setDelegation(keyWallets);
+        int count = 0;
+        for (Map.Entry<Address, String> prep : preps.entrySet()) {
+            if (prep.getKey().equals(Address.fromString("hxb6b5791be0b5ef67063b3c10b840fb81514db2fd"))){
+                continue;
+            }
+            if (count < 7) {
+                KeyWallet wallet = KeyWallet.load(new Bytes(prep.getValue()));
+                SystemInterface.Delegation[] delegations = new SystemInterface.Delegation[1];
+                delegations[0] = new SystemInterface.Delegation();
+                delegations[0].address = score.Address.fromString(prep.getKey().toString());
+                delegations[0].value = BigInteger.valueOf(80_000).multiply(BigInteger.TEN.pow(18));
+                var client = new DefaultScoreClient(
+                        chain.getEndpointURL(),
+                        chain.networkId,
+                        wallet,
+                        DefaultScoreClient.ZERO_ADDRESS
+                );
+                SYSTEM_INTERFACE = new SystemInterfaceScoreClient(client);
+                SYSTEM_INTERFACE.setDelegation(delegations);
+                count++;
+            }
+            else {
+                break;
+            }
+        }
+
+
+        System.out.println("delegation of preps done ");
     }
 
-    public void setBondOfPreps(){
-        KeyWallet[] keyWallets = {prepWallet1, prepWallet2, prepWallet3, prepWallet4, prepWallet5, prepWallet6, prepWallet7};
-        setBond(keyWallets);
+    public void setBonderList(){
+        int count = 0;
+        for (Map.Entry<Address, String> prep : preps.entrySet()) {
+            if (prep.getKey().equals(Address.fromString("hxb6b5791be0b5ef67063b3c10b840fb81514db2fd"))){
+                continue;
+            }
+            if (count < 7) {
+                KeyWallet wallet = KeyWallet.load(new Bytes(prep.getValue()));
+                score.Address[] bonderList = new score.Address[1];
+                bonderList[0] = score.Address.fromString(prep.getKey().toString());
+                var client = new DefaultScoreClient(
+                        chain.getEndpointURL(),
+                        chain.networkId,
+                        wallet,
+                        DefaultScoreClient.ZERO_ADDRESS
+                );
+                SYSTEM_INTERFACE = new SystemInterfaceScoreClient(client);
+                SYSTEM_INTERFACE.setBonderList(bonderList);
+                count++;
+
+
+
+            }
+            else {
+                break;
+            }
+
+
+        }
+        System.out.println("the bonder list");
+
     }
 
-    public void setBonderListOfPReps(){
-        KeyWallet[] keyWallets = {prepWallet1, prepWallet2, prepWallet3, prepWallet4, prepWallet5, prepWallet6, prepWallet7};
-        setBonderList(keyWallets);
+    public void setBondsofPreps(){
+        int count = 0;
+        for (Map.Entry<Address, String> prep : preps.entrySet()) {
+            if (prep.getKey().equals(Address.fromString("hxb6b5791be0b5ef67063b3c10b840fb81514db2fd"))){
+                continue;
+            }
+            if (count < 7){
+                KeyWallet wallet = KeyWallet.load(new Bytes(prep.getValue()));
+                SystemInterface.Bond[] bond = new SystemInterface.Bond[1];
+                bond[0] = new SystemInterface.Bond();
+                bond[0].address = score.Address.fromString(prep.getKey().toString());
+                bond[0].value = BigInteger.valueOf(10_000).multiply(BigInteger.TEN.pow(18));
+                var client = new DefaultScoreClient(
+                        chain.getEndpointURL(),
+                        chain.networkId,
+                        wallet,
+                        DefaultScoreClient.ZERO_ADDRESS
+                );
+                SYSTEM_INTERFACE = new SystemInterfaceScoreClient(client);
+                SYSTEM_INTERFACE.setBond(bond);
+                count++;
+            }
+            else {
+                break;
+            }
+        }
+
+        System.out.println("bond of preps done ");
     }
 
-    public void deployContracts(){
-        cpsCore = deploy(owner, "CPSCore", null);
-
-        Map<String, Object> cpsScoreAddress = Map.of("cps_score", cpsCore._address());
-        cpsTreasury = deploy(owner, "CPSTreasury", cpsScoreAddress);
-        cpfTreasury = deploy(owner, "CPFTreasury", cpsScoreAddress);
-
-
-        dex = deploy(owner, "Dex", null);
-
-        Map<String, Object> bnUSDParams = Map.of(
-                "_name", "Balanced Dollar",
-                "_symbol", "bnUSD",
-                "_decimals", BigInteger.valueOf(18),
-                "_initialSupply", BigInteger.valueOf(100000000));
-        bnusd = deploy(owner, "bnUSD", bnUSDParams);
-
-        sicx = deploy(owner, "sICX", bnUSDParams);
-
-        router = deploy(owner, "Router", null);
+    public CPSClient defaultClient() {
+        return ownerClient;
     }
 
-    public void setScoreAddresses(){
-        // CPS Main
+    public CPSClient testClient() {
+        return testClient;
+    }
+
+    public void send(foundation.icon.jsonrpc.Address address, String method, Map<String, Object> params) {
+        iconClient.send(owner, address, BigInteger.ZERO, method, params, DefaultICONClient.DEFAULT_RESULT_TIMEOUT);
+    }
+
+
+
+    public String getScorePath(String key) {
+        String path = System.getProperty(key);
+        if (path == null) {
+            throw new IllegalArgumentException("No such property: " + key);
+        }
+        return path;
+    }
+
+    public Callable<foundation.icon.jsonrpc.Address> deploy(Score score) {
+        return () -> _deploy(score);
+    }
+
+    public foundation.icon.jsonrpc.Address _deploy(Score score) {
+        return iconClient.deploy(owner, DefaultICONClient.ZERO_ADDRESS, score.getPath(), score.getParams());
+    }
+
+    public boolean isPRepRegistered() {
+        try {
+            SYSTEM_INTERFACE = new SystemInterfaceScoreClient(godClient);
+            Map<String, Object> result = SYSTEM_INTERFACE.getPReps(BigInteger.ONE, BigInteger.valueOf(100));
+            List<Object> registeredPReps = (List<Object>) result.get("preps");
+            if (registeredPReps.size() >= 100) {
+                return true;
+            }
+        } catch (Exception e) {
+
+        }
+        return false;
+    }
+
+    public CPSClient newClient(BigInteger balance) throws Exception {
+        CPSClient client = new CPSClient(this, createWalletWithBalance(balance));
+        cpsClients.put(client.getAddress(), client);
+        return client;
+    }
+
+    public CPSClient customClient(String privateKey){
+        CPSClient client = new CPSClient(this,KeyWallet.load(new Bytes(privateKey)));
+        cpsClients.put(client.getAddress(),client);
+        return client;
+    }
+
+    public void deployPrep() {
+        if (isPRepRegistered()) {
+            return;
+        }
+        try {
+
+            for (Map.Entry<Address, String> prep : preps.entrySet()) {
+                KeyWallet wallet = KeyWallet.load(new Bytes(prep.getValue()));
+                transfer(foundation.icon.jsonrpc.Address.of(wallet), BigInteger.TEN.pow(24));
+                var client = new DefaultScoreClient(
+                        chain.getEndpointURL(),
+                        chain.networkId,
+                        wallet,
+                        DefaultScoreClient.ZERO_ADDRESS
+                );
+                SYSTEM_INTERFACE = new SystemInterfaceScoreClient(client);
+                ((SystemInterfaceScoreClient) SYSTEM_INTERFACE).registerPRep(
+                        BigInteger.valueOf(2000).multiply(BigInteger.TEN.pow(18)), prep.getKey().toString(),
+                        "kokoa@example.com",
+                        "USA",
+                        "New York", "https://icon.kokoa.com", "https://icon.kokoa.com/json/details.json",
+                        "localhost:9082");
+            }
+        } catch (Exception e) {
+
+        }
+    }
+
+    public Map<String, foundation.icon.jsonrpc.Address> getAddresses() {
+        return this.addresses;
+    }
+
+    public foundation.icon.jsonrpc.Address getAddress(String key) {
+
+        return this.addresses.get(key);
     }
 }

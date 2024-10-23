@@ -1,0 +1,54 @@
+package community.icon.cps.score.test.integration.scores;
+
+import java.math.BigInteger;
+import java.util.Map;
+
+import foundation.icon.score.client.ScoreClient;
+import score.Address;
+import score.annotation.Payable;
+
+
+@ScoreClient
+public interface SystemInterface {
+
+    public class Delegation{
+        public Address address;
+        public BigInteger value;
+    }
+
+    public class Bond{
+        public Address address;
+        public BigInteger value;
+    }
+
+    Map<String, Object> getIISSInfo();
+
+    Map<String, Object> queryIScore(Address address);
+
+    Map<String, Object> getStake(Address address);
+
+    Map<String, Object> getDelegation(Address address);
+
+    Map<String, Object> getPReps(BigInteger startRanking, BigInteger endRanking);
+
+    @Payable
+    void registerPRep(String name, String email, String country, String city, String website, String details,
+                      String p2pEndpoint);
+
+
+    void setDelegation(Delegation[] delegations);
+
+    void setBond(Bond[] bonds);
+    Map<String,Address> getBonderList(Address address);
+
+    void setBonderList(Address[] bonderList);
+
+    void setStake(BigInteger value);
+
+    Map<String, Object> getPRep(Address address);
+
+    Map<String, Object> getPRepTerm();
+    void initCommissionRate(BigInteger maxChangeRate,BigInteger maxRate,BigInteger rate);
+    void setCommissionRate(BigInteger rate);
+
+}

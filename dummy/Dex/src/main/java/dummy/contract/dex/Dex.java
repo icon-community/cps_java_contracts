@@ -2,39 +2,40 @@ package dummy.contract.dex;
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
+import community.icon.cps.score.lib.interfaces.DexInterface;
 import score.Address;
 import score.Context;
-import score.DictDB;
 import score.VarDB;
 import score.annotation.EventLog;
 import score.annotation.External;
-import scorex.util.ArrayList;
+import score.annotation.Payable;
 
 import java.math.BigInteger;
 import java.util.Arrays;
-import java.util.List;
 
-public class Dex implements community.icon.cps.score.lib.interfaces.DexInterface {
+public class Dex implements DexInterface {
     private static final String TAG = "Balanced DEX";
     private final VarDB<Address> sicx = Context.newVarDB("sicx", Address.class);
     public static final BigInteger EXA = BigInteger.valueOf(1_000_000_000_000_000_000L);
 
-    public Dex(){}
+    public Dex() {
+    }
 
     @Override
     @External
-    public void setSicxScore(Address _score){
+    public void setSicxScore(Address _score) {
         this.sicx.set(_score);
     }
 
     @External(readonly = true)
-    public BigInteger getPrice(int poolId){
+    public BigInteger getPrice(int _id) {
         return BigInteger.ONE;
     }
 
     @Override
     @EventLog
-    public void Deposit(Address from_token, Address from, BigInteger value){}
+    public void Deposit(Address from_token, Address from, BigInteger value) {
+    }
 
     @Override
     @EventLog(indexed = 2)
@@ -44,13 +45,19 @@ public class Dex implements community.icon.cps.score.lib.interfaces.DexInterface
                      BigInteger _poolQuote, BigInteger _endingPrice, BigInteger _effectiveFillPrice) {
     }
 
+
+    @Payable
+    public void fallback(){
+
+    }
+
     @Override
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
         // Parse the transaction data submitted by the user
         String unpackedData = new String(_data);
         Context.require(!unpackedData.equals(""), "Token Fallback: Data can't be empty");
-        if (Arrays.equals(_data, "None".getBytes())){
+        if (Arrays.equals(_data, "None".getBytes())) {
             return;
         }
         JsonObject json = Json.parse(unpackedData).asObject();
@@ -94,8 +101,12 @@ public class Dex implements community.icon.cps.score.lib.interfaces.DexInterface
                 Address toToken = Address.fromString(params.get("toToken").asString());
 
                 // Perform the swap
+
                 exchange(fromToken, toToken, _from, receiver, _value, minimumReceive);
 
+                break;
+            }
+            case "_dex":{
                 break;
             }
             default:
@@ -117,6 +128,7 @@ public class Dex implements community.icon.cps.score.lib.interfaces.DexInterface
         }
 
         // Send the trader their funds
+
         Context.call(toToken, "transfer", receiver, value);
 
         Swap(BigInteger.valueOf(0), fromToken, fromToken, toToken, sender, receiver, value, value,

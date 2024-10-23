@@ -9,8 +9,8 @@ import javax.management.MBeanServerInvocationHandler;
 import java.math.BigInteger;
 import java.util.Map;
 
-@ScoreClient
-@ScoreInterface
+//@ScoreClient
+@ScoreInterface(suffix = "Client")
 public interface SystemInterface {
     public static class Delegation{
         public Address address;

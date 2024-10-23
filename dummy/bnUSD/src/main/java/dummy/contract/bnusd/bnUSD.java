@@ -2,7 +2,9 @@ package dummy.contract.bnusd;
 
 import community.icon.cps.score.lib.interfaces.bnUSDInterface;
 import community.icon.cps.score.lib.tokens.IRC2Base;
+import score.Address;
 import score.Context;
+import score.annotation.External;
 
 import java.math.BigInteger;
 
@@ -12,7 +14,12 @@ public class bnUSD extends IRC2Base implements bnUSDInterface {
 
         // mint the initial token supply here
         Context.require(_initialSupply.compareTo(BigInteger.ZERO) >= 0);
-        mint(Context.getCaller(), _initialSupply.multiply(pow10(_decimals)));
+        mint(Context.getCaller(), _initialSupply);
+    }
+
+    @External
+    public void mintTo(Address to, BigInteger amount) {
+        mint(to, amount);
     }
 
     private static BigInteger pow10(int exponent) {

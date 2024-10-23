@@ -11,8 +11,8 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-@ScoreClient
-@ScoreInterface
+//@ScoreClient
+@ScoreInterface(suffix = "Client")
 public interface CPSTreasuryInterface {
     @External(readonly = true)
     String name();

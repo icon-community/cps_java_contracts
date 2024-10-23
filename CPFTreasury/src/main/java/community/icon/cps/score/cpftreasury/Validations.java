@@ -3,7 +3,6 @@ package community.icon.cps.score.cpftreasury;
 import score.Address;
 import score.Context;
 
-import static community.icon.cps.score.cpftreasury.Constants.SYSTEM_ADDRESS;
 import static community.icon.cps.score.cpftreasury.Constants.TAG;
 
 public class Validations {
@@ -14,7 +13,9 @@ public class Validations {
     }
 
     public static void validateGovernanceContract() {
-        Context.require(Context.getCaller().equals(SYSTEM_ADDRESS),
+        Address caller = Context.getCaller();
+        Address owner = Context.getOwner();
+        Context.require(caller.equals(owner),
                 TAG + ": Only Admins can call this method");
 
     }

@@ -36,3 +36,6 @@ gradle.properties
 .classpath
 .settings
 **/bin/
+
+*.ipynb
+*.csv

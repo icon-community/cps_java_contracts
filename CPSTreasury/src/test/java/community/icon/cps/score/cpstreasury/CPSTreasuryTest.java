@@ -51,7 +51,7 @@ public class CPSTreasuryTest extends TestBase {
 
     @BeforeEach
     public void setup() throws Exception {
-        tokenScore = sm.deploy(owner, CPSTreasury.class);
+        tokenScore = sm.deploy(owner, CPSTreasury.class, score_address);
         CPSTreasury instance = (CPSTreasury) tokenScore.getInstance();
         scoreSpy = spy(instance);
         tokenScore.setInstance(scoreSpy);
@@ -167,39 +167,39 @@ public class CPSTreasuryTest extends TestBase {
     void setCpsScoreNotAdmin() {
         setScoresMethod();
         Executable setCpsScoreNotAdmin = () -> setCpsScoreExceptions(false, score_address);
-        expectErrorMessage(setCpsScoreNotAdmin, "Reverted(0): " + TAG + ": Only admins can call this method");
+        expectErrorMessage(setCpsScoreNotAdmin, TAG + ": Only admins can call this method");
     }
 
     @Test
     void setCpfTreasuryScoreNotAdmin() {
         setScoresMethod();
         Executable setCpfTreasuryScoreNotAdmin = () -> setCpfTreasuryScoreExceptions(false, score_address);
-        expectErrorMessage(setCpfTreasuryScoreNotAdmin, "Reverted(0): " + TAG + ": Only admins can call this method");
+        expectErrorMessage(setCpfTreasuryScoreNotAdmin, TAG + ": Only admins can call this method");
     }
 
     @Test
     void setBnUSDScoreNotAdmin() {
         setScoresMethod();
         Executable setBnUSDScoreNotAdmin = () -> setBnUSDScoreExceptions(false, score_address);
-        expectErrorMessage(setBnUSDScoreNotAdmin, "Reverted(0): " + TAG + ": Only admins can call this method");
+        expectErrorMessage(setBnUSDScoreNotAdmin, TAG + ": Only admins can call this method");
     }
 
     @Test
     void setCPSScoreNotContract() {
         Executable setCpsScoreNotAdmin = () -> setCpsScoreExceptions(true, testing_account.getAddress());
-        expectErrorMessage(setCpsScoreNotAdmin, "Reverted(0): " + TAG + "Target " + testing_account.getAddress() + " is not a score.");
+        expectErrorMessage(setCpsScoreNotAdmin, TAG + "Target " + testing_account.getAddress() + " is not a score.");
     }
 
     @Test
     void setCPFTreasuryScoreNotContract() {
         Executable setCpfTreasuryScoreNotContract = () -> setCpfTreasuryScoreExceptions(true, testing_account.getAddress());
-        expectErrorMessage(setCpfTreasuryScoreNotContract, "Reverted(0): " + TAG + "Target " + testing_account.getAddress() + " is not a score.");
+        expectErrorMessage(setCpfTreasuryScoreNotContract,    TAG + "Target " + testing_account.getAddress() + " is not a score.");
     }
 
     @Test
     void setBnUSDScoreNotContract() {
         Executable setBnUSDScoreContract = () -> setBnUSDScoreExceptions(true, testing_account.getAddress());
-        expectErrorMessage(setBnUSDScoreContract, "Reverted(0): " + TAG + "Target " + testing_account.getAddress() + " is not a score.");
+        expectErrorMessage(setBnUSDScoreContract,    TAG + "Target " + testing_account.getAddress() + " is not a score.");
     }
 
     @Test
@@ -268,7 +268,7 @@ public class CPSTreasuryTest extends TestBase {
         setOnsetPayment();
         depositProposalFundMethod();
         Executable depositProposalFundProposalAlreadyExists = () -> depositProposalFundExceptions();
-        expectErrorMessage(depositProposalFundProposalAlreadyExists, "Reverted(0): " + "CPS_TREASURY: Already have this project");
+        expectErrorMessage(depositProposalFundProposalAlreadyExists,  "CPS_TREASURY: Already have this project");
     }
 
     @Test
@@ -342,7 +342,7 @@ public class CPSTreasuryTest extends TestBase {
     @Test
     void updateProposalFundProposalDoesnotExist(){
         Executable updateProposalFundProposalDoesnotExist = () -> updateProposalFundProposalException();
-        expectErrorMessage(updateProposalFundProposalDoesnotExist, "Reverted(0): " + "CPS_TREASURY: Invalid IPFS hash.");
+        expectErrorMessage(updateProposalFundProposalDoesnotExist,    "CPS_TREASURY: Invalid IPFS hash.");
     }
 
     private void  depositProposalFund_MilestoneCheck() {
@@ -569,4 +569,47 @@ public class CPSTreasuryTest extends TestBase {
 
 
     }
+
+    @Test
+    void updateAddress(){
+        setOnsetPayment();
+        setCpsScoreMethod();
+
+        contextMock.when(caller()).thenReturn(score_address);
+        depositProposalFundMethod();
+
+        Address newContributorAddress = sm.createAccount().getAddress();
+        Address newSponsorAddress = sm.createAccount().getAddress();
+
+        contextMock.when(caller()).thenReturn(score_address);
+        tokenScore.invoke(testing_account,"updateContributorSponsorAddress", "Proposal 1",
+                newContributorAddress,newSponsorAddress);
+
+
+        Map<String,? > oldContributorData = (Map<String, ?>) tokenScore.call("getContributorProjectedFund", testing_account2.getAddress());
+        System.out.println("The data is empty: "+oldContributorData.get(DATA));
+
+        Map<String,? > oldSponsorData = (Map<String, ?>) tokenScore.call("getSponsorProjectedFund", testing_account.getAddress());
+        System.out.println("The data is empty: "+oldSponsorData.get(DATA));
+
+        doReturn(List.of(Map.of(
+                BUDGET,BigInteger.valueOf(50).multiply(ICX)
+        ))).when(scoreSpy).callScore(List.class,score_address,"getRemainingMilestones","Proposal 1");
+        Map<String,? > newContributorData = (Map<String, ?>) tokenScore.call("getContributorProjectedFund", newContributorAddress);
+
+        List<Map<String, ?>> data = (List<Map<String, ?>>) newContributorData.get(DATA);
+        assertEquals(data.get(0).get("ipfs_hash"),"Proposal 1");
+        assertEquals(data.get(0).get("total_installment_paid"), new BigInteger("10000000000000000000"));
+
+
+        Map<String,? > newSponsorData = (Map<String, ?>) tokenScore.call("getSponsorProjectedFund", newSponsorAddress);
+        System.out.println(newSponsorData);
+        data = (List<Map<String, ?>>) newSponsorData.get(DATA);
+        assertEquals(data.get(0).get("ipfs_hash"),"Proposal 1");
+        assertEquals(data.get(0).get("total_installment_paid"), new BigInteger("200000000000000000"));
+        assertEquals(data.get(0).get("sponsor_bond_amount"), new BigInteger("15000000000000000000"));
+
+
+    }
+
 }

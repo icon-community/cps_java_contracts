@@ -1,6 +1,5 @@
 package community.icon.cps.score.lib.interfaces;
 
-import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
 import score.Address;
 import score.annotation.EventLog;
@@ -8,8 +7,8 @@ import score.annotation.External;
 
 import java.math.BigInteger;
 
-@ScoreInterface
-@ScoreClient
+
+@ScoreInterface(suffix = "Client")
 public interface DexInterface {
 
     @External
