@@ -2,17 +2,16 @@ package dummy.contract.dex;
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
+import community.icon.cps.score.lib.interfaces.DexInterface;
 import score.Address;
 import score.Context;
 import score.VarDB;
 import score.annotation.EventLog;
 import score.annotation.External;
+import score.annotation.Payable;
 
 import java.math.BigInteger;
 import java.util.Arrays;
-
-import community.icon.cps.score.lib.interfaces.DexInterface;
-import score.annotation.Payable;
 
 public class Dex implements DexInterface {
     private static final String TAG = "Balanced DEX";
@@ -29,7 +28,7 @@ public class Dex implements DexInterface {
     }
 
     @External(readonly = true)
-    public BigInteger getPrice(int poolId) {
+    public BigInteger getPrice(int _id) {
         return BigInteger.ONE;
     }
 
