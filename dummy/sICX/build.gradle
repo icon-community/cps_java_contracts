@@ -22,14 +22,15 @@ deployJar {
             uri = 'http://localhost:9082/api/v3'
             nid = 0x3
         }
+        devnet{
+            uri = "https://tt.net.solidwallet.io/api/v3"
+            nid = 0x3
+        }
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
     parameters {
-        arg('_name', 'Staked ICX')
-        arg('_symbol', 'sICX')
-        arg('_decimals', '0x12')
-        arg('_initialSupply', '0x989680')
+        arg('_admin', 'hx2eec32d4469cbdc24fac4ea0c3859b7c3f2729ee')
     }
 }
 
