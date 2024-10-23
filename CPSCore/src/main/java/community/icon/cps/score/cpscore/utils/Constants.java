@@ -10,10 +10,9 @@ public class Constants {
 
 
     public static final BigInteger EXA = BigInteger.valueOf(1000000000000000000L);
-    public static final Integer MINIMUM_PREPS = 7;
 
     public static final Integer MAX_PROJECT_PERIOD = 12;
-    public static final double MAJORITY = 0.67;
+    public static final double MAJORITY = 0.66;
     public static final BigInteger DAY_COUNT = BigInteger.valueOf(15);
     public static final BigInteger BLOCKS_DAY_COUNT = BigInteger.valueOf(43120);
 
@@ -140,6 +139,7 @@ public class Constants {
     public static final String PAY_PENALTY = "payPenalty";
     public static final String IS_REGISTERED = "isRegistered";
     public static final String IS_PREP = "isPRep";
+    public static final String IS_COUNCIL_MANAGER = "isCouncilManager";
     public static final String PENALTY_AMOUNT1 = "penaltyAmount";
     public static final String TRANSFER = "transfer";
     public static final String METHOD = "method";
